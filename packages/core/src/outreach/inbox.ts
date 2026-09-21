@@ -210,10 +210,11 @@ export async function sendDirectMessage(ctx: TenantContext, leadId: string, inpu
 
 export async function inboxSummary(ctx: TenantContext) {
   assertCan(ctx, "conversations:read");
-  const [needsResponse, unread, pendingApproval] = await Promise.all([
+  const [needsResponse, unread, pendingApproval, callsWaiting] = await Promise.all([
     ctx.db.conversation.count({ where: { status: "NEEDS_RESPONSE", lead: { deletedAt: null } } }),
     ctx.db.conversation.aggregate({ _sum: { unreadCount: true }, where: { lead: { deletedAt: null } } }),
     ctx.db.message.count({ where: { direction: "OUTBOUND", status: { in: ["DRAFT", "PENDING_APPROVAL"] } } }),
+    ctx.db.call.count({ where: { status: { in: ["PREPARED", "RINGING", "IN_PROGRESS"] } } }),
   ]);
-  return { needsResponse, unread: unread._sum.unreadCount ?? 0, pendingApproval };
+  return { needsResponse, unread: unread._sum.unreadCount ?? 0, pendingApproval, callsWaiting };
 }

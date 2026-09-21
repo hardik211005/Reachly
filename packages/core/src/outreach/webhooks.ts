@@ -11,7 +11,7 @@ import {
   type WhatsAppEvent,
 } from "@repo/integrations";
 import { getQueue } from "@repo/queue";
-import { systemContext } from "../context";
+import { systemContext, type TenantContext } from "../context";
 import { decryptJson, safeEqual } from "../crypto";
 import { AppError, NotFoundError } from "../errors";
 import { logger } from "../logger";
@@ -28,9 +28,26 @@ export class WebhookSignatureError extends AppError {
   }
 }
 
-type StoredEvent =
+/** A provider event handled by another module (e.g. voice), keyed by `kind`. */
+export interface ExternalStoredEvent {
+  kind: string;
+  callId?: string;
+  event: Record<string, unknown>;
+}
+
+type BuiltinStoredEvent =
   | { kind: "email"; event: Omit<EmailEvent, "occurredAt"> & { occurredAt: string } }
   | { kind: "whatsapp"; event: (Omit<Extract<WhatsAppEvent, { type: "status" }>, "occurredAt"> | Omit<Extract<WhatsAppEvent, { type: "inbound" }>, "occurredAt">) & { occurredAt: string } };
+
+type StoredEvent = BuiltinStoredEvent | ExternalStoredEvent;
+
+type WebhookHandler = (ctx: TenantContext, stored: ExternalStoredEvent, provider: string) => Promise<unknown>;
+const handlers = new Map<string, WebhookHandler>();
+
+/** Modules with their own provider events (voice) register how to apply them. */
+export function registerWebhookHandler(kind: string, handler: WebhookHandler): void {
+  handlers.set(kind, handler);
+}
 
 async function integrationCredentials(integrationId: string) {
   const integration = await prisma.integration.findFirst({ where: { id: integrationId, status: "CONNECTED" } });
@@ -39,7 +56,7 @@ async function integrationCredentials(integrationId: string) {
   return { integration, credentials };
 }
 
-async function store(provider: string, organizationId: string | null, eventType: string, externalEventId: string, payload: StoredEvent) {
+export async function storeWebhookEvent(provider: string, organizationId: string | null, eventType: string, externalEventId: string, payload: StoredEvent) {
   try {
     const row = await prisma.webhookEvent.create({
       data: {
@@ -101,7 +118,7 @@ export async function ingestEmailWebhook(providerName: string, request: WebhookR
   const result = { accepted: 0, duplicates: 0, ignored: 0 };
   for (const event of events) {
     const org = organizationId ?? (await organizationForMessage(providerName, event.providerMessageId, event.inbound?.inReplyTo));
-    const outcome = await store(providerName, org, event.type, event.externalEventId, { kind: "email", event: { ...event, occurredAt: event.occurredAt.toISOString() } });
+    const outcome = await storeWebhookEvent(providerName, org, event.type, event.externalEventId, { kind: "email", event: { ...event, occurredAt: event.occurredAt.toISOString() } });
     if (outcome === "duplicate") result.duplicates += 1;
     else if (org) result.accepted += 1;
     else result.ignored += 1;
@@ -161,7 +178,7 @@ export async function ingestWhatsAppWebhook(request: WebhookRequest) {
       org = last?.organizationId ?? null;
     }
     const { occurredAt, ...rest } = event;
-    const outcome = await store("meta_whatsapp", org, event.type === "status" ? `status.${event.status}` : "message", event.externalEventId + (event.type === "status" ? `:${event.status}` : ""), {
+    const outcome = await storeWebhookEvent("meta_whatsapp", org, event.type === "status" ? `status.${event.status}` : "message", event.externalEventId + (event.type === "status" ? `:${event.status}` : ""), {
       kind: "whatsapp",
       event: { ...rest, occurredAt: occurredAt.toISOString() },
     });
@@ -178,11 +195,15 @@ export async function processWebhookEvent(webhookEventId: string) {
   const row = await prisma.webhookEvent.findUnique({ where: { id: webhookEventId } });
   if (!row || row.status === "PROCESSED" || !row.organizationId) return { skipped: true };
   const ctx = systemContext(row.organizationId, { type: "PROVIDER", id: row.provider });
-  const stored = row.payload as unknown as StoredEvent;
+  const kind = (row.payload as { kind?: string } | null)?.kind ?? "";
+  const external = handlers.get(kind);
+  const stored = row.payload as unknown as BuiltinStoredEvent;
   await prisma.webhookEvent.update({ where: { id: row.id }, data: { attempts: { increment: 1 } } });
   try {
     let outcome: unknown;
-    if (stored.kind === "email") {
+    if (external) {
+      outcome = await external(ctx, row.payload as unknown as ExternalStoredEvent, row.provider);
+    } else if (stored.kind === "email") {
       const event = stored.event;
       const occurredAt = new Date(event.occurredAt);
       if (event.type === "inbound" && event.inbound) {

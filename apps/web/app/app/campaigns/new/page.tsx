@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { formatCurrency } from "@repo/ui";
 import { listOfferings } from "@repo/core/business/service";
 import { resolvePlan } from "@repo/core/billing/plans";
+import { callReadiness } from "@repo/core/calls/policy";
 import { can } from "@repo/core/context";
 import { leadFilterOptions } from "@repo/core/leads/service";
 import { channelAvailability } from "@repo/core/outreach/providers";
@@ -20,13 +21,14 @@ export default async function NewCampaignPage() {
   const { ctx } = await requireWorkspace();
   if (!can(ctx, "campaigns:write")) redirect("/app/campaigns");
 
-  const [offerings, filters, plan, providers, templates, profile] = await Promise.all([
+  const [offerings, filters, plan, providers, templates, profile, readiness] = await Promise.all([
     listOfferings(ctx),
     leadFilterOptions(ctx),
     resolvePlan(ctx),
     channelAvailability(ctx),
     listWhatsAppTemplates(ctx),
     ctx.db.businessProfile.findFirst({ select: { outreachTone: true } }),
+    callReadiness(ctx),
   ]);
 
   const options: BuilderOptions = {
@@ -42,7 +44,7 @@ export default async function NewCampaignPage() {
     cities: filters.cities,
     plan: { name: plan.name, automationModes: [...plan.features.automationModes], channels: [...plan.features.channels] },
     providers,
-    voiceAvailable: false,
+    voiceAvailable: readiness.ready,
     templates: templates.templates.map((template) => ({ id: template.id, name: template.name, body: template.body, status: template.status, language: template.language })),
     defaultTone: profile?.outreachTone ?? "professional",
   };

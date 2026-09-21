@@ -674,7 +674,10 @@ export function LeadWorkspace({
           </TabsContent>
 
           <TabsContent value="outreach" className="pt-4">
-            <LeadOutreachPanel lead={{ id: lead.id, name: lead.name, doNotContact: lead.doNotContact }} providers={providers} />
+            <LeadOutreachPanel
+              lead={{ id: lead.id, name: lead.name, doNotContact: lead.doNotContact, city: lead.city, locality: lead.locality, score: lead.score, phone: lead.phone ?? lead.contacts.find((contact) => contact.phone)?.phone ?? null }}
+              providers={providers}
+            />
           </TabsContent>
 
           <TabsContent value="activity" className="grid gap-4 pt-4">

@@ -28,11 +28,15 @@ import { useCanManage, useShell } from "./shell-context";
 function useNavCounts(): Record<string, number> {
   const summary = useQuery({
     queryKey: ["inbox-summary"],
-    queryFn: () => api<{ needsResponse: number; unread: number; pendingApproval: number }>("/api/v1/conversations/summary"),
+    queryFn: () => api<{ needsResponse: number; unread: number; pendingApproval: number; callsWaiting: number }>("/api/v1/conversations/summary"),
     refetchInterval: 30_000,
     staleTime: 15_000,
   });
-  return { "/app/conversations": summary.data?.needsResponse ?? 0, "/app/campaigns": summary.data?.pendingApproval ?? 0 };
+  return {
+    "/app/conversations": summary.data?.needsResponse ?? 0,
+    "/app/campaigns": summary.data?.pendingApproval ?? 0,
+    "/app/calls": summary.data?.callsWaiting ?? 0,
+  };
 }
 
 function NavLink({ item, collapsed, onNavigate, count = 0 }: { item: NavItem; collapsed: boolean; onNavigate?: () => void; count?: number }) {

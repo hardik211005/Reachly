@@ -3,7 +3,8 @@ import { z } from "zod";
 import { getCampaignStats, listCampaignsWithStats } from "../campaigns/stats";
 import { listLeads } from "../leads/service";
 import { inboxSummary, listConversations } from "../outreach/inbox";
-import { registerMockFormatter, registerMockIntent } from "./mock";
+import { callsOverview } from "../calls/stats";
+import { extractDays, registerMockFormatter, registerMockIntent } from "./mock";
 import { registerCopilotTool } from "./tools";
 
 /** Copilot tools over campaigns, the inbox and leads — all thin wrappers over real services. */
@@ -84,6 +85,17 @@ registerCopilotTool({
   },
 });
 
+registerCopilotTool({
+  name: "get_call_results",
+  description: "AI and manual call results for the last N days: calls placed, connect rate, positive rate, average length, meetings booked, outcome breakdown, calls waiting to be started.",
+  parameters: z.object({ days: z.number().int().min(1).max(365).default(30) }),
+  permission: "conversations:read",
+  async run(ctx, args) {
+    const overview = await callsOverview(ctx, args.days);
+    return { days: args.days, placed: overview.placed, connected: overview.connected, connectRate: overview.connectRate, positiveRate: overview.positiveRate, avgDurationSeconds: overview.avgDurationSeconds, meetings: overview.meetings, outcomes: overview.outcomes, waiting: overview.queue };
+  },
+});
+
 // ----------------------------------------------------------------------------- Demo-mode intents
 
 const CAMPAIGN_STOPWORDS = new Set(["how", "is", "was", "are", "the", "of", "for", "about", "my", "our", "all", "each", "every", "which", "what", "this", "that", "any", "a", "an", "doing", "did", "does", "show", "me", "tell"]);
@@ -122,6 +134,15 @@ registerMockIntent(
   },
   { first: true },
 );
+
+registerMockIntent({ tool: "get_call_results", match: (text) => (/\b(calls?|calling|phone)\b/.test(text) && !/\bcampaign\b/.test(text) ? { days: extractDays(text) } : null) }, { first: true });
+
+registerMockFormatter("get_call_results", (result) => {
+  const data = result as { days: number; placed: number; connected: number; connectRate: number | null; positiveRate: number | null; avgDurationSeconds: number | null; meetings: number; outcomes: Array<{ outcome: string; count: number }>; waiting: number };
+  if (!data.placed) return `No calls were placed in the last ${data.days} days.${data.waiting ? ` ${data.waiting} prepared call${data.waiting === 1 ? " is" : "s are"} waiting to be started.` : ""}`;
+  const top = [...data.outcomes].sort((a, b) => b.count - a.count).slice(0, 3).map((item) => `${item.outcome.toLowerCase().replace(/_/g, " ")} (${item.count})`).join(", ");
+  return `In the last ${data.days} days: ${data.placed} calls placed, ${data.connected} connected (${rate(data.connectRate)}), ${rate(data.positiveRate)} of conversations positive, ${data.meetings} meeting${data.meetings === 1 ? "" : "s"} booked.${top ? ` Most common outcomes: ${top}.` : ""}${data.waiting ? ` ${data.waiting} call${data.waiting === 1 ? " is" : "s are"} waiting to be started.` : ""}`;
+});
 
 registerMockFormatter("list_campaigns", (result) => {
   const rows = result as Array<{ name: string; status: string; leads: number; sent: number; replyRate: number | null; meetings: number }>;

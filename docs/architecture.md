@@ -64,6 +64,7 @@ Internal packages ship as TypeScript source (`exports` → `src/*.ts`); Next.js 
 - Worker: `apps/worker` starts one BullMQ `Worker` per queue with processors, upserts cron schedulers, writes heartbeats and dead-letters final failures.
 - Non-retryable application errors (validation, limits, not found) skip retries.
 - Outreach runs on jobs too: `sequences.tick` (every minute) → `outreach.prepare-step` → `messages.send`, plus `conversations.analyze-inbound`, `webhooks.process` and, in demo mode, `demo.simulate`. See [outreach.md](outreach.md).
+- Calls: `calls.start` hands a confirmed call to the voice provider and `calls.analyze` turns the transcript into an outcome. Voice webhooks share the `WebhookEvent` store and are applied through a registered `voice` handler. See [calling.md](calling.md).
 
 ## Security model (summary)
 

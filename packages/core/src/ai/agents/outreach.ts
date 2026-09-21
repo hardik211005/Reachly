@@ -62,7 +62,8 @@ function plural(label: string): string {
   return `${label}s`;
 }
 
-function observation(lead: OutreachLeadContext): { text: string; fact: string } {
+/** One specific, verifiable thing about the lead to open with (from its signals). */
+export function observation(lead: OutreachLeadContext): { text: string; fact: string } {
   const where = lead.locality ?? lead.city ?? "your area";
   const bySignal = Object.fromEntries(lead.signals.map((signal) => [signal.key, signal]));
   if (bySignal.multiple_locations && lead.locationsCount && lead.locationsCount > 1) {

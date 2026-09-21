@@ -27,6 +27,7 @@ import { apiWithMeta, api, errorMessage } from "@/lib/api-client";
 import { useCanWrite } from "../shell/shell-context";
 import { RelativeTime } from "../time";
 import { ChannelIcon, IntentBadge, ProviderPill, type ProviderState } from "./shared";
+import { LeadCalls } from "../calls/lead-calls";
 import { ConversationThread } from "./thread";
 
 interface PitchPack {
@@ -172,7 +173,13 @@ export function ComposeDialog({
 
 // ----------------------------------------------------------------------------- Tab
 
-export function LeadOutreachPanel({ lead, providers }: { lead: { id: string; name: string; doNotContact: boolean }; providers: { EMAIL: ProviderState; WHATSAPP: ProviderState } }) {
+export function LeadOutreachPanel({
+  lead,
+  providers,
+}: {
+  lead: { id: string; name: string; doNotContact: boolean; city: string | null; locality: string | null; score: number | null; phone: string | null };
+  providers: { EMAIL: ProviderState; WHATSAPP: ProviderState };
+}) {
   const canWrite = useCanWrite();
   const [compose, setCompose] = React.useState<{ key: number; open: boolean; value: { channel: "EMAIL" | "WHATSAPP"; subject: string; body: string } }>({
     key: 0,
@@ -252,6 +259,8 @@ export function LeadOutreachPanel({ lead, providers }: { lead: { id: string; nam
           </div>
         )}
       </section>
+
+      <LeadCalls lead={lead} />
 
       <section className="grid gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
