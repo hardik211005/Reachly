@@ -1,0 +1,65 @@
+{
+  "name": "ReachAI — Meeting booked",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "reachai-meeting-booked",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "5b0f3c1e-6f0a-4a57-9a11-1c7f2b9c0a01",
+      "name": "ReachAI webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "reachai-meeting-booked"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Verifies ReachAI's x-reachai-signature: t=<unix>,v1=<hex HMAC-SHA256 of \"t.body\">.\n// Needs NODE_FUNCTION_ALLOW_BUILTIN=crypto and REACHAI_WEBHOOK_SECRET in n8n's environment.\nconst crypto = require('crypto');\nconst secret = $env.REACHAI_WEBHOOK_SECRET;\nconst item = $input.first().json;\nconst header = item.headers['x-reachai-signature'] || '';\nif (secret) {\n  const parts = Object.fromEntries(header.split(',').map((part) => part.split('=')));\n  const body = JSON.stringify(item.body);\n  const expected = crypto.createHmac('sha256', secret).update(`${parts.t}.${body}`).digest('hex');\n  const fresh = Math.abs(Date.now() / 1000 - Number(parts.t)) < 300;\n  if (!fresh || !parts.v1 || !crypto.timingSafeEqual(Buffer.from(parts.v1), Buffer.from(expected))) {\n    throw new Error('Invalid ReachAI signature');\n  }\n}\nconst { lead, event, workflow } = item.body;\nreturn [{ json: {\n  lead: lead?.name ?? '',\n  city: lead?.city ?? '',\n  leadUrl: lead?.url ?? '',\n  meetingAt: event?.properties?.scheduledAt ?? '',\n  workflow: workflow?.name ?? '',\n  receivedAt: new Date().toISOString(),\n} }];"
+      },
+      "id": "5b0f3c1e-6f0a-4a57-9a11-1c7f2b9c0a02",
+      "name": "Verify signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": { "__rl": true, "mode": "url", "value": "" },
+        "sheetName": { "__rl": true, "mode": "name", "value": "Meetings" },
+        "columns": { "mappingMode": "autoMapInputData", "value": {} },
+        "options": {}
+      },
+      "id": "5b0f3c1e-6f0a-4a57-9a11-1c7f2b9c0a03",
+      "name": "Append to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [480, 0],
+      "disabled": true,
+      "notes": "Add Google credentials and a sheet URL, then enable this node."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true } }}",
+        "options": {}
+      },
+      "id": "5b0f3c1e-6f0a-4a57-9a11-1c7f2b9c0a04",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [720, 0]
+    }
+  ],
+  "connections": {
+    "ReachAI webhook": { "main": [[{ "node": "Verify signature", "type": "main", "index": 0 }]] },
+    "Verify signature": { "main": [[{ "node": "Append to Google Sheets", "type": "main", "index": 0 }]] },
+    "Append to Google Sheets": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "active": false,
+  "tags": []
+}

@@ -1,0 +1,55 @@
+{
+  "name": "ReachAI — Daily digest to Slack",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "days", "triggerAtHour": 9 }] } },
+      "id": "a41d5e22-7b9c-4f0e-9d33-3c9f4d0e2c01",
+      "name": "Every morning",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.REACHAI_APP_URL }}/api/v1/analytics/overview?days=1",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.REACHAI_API_KEY }}" }] },
+        "options": {}
+      },
+      "id": "a41d5e22-7b9c-4f0e-9d33-3c9f4d0e2c02",
+      "name": "Get yesterday's numbers",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0],
+      "notes": "Create an API key in ReachAI (Settings → API keys) and set REACHAI_API_KEY in n8n's environment."
+    },
+    {
+      "parameters": {
+        "jsCode": "const kpis = $input.first().json.data?.kpis ?? [];\nconst lines = kpis.slice(0, 6).map((kpi) => `• ${kpi.label}: ${kpi.value}`);\nreturn [{ json: { text: `*ReachAI — yesterday*\\n${lines.join('\\n')}` } }];"
+      },
+      "id": "a41d5e22-7b9c-4f0e-9d33-3c9f4d0e2c03",
+      "name": "Format",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 0]
+    },
+    {
+      "parameters": { "select": "channel", "channelId": { "__rl": true, "mode": "name", "value": "#sales" }, "text": "={{ $json.text }}", "otherOptions": {} },
+      "id": "a41d5e22-7b9c-4f0e-9d33-3c9f4d0e2c04",
+      "name": "Post to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [720, 0],
+      "disabled": true,
+      "notes": "Add Slack credentials and a channel, then enable this node."
+    }
+  ],
+  "connections": {
+    "Every morning": { "main": [[{ "node": "Get yesterday's numbers", "type": "main", "index": 0 }]] },
+    "Get yesterday's numbers": { "main": [[{ "node": "Format", "type": "main", "index": 0 }]] },
+    "Format": { "main": [[{ "node": "Post to Slack", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "active": false,
+  "tags": []
+}

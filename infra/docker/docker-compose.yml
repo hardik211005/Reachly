@@ -67,11 +67,15 @@ services:
       N8N_PERSONALIZATION_ENABLED: "false"
       # Lets workflows reach the app running on the host machine.
       REACHAI_APP_URL: http://host.docker.internal:3000
+      # The template Code nodes verify ReachAI's HMAC signature.
+      NODE_FUNCTION_ALLOW_BUILTIN: crypto
+      REACHAI_WEBHOOK_SECRET: ${N8N_WEBHOOK_SECRET:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
       - n8n-data:/home/node/.n8n
-      - ../n8n/workflows:/workflows:ro
+      # Importable templates (also downloadable from the app at /n8n/<file>.json).
+      - ../../apps/web/public/n8n:/workflows:ro
 
   # S3-compatible object storage for quote PDFs and attachments (optional).
   minio:

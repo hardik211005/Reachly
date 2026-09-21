@@ -9,6 +9,8 @@ process.env.QUEUE_DRIVER = "inline";
 process.env.DEMO_MODE = "true";
 // Tests drive provider events explicitly instead of the demo simulator.
 process.env.DEMO_SIMULATE_EVENTS = "false";
+// External services are never called from tests; n8n steps use the demo client.
+process.env.N8N_URL = "";
 process.env.AI_DEFAULT_PROVIDER = "mock";
 process.env.LOG_LEVEL = "fatal";
 

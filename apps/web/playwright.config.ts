@@ -4,10 +4,13 @@ import { defineConfig, devices } from "@playwright/test";
  * End-to-end tests against a running app (seeded demo workspace).
  * Locally they use the installed Chrome (no browser download); CI installs Chromium.
  */
+// The dev server compiles each route on its first request (up to ~20s on a cold cache).
+const devServer = !process.env.E2E_BASE_URL;
+
 export default defineConfig({
   testDir: "./e2e",
-  timeout: 60_000,
-  expect: { timeout: 15_000 },
+  timeout: devServer ? 90_000 : 60_000,
+  expect: { timeout: devServer ? 30_000 : 15_000 },
   fullyParallel: false,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : [["list"]],

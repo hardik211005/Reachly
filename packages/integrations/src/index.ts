@@ -10,3 +10,4 @@ export * from "./whatsapp/types";
 export * from "./whatsapp/providers";
 export * from "./voice/types";
 export * from "./voice/providers";
+export * from "./automation/n8n";
