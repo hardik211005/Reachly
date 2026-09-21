@@ -6,3 +6,5 @@ export * from "./leads/types";
 export * from "./leads/mock";
 export * from "./leads/google-places";
 export * from "./leads/website-enrichment";
+export * from "./whatsapp/types";
+export * from "./whatsapp/providers";

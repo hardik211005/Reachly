@@ -81,7 +81,7 @@ export async function globalSearch(ctx: TenantContext, query: string, limitPerTy
       id: conversation.id,
       title: conversation.subject ?? conversation.lead.name,
       subtitle: `${conversation.channel.toLowerCase()} · ${conversation.lead.name}`,
-      href: `/app/conversations?id=${conversation.id}`,
+      href: `/app/conversations?status=all&c=${conversation.id}`,
     })),
   ];
 }

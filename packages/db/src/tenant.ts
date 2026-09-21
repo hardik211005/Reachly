@@ -60,6 +60,7 @@ export const TENANT_MODELS: ReadonlySet<Prisma.ModelName> = new Set<Prisma.Model
   "AICacheEntry",
   "Insight",
   "Integration",
+  "WhatsAppTemplate",
   "WebhookEndpoint",
   "Notification",
   "Event",

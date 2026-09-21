@@ -184,6 +184,21 @@ async function resolveActor(req: NextRequest, requestId: string): Promise<{ user
 
 type RouteContext<P> = { params: Promise<P> };
 
+const ID_SEGMENT = /\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?=\/|$)/gi;
+/** Overall ceiling per actor across every endpoint, on top of the per-endpoint limits. */
+const ACTOR_LIMIT_PER_MINUTE = 600;
+
+/**
+ * Per-endpoint buckets (method + path with ids collapsed), so a strict limit on one
+ * endpoint (e.g. launching a campaign) isn't consumed by ordinary reads elsewhere.
+ */
+async function enforceRateLimits(req: NextRequest, actorKey: string, endpointLimit: number) {
+  const endpoint = `${req.method}:${req.nextUrl.pathname.replace(ID_SEGMENT, "/:id")}`;
+  const [overall, scoped] = await Promise.all([rateLimit(`api:${actorKey}`, ACTOR_LIMIT_PER_MINUTE, 60), rateLimit(`api:${actorKey}:${endpoint}`, endpointLimit, 60)]);
+  const blocked = !overall.allowed ? overall : !scoped.allowed ? scoped : null;
+  if (blocked) throw new AppError("RATE_LIMITED", "Too many requests", 429, { retryAfterSeconds: blocked.resetSeconds });
+}
+
 /** Workspace-scoped route (most endpoints). */
 export function route<P = Record<string, string>, B extends z.ZodType | undefined = undefined, Q extends z.ZodType | undefined = undefined>(
   config: RouteConfig<B, Q>,
@@ -197,9 +212,7 @@ export function route<P = Record<string, string>, B extends z.ZodType | undefine
       if (!actor.viaApiKey && !SAFE_METHODS.has(req.method)) assertSameOrigin(req);
       if (!actor.ctx) throw new AppError("PRECONDITION_FAILED", "Create a workspace first", 409);
 
-      const limit = config.rateLimit ?? (SAFE_METHODS.has(req.method) ? 120 : 60);
-      const rl = await rateLimit(`api:${actor.ctx.actor.id ?? actor.ctx.organizationId}`, limit, 60);
-      if (!rl.allowed) throw new AppError("RATE_LIMITED", "Too many requests", 429, { retryAfterSeconds: rl.resetSeconds });
+      await enforceRateLimits(req, actor.ctx.actor.id ?? actor.ctx.organizationId, config.rateLimit ?? (SAFE_METHODS.has(req.method) ? 120 : 60));
 
       if (config.permission) assertCan(actor.ctx, config.permission);
       const { body, query } = await parseInput(req, config);
@@ -224,8 +237,7 @@ export function userRoute<P = Record<string, string>, B extends z.ZodType | unde
       const actor = await resolveActor(req, requestId);
       if (actor.viaApiKey || !actor.userId) throw new UnauthorizedError("This endpoint requires a user session");
       if (!SAFE_METHODS.has(req.method)) assertSameOrigin(req);
-      const rl = await rateLimit(`user:${actor.userId}`, config.rateLimit ?? 30, 60);
-      if (!rl.allowed) throw new AppError("RATE_LIMITED", "Too many requests", 429, { retryAfterSeconds: rl.resetSeconds });
+      await enforceRateLimits(req, `user:${actor.userId}`, config.rateLimit ?? 30);
       if (config.permission && actor.ctx) assertCan(actor.ctx, config.permission);
       const { body, query } = await parseInput(req, config);
       const params = await context.params;

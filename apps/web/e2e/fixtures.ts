@@ -21,6 +21,9 @@ export const test = base.extend<{ consoleErrors: string[] }>({
         errors.push(`console: ${text}`);
       });
       await use(errors);
+      // Layout regression guard: no page should scroll sideways at desktop width.
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth).catch(() => 0);
+      if (overflow > 1) errors.push(`horizontal overflow of ${overflow}px on ${page.url()}`);
       expect(errors, "page produced errors").toEqual([]);
     },
     { auto: true },

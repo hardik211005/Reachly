@@ -1,5 +1,5 @@
 import { LEAD_STATUS_LABELS, type LeadStatus } from "@repo/config";
-import { Prisma } from "@repo/db";
+import { type Prisma } from "@repo/db";
 import { getQueue } from "@repo/queue";
 import { audit } from "../audit";
 import { consumeUsage } from "../billing/usage";
@@ -26,7 +26,7 @@ import {
 
 // ----------------------------------------------------------------------------- List
 
-function whereFromQuery(query: ReturnType<typeof leadListQuerySchema.parse>): Prisma.LeadWhereInput {
+export function whereFromQuery(query: ReturnType<typeof leadListQuerySchema.parse>): Prisma.LeadWhereInput {
   const and: Prisma.LeadWhereInput[] = [{ deletedAt: null }];
   if (!query.includeDnc && !query.status?.includes("DO_NOT_CONTACT")) and.push({ doNotContact: false });
   if (query.q) {

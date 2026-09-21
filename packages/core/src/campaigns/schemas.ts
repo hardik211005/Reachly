@@ -41,6 +41,8 @@ export const campaignStepInputSchema = z.object({
   subject: z.string().trim().max(200).nullable().default(null),
   body: z.string().trim().min(1).max(5000),
   useAI: z.boolean().default(true),
+  /** Approved WhatsApp template used when the 24-hour window is closed (business-initiated). */
+  whatsappTemplateId: z.uuid().nullable().default(null),
 });
 export type CampaignStepInput = z.input<typeof campaignStepInputSchema>;
 

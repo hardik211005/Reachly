@@ -19,6 +19,7 @@ import {
   ListTodo,
   Mail,
   MapPin,
+  MessagesSquare,
   MoreHorizontal,
   Phone,
   Plus,
@@ -72,6 +73,8 @@ import {
 import { api, errorMessage } from "@/lib/api-client";
 import { useCanWrite } from "../shell/shell-context";
 import { LocalTime, RelativeTime } from "../time";
+import { LeadOutreachPanel } from "../outreach/lead-outreach";
+import type { ProviderState } from "../outreach/shared";
 import { AddToCampaignMenu, FitBadge, LeadStatusBadge, SourceLabel, type LeadSignalView } from "./shared";
 
 // ----------------------------------------------------------------------------- Types (serialised Prisma rows)
@@ -452,7 +455,15 @@ function TasksPanel({ lead }: { lead: LeadDetail }) {
 
 // ----------------------------------------------------------------------------- Workspace
 
-export function LeadWorkspace({ lead, timeline }: { lead: LeadDetail; timeline: { events: TimelineEvent[]; notes: NoteRow[] } }) {
+export function LeadWorkspace({
+  lead,
+  timeline,
+  providers,
+}: {
+  lead: LeadDetail;
+  timeline: { events: TimelineEvent[]; notes: NoteRow[] };
+  providers: { EMAIL: ProviderState; WHATSAPP: ProviderState };
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const canWrite = useCanWrite();
@@ -590,6 +601,9 @@ export function LeadWorkspace({ lead, timeline }: { lead: LeadDetail; timeline: 
         <Tabs defaultValue="overview" className="min-w-0">
           <TabsList className="w-full justify-start overflow-x-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="outreach">
+              <MessagesSquare /> Outreach
+            </TabsTrigger>
             <TabsTrigger value="activity">
               <Activity /> Activity
             </TabsTrigger>
@@ -657,6 +671,10 @@ export function LeadWorkspace({ lead, timeline }: { lead: LeadDetail; timeline: 
               </section>
             </div>
             {lead.description ? <p className="text-[13px] leading-relaxed text-foreground-secondary">{lead.description}</p> : null}
+          </TabsContent>
+
+          <TabsContent value="outreach" className="pt-4">
+            <LeadOutreachPanel lead={{ id: lead.id, name: lead.name, doNotContact: lead.doNotContact }} providers={providers} />
           </TabsContent>
 
           <TabsContent value="activity" className="grid gap-4 pt-4">

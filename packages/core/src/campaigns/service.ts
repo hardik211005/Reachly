@@ -60,6 +60,7 @@ export async function createCampaign(ctx: TenantContext, input: CampaignInput) {
         subject: step.subject ?? null,
         body: step.body,
         useAI: step.useAI ?? true,
+        whatsappTemplateId: step.whatsappTemplateId ?? null,
       })),
     });
     return created;
@@ -74,7 +75,7 @@ export async function getCampaign(ctx: TenantContext, id: string) {
   assertCan(ctx, "campaigns:read");
   const campaign = await ctx.db.campaign.findFirst({
     where: { id, deletedAt: null },
-    include: { steps: { orderBy: { order: "asc" } } },
+    include: { steps: { orderBy: { order: "asc" }, include: { whatsappTemplate: { select: { id: true, name: true, status: true, body: true, language: true } } } } },
   });
   if (!campaign) throw new NotFoundError("Campaign", id);
   return campaign;
@@ -129,6 +130,7 @@ export async function updateCampaignDraft(ctx: TenantContext, id: string, input:
           subject: step.subject,
           body: step.body,
           useAI: step.useAI,
+          whatsappTemplateId: step.whatsappTemplateId,
         })),
       });
     }

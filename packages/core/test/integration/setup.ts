@@ -7,6 +7,8 @@ process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 process.env.DIRECT_URL = process.env.TEST_DATABASE_URL;
 process.env.QUEUE_DRIVER = "inline";
 process.env.DEMO_MODE = "true";
+// Tests drive provider events explicitly instead of the demo simulator.
+process.env.DEMO_SIMULATE_EVENTS = "false";
 process.env.AI_DEFAULT_PROVIDER = "mock";
 process.env.LOG_LEVEL = "fatal";
 

@@ -1,5 +1,5 @@
 import type { MemberRole } from "@repo/config";
-import { prisma, Prisma } from "@repo/db";
+import { prisma, type Prisma } from "@repo/db";
 import { ensureSubscription } from "../billing/subscription";
 import { ForbiddenError, NotFoundError, ValidationError } from "../errors";
 import { DEFAULT_SCORING_WEIGHTS } from "../leads/scoring-defaults";

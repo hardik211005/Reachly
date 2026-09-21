@@ -595,6 +595,7 @@ model Organization {
   savedViews           SavedView[]
   importJobs           ImportJob[]
   campaigns            Campaign[]
+  whatsappTemplates    WhatsAppTemplate[]
   campaignLeads        CampaignLead[]
   conversations        Conversation[]
   messages             Message[]
@@ -960,6 +961,10 @@ model ComplianceSettings {
   /// Local-time window when outreach may be sent, e.g. {"start": 9, "end": 19, "days": [1,2,3,4,5]}
   quietHours                  Json     @default("{\"start\": 9, \"end\": 19, \"days\": [1, 2, 3, 4, 5]}")
   optOutKeywords              String[] @default(["stop", "unsubscribe", "remove me", "don't contact", "do not contact", "not interested"])
+  /// WhatsApp Business Policy: business-initiated messages need recorded opt-in.
+  whatsappRequireOptIn        Boolean  @default(true)
+  /// Leads sourced from demo data can never be contacted through a real provider.
+  blockSimulatedLeadsOnRealProviders Boolean @default(true)
   createdAt                   DateTime @default(now())
   updatedAt                   DateTime @updatedAt
 
@@ -1297,11 +1302,14 @@ model CampaignStep {
   /// Template body with {{variables}}; when useAI is true the Outreach Agent personalises it.
   body         String
   useAI        Boolean       @default(true)
+  /// Approved WhatsApp template used for business-initiated messages on this step.
+  whatsappTemplateId String?  @db.Uuid
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
-  campaign Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  messages Message[]
+  campaign         Campaign          @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  whatsappTemplate WhatsAppTemplate? @relation(fields: [whatsappTemplateId], references: [id], onDelete: SetNull)
+  messages         Message[]
 
   @@unique([campaignId, order])
   @@map("campaign_steps")
@@ -1527,6 +1535,32 @@ model Suppression {
   @@unique([organizationId, key])
   @@index([organizationId, type, value])
   @@map("suppressions")
+}
+
+model WhatsAppTemplate {
+  id                 String   @id @default(uuid()) @db.Uuid
+  organizationId     String   @db.Uuid
+  name               String
+  language           String   @default("en")
+  /// MARKETING | UTILITY | AUTHENTICATION (Meta template categories)
+  category           String   @default("MARKETING")
+  /// Body with positional parameters {{1}}, {{2}} …
+  body               String
+  /// Human labels for the positional parameters, e.g. ["first_name", "business_name"].
+  variables          String[]
+  /// APPROVED | PENDING | REJECTED — only APPROVED templates can be sent.
+  status             String   @default("PENDING")
+  provider           String
+  providerTemplateId String?
+  syncedAt           DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  steps        CampaignStep[]
+
+  @@unique([organizationId, name, language])
+  @@map("whatsapp_templates")
 }
 
 // -----------------------------------------------------------------------------

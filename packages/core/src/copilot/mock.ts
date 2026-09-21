@@ -14,8 +14,10 @@ type Formatter = (result: unknown, args: unknown) => string;
 const intents: IntentRule[] = [];
 const formatters = new Map<string, Formatter>();
 
-export function registerMockIntent(rule: IntentRule): void {
-  intents.push(rule);
+/** `first` puts specific intents ahead of the broad metrics intent. */
+export function registerMockIntent(rule: IntentRule, options: { first?: boolean } = {}): void {
+  if (options.first) intents.unshift(rule);
+  else intents.push(rule);
 }
 
 export function registerMockFormatter(tool: string, formatter: Formatter): void {

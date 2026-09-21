@@ -5,6 +5,7 @@
 import "./events";
 import "./housekeeping";
 import "./leads";
+import "./outreach";
 
 export { processJob, registeredJobNames, hasProcessor, registerProcessor, NonRetryableJobError } from "./registry";
 export { recordDeadLetter, recentDeadLetters } from "./dead-letter";

@@ -13,12 +13,14 @@ process.env.LOG_LEVEL ??= "warn";
 
 const { disconnectPrisma } = await import("@repo/db");
 const { seedDemoWorkspace, DEMO_USER, DEMO_ORG_NAME } = await import("../src/seed/demo-workspace");
+const { seedDemoOutreach } = await import("../src/seed/demo-outreach");
 
 const started = Date.now();
 const { ctx } = await seedDemoWorkspace(hashPassword);
-void ctx;
+const campaigns = await seedDemoOutreach(ctx);
 
 console.log(`\nSeeded "${DEMO_ORG_NAME}" in ${((Date.now() - started) / 1000).toFixed(1)}s`);
+console.table(campaigns);
 console.log(`Sign in with ${DEMO_USER.email} / ${DEMO_USER.password}\n`);
 await disconnectPrisma();
 process.exit(0);

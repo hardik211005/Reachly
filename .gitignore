@@ -43,5 +43,5 @@ Thumbs.db
 
 # local tooling
 .claude/
-e2e/.auth/
-e2e/screenshots/
+**/e2e/.auth/
+**/e2e/screenshots/

@@ -6,7 +6,11 @@
 
 ## Status
 
-Built in phases (see [Roadmap](#roadmap)). Phases 1–2 are complete: foundation (auth, workspaces, RBAC, design system, onboarding with AI business analysis, event-backed overview, copilot) and the lead engine (natural-language discovery, provider abstraction with Google Places + demo data, compliant enrichment, dedupe, transparent AI-assisted scoring, lead table and lead workspace, CSV import/export).
+Built in phases (see [Roadmap](#roadmap)). Phases 1–3 are complete:
+
+- **Foundation** — auth, workspaces, RBAC, design system, onboarding with AI business analysis, event-backed overview, copilot.
+- **Lead engine** — natural-language discovery, provider abstraction (Google Places + demo data), compliant enrichment, dedupe, transparent AI-assisted scoring, lead table and workspace, CSV import/export.
+- **Campaigns & outreach** — 5-step campaign builder with live audience and message previews, launch estimate (volume, reachability, AI credits, cost) with explicit confirmation, sequence engine (steps, delays, stop-on-reply), Manual / Assisted / Automated modes with a human review queue, email (Resend/SendGrid/SMTP) with unsubscribe + List-Unsubscribe, official WhatsApp Cloud API with templates, opt-in and the 24-hour window, signed provider webhooks, unified inbox with AI reply classification and suggested replies, per-lead pitch packs, email/WhatsApp channel dashboards, and copilot tools over campaigns, inbox and leads. See [docs/outreach.md](docs/outreach.md).
 
 ## Tech stack
 
@@ -75,6 +79,8 @@ npm run dev                 # web on http://localhost:3000 (+ worker when QUEUE_
 
 Demo login (seeded): `demo@reachai.dev` / `demo-password-2026`.
 
+The seed builds **Demo Growth Agency** through the same services the app uses: ~100 leads discovered with the demo provider, three campaigns (*Delhi Cafés* — assisted email + WhatsApp, *Gurgaon Startups* — automated email, *Noida D2C Brands* — completed) with six weeks of backdated sends, deliveries, opens, AI-classified replies, opt-outs and a booked meeting, AI drafts waiting in the review queue, and a fresh *Restaurants in Gurgaon* segment to build a new campaign from. Every chart reads these stored events.
+
 ### Demo mode
 
 `DEMO_MODE=true` lets the whole product run without paid APIs: missing providers fall back to clearly-labelled mock adapters (AI, lead data, email, WhatsApp, voice), and a persistent **Demo mode** badge lists which categories are simulated. Mock outreach is never sent anywhere. `DEMO_MODE` must be `false` in production (enforced at boot).
@@ -105,7 +111,7 @@ See [docs/architecture.md](docs/architecture.md). In short: a modular monolith (
 |---|---|---|
 | 1. Foundation | Monorepo, DB, auth, workspaces/RBAC, design system, shell, onboarding + ICP, overview, copilot, usage metering | ✅ |
 | 2. Lead engine | Discovery (NL → criteria), provider abstraction, enrichment, dedupe, transparent scoring, lead table & workspace | ✅ |
-| 3. Campaigns | Campaign builder, outreach generation, email + WhatsApp, sequences, approvals, compliance | ⏳ |
+| 3. Campaigns | Campaign builder, outreach generation, email + WhatsApp, sequences, approvals, inbox, compliance | ✅ |
 | 4. AI calling | Voice provider abstraction, call prep, transcripts, call analysis | ⏳ |
 | 5. Automation | Workflow engine & builder, n8n integration, execution visibility | ⏳ |
 | 6. CRM | Pipeline, deals, tasks, notes, quotes + PDF | ⏳ |

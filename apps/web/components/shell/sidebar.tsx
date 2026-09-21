@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Check, ChevronsUpDown, LogOut, Moon, PanelLeftClose, PanelLeftOpen, Plus, Sun, UserRound } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useQuery } from "@tanstack/react-query";
 import {
   Avatar,
   DropdownMenu,
@@ -23,9 +24,21 @@ import { Logo } from "../brand/logo";
 import { NAV_FOOTER, NAV_GROUPS, isActive, type NavItem } from "./nav";
 import { useCanManage, useShell } from "./shell-context";
 
-function NavLink({ item, collapsed, onNavigate }: { item: NavItem; collapsed: boolean; onNavigate?: () => void }) {
+/** Attention counts shown next to nav items: replies needing a response, drafts awaiting review. */
+function useNavCounts(): Record<string, number> {
+  const summary = useQuery({
+    queryKey: ["inbox-summary"],
+    queryFn: () => api<{ needsResponse: number; unread: number; pendingApproval: number }>("/api/v1/conversations/summary"),
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+  });
+  return { "/app/conversations": summary.data?.needsResponse ?? 0, "/app/campaigns": summary.data?.pendingApproval ?? 0 };
+}
+
+function NavLink({ item, collapsed, onNavigate, count = 0 }: { item: NavItem; collapsed: boolean; onNavigate?: () => void; count?: number }) {
   const pathname = usePathname();
   const active = isActive(pathname, item.href);
+  const label = count ? `${item.label} (${count})` : item.label;
   const link = (
     <Link
       href={item.href}
@@ -37,12 +50,20 @@ function NavLink({ item, collapsed, onNavigate }: { item: NavItem; collapsed: bo
         collapsed && "justify-center px-0",
       )}
     >
-      <item.icon className={cn("size-4 shrink-0", active ? "text-foreground" : "text-foreground-muted group-hover:text-foreground-secondary")} />
-      {collapsed ? <span className="sr-only">{item.label}</span> : <span className="truncate">{item.label}</span>}
+      <span className="relative">
+        <item.icon className={cn("size-4 shrink-0", active ? "text-foreground" : "text-foreground-muted group-hover:text-foreground-secondary")} />
+        {collapsed && count ? <span aria-hidden className="absolute -top-1 -right-1 size-2 rounded-full bg-accent ring-2 ring-background" /> : null}
+      </span>
+      {collapsed ? <span className="sr-only">{label}</span> : <span className="truncate">{item.label}</span>}
+      {!collapsed && count ? (
+        <span className="ml-auto rounded-full bg-accent-soft px-1.5 text-[10.5px] leading-[18px] font-semibold text-accent-soft-foreground tabular" aria-label={`${count} need attention`}>
+          {count > 99 ? "99+" : count}
+        </span>
+      ) : null}
     </Link>
   );
   return collapsed ? (
-    <Tooltip content={item.label} side="right">
+    <Tooltip content={label} side="right">
       {link}
     </Tooltip>
   ) : (
@@ -152,6 +173,7 @@ function UserMenu({ collapsed }: { collapsed: boolean }) {
 
 export function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
   const canManage = useCanManage();
+  const counts = useNavCounts();
   return (
     <div className="flex h-full flex-col">
       <div className="px-2 pt-2">
@@ -166,7 +188,7 @@ export function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; 
             {group.label && collapsed ? <div className="mx-2 mb-2 h-px bg-border" /> : null}
             <div className="grid gap-0.5">
               {group.items.map((item) => (
-                <NavLink key={item.href} item={item} collapsed={collapsed} onNavigate={onNavigate} />
+                <NavLink key={item.href} item={item} collapsed={collapsed} onNavigate={onNavigate} count={counts[item.href]} />
               ))}
             </div>
           </div>

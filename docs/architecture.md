@@ -54,7 +54,7 @@ Internal packages ship as TypeScript source (`exports` → `src/*.ts`); Next.js 
 ## Request lifecycle (REST)
 
 1. `proxy.ts` gates page routes on session-cookie presence and assigns a request id.
-2. `route()` in `apps/web/lib/api.ts` authenticates (session cookie or `Bearer rk_live_…` API key), enforces same-origin for cookie writes (CSRF), applies a per-actor rate limit, checks the RBAC permission, validates body/query with Zod, runs the handler with a `TenantContext`, and maps errors to a consistent envelope.
+2. `route()` in `apps/web/lib/api.ts` authenticates (session cookie or `Bearer rk_live_…` API key), enforces same-origin for cookie writes (CSRF), applies rate limits (a per-endpoint bucket — method + path with ids collapsed — plus an overall per-actor ceiling, so strict limits like campaign launch aren't consumed by ordinary reads), checks the RBAC permission, validates body/query with Zod, runs the handler with a `TenantContext`, and maps errors to a consistent envelope.
 3. Services validate business rules (plan features, usage limits, compliance), write through `ctx.db`, record events and audit logs, and enqueue jobs.
 
 ## Background processing
@@ -63,6 +63,7 @@ Internal packages ship as TypeScript source (`exports` → `src/*.ts`); Next.js 
 - Processors: registered in `packages/core/src/jobs/*` via `registerProcessor`.
 - Worker: `apps/worker` starts one BullMQ `Worker` per queue with processors, upserts cron schedulers, writes heartbeats and dead-letters final failures.
 - Non-retryable application errors (validation, limits, not found) skip retries.
+- Outreach runs on jobs too: `sequences.tick` (every minute) → `outreach.prepare-step` → `messages.send`, plus `conversations.analyze-inbound`, `webhooks.process` and, in demo mode, `demo.simulate`. See [outreach.md](outreach.md).
 
 ## Security model (summary)
 

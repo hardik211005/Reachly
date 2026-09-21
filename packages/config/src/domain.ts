@@ -153,6 +153,41 @@ export const REPLY_INTENT_LABELS: Record<ReplyIntent, string> = {
 /** Intents counted as a positive reply in analytics. QUESTION counts as engaged, not positive. */
 export const POSITIVE_INTENTS: readonly ReplyIntent[] = ["POSITIVE", "MEETING_REQUEST", "PRICING_REQUEST"];
 
+export const CONVERSATION_STATUSES = ["OPEN", "AWAITING_REPLY", "NEEDS_RESPONSE", "CLOSED"] as const;
+export type ConversationStatus = (typeof CONVERSATION_STATUSES)[number];
+
+export const CONVERSATION_STATUS_LABELS: Record<ConversationStatus, string> = {
+  OPEN: "Open",
+  AWAITING_REPLY: "Awaiting reply",
+  NEEDS_RESPONSE: "Needs response",
+  CLOSED: "Closed",
+};
+
+export const MESSAGE_STATUS_LABELS: Record<string, string> = {
+  DRAFT: "Draft",
+  PENDING_APPROVAL: "Pending approval",
+  APPROVED: "Approved",
+  QUEUED: "Scheduled",
+  SENDING: "Sending",
+  SENT: "Sent",
+  DELIVERED: "Delivered",
+  READ: "Read",
+  FAILED: "Failed",
+  BOUNCED: "Bounced",
+  RECEIVED: "Received",
+  CANCELED: "Canceled",
+  SUPPRESSED: "Blocked",
+};
+
+export const CAMPAIGN_STATUS_LABELS: Record<string, string> = {
+  DRAFT: "Draft",
+  SCHEDULED: "Scheduled",
+  ACTIVE: "Active",
+  PAUSED: "Paused",
+  COMPLETED: "Completed",
+  ARCHIVED: "Archived",
+};
+
 export const MEMBER_ROLES = ["OWNER", "ADMIN", "MEMBER", "VIEWER"] as const;
 export type MemberRole = (typeof MEMBER_ROLES)[number];
 
