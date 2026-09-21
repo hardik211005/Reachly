@@ -1,0 +1,261 @@
+/*
+ * Design tokens. Every colour in the product resolves to one of these variables so
+ * light/dark themes swap in one place. Chart surfaces and series colours come from the
+ * validated data-viz palette (categorical order is a CVD-safety mechanism — don't reorder).
+ *
+ * Consumers: `@import "tailwindcss"; @import "@repo/ui/styles.css";` plus an @source
+ * pointing at packages/ui/src so Tailwind scans the component classes.
+ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --background: #f9f9f7; /* page plane */
+  --surface: #fcfcfb; /* cards, charts, tables */
+  --surface-raised: #ffffff; /* popovers, dialogs */
+  --surface-muted: #f3f3f0; /* hover wash, table header, inputs */
+  --surface-sunken: #efeeea;
+
+  /* Ink */
+  --foreground: #0b0b0b;
+  --foreground-secondary: #52514e;
+  --foreground-muted: #7a7873;
+  --foreground-subtle: #a3a19b;
+
+  /* Lines */
+  --border: rgba(11, 11, 11, 0.1);
+  --border-strong: rgba(11, 11, 11, 0.18);
+  --gridline: #e1e0d9;
+  --baseline: #c3c2b7;
+  --ring: #2a78d6;
+
+  /* Brand / interactive */
+  --primary: #0b0b0b; /* primary buttons are ink, Linear/Vercel-style */
+  --primary-foreground: #fcfcfb;
+  --accent: #2a78d6; /* links, focus, selection */
+  --accent-foreground: #ffffff;
+  --accent-soft: #e8f1fc;
+  --accent-soft-foreground: #184f95;
+
+  /* Status (fixed across themes; always paired with an icon/label) */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+  --success-text: #006300;
+  --warning-text: #8a5a00;
+  --danger-text: #b42323;
+  --success-soft: #e6f4e6;
+  --warning-soft: #fdf3dc;
+  --danger-soft: #fbe9e9;
+
+  /* Data-viz categorical slots (fixed order) */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
+  --series-muted: #c3c2b7;
+
+  /* Sequential blue (ordinal ramp starts at 250 on light) */
+  --seq-100: #cde2fb;
+  --seq-200: #9ec5f4;
+  --seq-250: #86b6ef;
+  --seq-350: #5598e7;
+  --seq-450: #2a78d6;
+  --seq-550: #1c5cab;
+  --seq-650: #104281;
+
+  /* Shape & motion */
+  --radius: 6px;
+  --radius-lg: 8px;
+  --shadow-sm: 0 1px 2px rgba(11, 11, 11, 0.04);
+  --shadow-md: 0 4px 16px -4px rgba(11, 11, 11, 0.1), 0 1px 3px rgba(11, 11, 11, 0.05);
+  --shadow-lg: 0 16px 48px -12px rgba(11, 11, 11, 0.22), 0 2px 6px rgba(11, 11, 11, 0.06);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not(.light)) {
+    color-scheme: dark;
+  }
+}
+
+.dark {
+  color-scheme: dark;
+
+  --background: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-raised: #212120;
+  --surface-muted: #242423;
+  --surface-sunken: #121211;
+
+  --foreground: #f5f5f3;
+  --foreground-secondary: #c3c2b7;
+  --foreground-muted: #8f8d87;
+  --foreground-subtle: #62615d;
+
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --gridline: #2c2c2a;
+  --baseline: #383835;
+  --ring: #3987e5;
+
+  --primary: #f5f5f3;
+  --primary-foreground: #0d0d0d;
+  --accent: #3987e5;
+  --accent-foreground: #ffffff;
+  --accent-soft: #16263b;
+  --accent-soft-foreground: #9ec5f4;
+
+  --success-text: #2fbf2f;
+  --warning-text: #f5c04a;
+  --danger-text: #ee7a7a;
+  --success-soft: #11291a;
+  --warning-soft: #2e2410;
+  --danger-soft: #331717;
+
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+  --series-muted: #4a4a47;
+
+  /* Ordinal ramp on dark: go no darker than 600 */
+  --seq-100: #104281;
+  --seq-200: #184f95;
+  --seq-250: #1c5cab;
+  --seq-350: #256abf;
+  --seq-450: #3987e5;
+  --seq-550: #6da7ec;
+  --seq-650: #9ec5f4;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px -4px rgba(0, 0, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 16px 48px -12px rgba(0, 0, 0, 0.75), 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-foreground: var(--foreground);
+  --color-foreground-secondary: var(--foreground-secondary);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-subtle: var(--foreground-subtle);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-soft-foreground: var(--accent-soft-foreground);
+  --color-good: var(--status-good);
+  --color-warning: var(--status-warning);
+  --color-serious: var(--status-serious);
+  --color-critical: var(--status-critical);
+  --color-success-text: var(--success-text);
+  --color-warning-text: var(--warning-text);
+  --color-danger-text: var(--danger-text);
+  --color-success-soft: var(--success-soft);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger-soft: var(--danger-soft);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
+  --color-series-4: var(--series-4);
+  --color-series-5: var(--series-5);
+  --color-series-6: var(--series-6);
+  --color-series-7: var(--series-7);
+  --color-series-8: var(--series-8);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-mono-face), ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: 12px;
+
+  --shadow-xs: var(--shadow-sm);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+
+  --animate-fade-in: fade-in 160ms var(--ease-out);
+  --animate-slide-up: slide-up 200ms var(--ease-out);
+  --animate-slide-in-right: slide-in-right 240ms var(--ease-out);
+  --animate-shimmer: shimmer 1.6s linear infinite;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slide-in-right {
+    from { transform: translateX(16px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes shimmer {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    font-feature-settings: "cv11", "ss01";
+  }
+  ::selection {
+    background: var(--accent-soft);
+    color: var(--accent-soft-foreground);
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

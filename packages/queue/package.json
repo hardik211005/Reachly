@@ -1,0 +1,24 @@
+{
+  "name": "@repo/queue",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@repo/config": "*",
+    "bullmq": "^5.81.5",
+    "ioredis": "^5.8.2",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@repo/tsconfig": "*",
+    "vitest": "^5.0.1"
+  }
+}

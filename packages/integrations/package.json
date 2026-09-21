@@ -1,0 +1,25 @@
+{
+  "name": "@repo/integrations",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@repo/config": "*",
+    "nodemailer": "^7.0.10",
+    "stripe": "^22.6.2",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@repo/tsconfig": "*",
+    "@types/nodemailer": "^7.0.3",
+    "vitest": "^5.0.1"
+  }
+}

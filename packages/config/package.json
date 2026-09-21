@@ -1,0 +1,26 @@
+{
+  "name": "@repo/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./env": "./src/env.ts",
+    "./brand": "./src/brand.ts",
+    "./plans": "./src/plans.ts",
+    "./ai-models": "./src/ai-models.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@repo/tsconfig": "*",
+    "vitest": "^5.0.1"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "@repo/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --clear-screen=false src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@repo/config": "*",
+    "@repo/core": "*",
+    "@repo/db": "*",
+    "@repo/queue": "*"
+  },
+  "devDependencies": {
+    "@repo/tsconfig": "*",
+    "tsup": "^8.5.1",
+    "tsx": "^4.23.15",
+    "vitest": "^5.0.1"
+  }
+}

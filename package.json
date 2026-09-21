@@ -1,0 +1,44 @@
+{
+  "name": "reachai-monorepo",
+  "private": true,
+  "packageManager": "npm@11.6.2",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev --filter=@repo/web --filter=@repo/worker",
+    "dev:web": "turbo run dev --filter=@repo/web",
+    "dev:worker": "turbo run dev --filter=@repo/worker",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "test:integration": "npm run test:integration -w @repo/core",
+    "test:e2e": "npm run test:e2e -w @repo/web",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json,css}\"",
+    "db:generate": "npm run db:generate -w @repo/db",
+    "db:migrate": "npm run db:migrate -w @repo/db",
+    "db:deploy": "npm run db:deploy -w @repo/db",
+    "db:seed": "npm run db:seed -w @repo/db",
+    "db:reset": "npm run db:reset -w @repo/db",
+    "db:studio": "npm run db:studio -w @repo/db",
+    "infra:up": "docker compose -f infra/docker/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infra/docker/docker-compose.yml down",
+    "postinstall": "npm run db:generate",
+    "db:local": "node infra/scripts/dev-db.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^24.10.1",
+    "eslint": "^9.39.1",
+    "prettier": "^3.6.2",
+    "turbo": "^2.11.2",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.70.0",
+    "embedded-postgres": "18.4.0-beta.17"
+  }
+}

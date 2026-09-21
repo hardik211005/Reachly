@@ -1,0 +1,69 @@
+# Architecture
+
+ReachAI is a **modular monolith plus background workers**. One Next.js application serves the UI and the REST API; one worker process runs queued jobs. Domain logic lives in workspace packages with clear boundaries, so any module can later be extracted into its own service without rewriting callers.
+
+```
+                ┌──────────────────────────── apps/web (Next.js 16) ─────────────────────────────┐
+ Browser ──────▶│ React Server Components  │  /api/v1 REST (route wrapper)  │  /api/webhooks/*     │
+                │ Client islands (TanStack)│  auth · RBAC · zod · rate limit│  signature + idempot.│
+                └──────────────┬───────────┴──────────────┬─────────────────┴─────────┬───────────┘
+                               │ TenantContext            │                           │
+                               ▼                          ▼                           ▼
+                ┌──────────────────────────── packages/core (domain) ─────────────────────────────┐
+                │ organizations · business · leads · discovery · scoring · campaigns · outreach  │
+                │ conversations · calls · crm · quotes · workflows · analytics · billing · copilot│
+                └───────┬──────────────────┬───────────────────┬──────────────────┬─────────────┘
+                        │                  │                   │                  │
+                 packages/db         packages/ai        packages/integrations  packages/queue
+                 Prisma 7 + tenant   provider-agnostic  email/WhatsApp/voice/   BullMQ | inline
+                 scoping extension   LLM layer          leads/billing/n8n       job contracts
+                        │                  │                   │                  │
+                   PostgreSQL        OpenAI/Anthropic/     Resend/SendGrid/SMTP,  Redis
+                                     Google/Mock           Meta, Twilio/Vapi,       │
+                                                           Stripe, n8n, S3          ▼
+                                                                          apps/worker (BullMQ)
+```
+
+## Packages
+
+| Package | Responsibility | Depends on |
+|---|---|---|
+| `@repo/config` | Branding, plan catalogue, model catalogue, domain vocabularies, env schema | — |
+| `@repo/db` | Prisma schema, client, tenant-scoping extension, generated types | config |
+| `@repo/ai` | `AIProvider` interface; OpenAI / Anthropic / Google / Mock adapters; strict JSON schema | config |
+| `@repo/integrations` | Provider interfaces + adapters (email, WhatsApp, voice, lead data, billing, n8n, storage); webhook signature verification | config |
+| `@repo/queue` | Job catalogue (Zod payloads), BullMQ driver, inline driver, schedules | config |
+| `@repo/core` | All business logic: services take a `TenantContext` | all of the above |
+| `@repo/ui` | Design system (tokens, primitives, data components, charts) | — |
+| `apps/web` | Pages, API route handlers, auth, webhooks | core, ui |
+| `apps/worker` | BullMQ workers dispatching to core processors | core, queue |
+
+Internal packages ship as TypeScript source (`exports` → `src/*.ts`); Next.js transpiles them and the worker is bundled with tsup.
+
+## Key decisions
+
+- **Modular monolith, not microservices.** A single deployable web app and a worker keep operations simple. Module boundaries are package/folder boundaries; cross-module calls go through service functions, never through another module's tables.
+- **Tenancy = Organization** (labelled *Workspace* in the UI, like Linear). Every tenant-owned table carries `organizationId`. Services only use `ctx.db`, a Prisma client extended to inject `organizationId` into every query and create, and to throw `TenantViolationError` on explicit cross-tenant filters. Integration tests prove isolation.
+- **Lead doubles as the CRM company.** A prospect business is one `Lead` row (with `Contact`s); CRM views (companies, pipeline) are projections over leads plus `Deal`/`Task`/`Note`. One source of truth per business avoids lead→account sync drift.
+- **Event log is the analytics source of truth.** `Event` is append-only. Timelines, funnels, KPIs, channel/campaign performance and AI insights are all SQL over events (plus current deal/lead snapshots). No dashboard card is computed independently of stored data.
+- **Provider abstraction everywhere.** Resolution order per capability: organisation-connected integration → platform env credentials → mock (only when `DEMO_MODE=true`) → "Connect provider". The current mode for each category is visible in Integrations and the demo badge.
+- **Nothing pretends to work.** Mock providers are labelled; simulated inbound events are flagged `simulated`; missing credentials surface as `PROVIDER_NOT_CONFIGURED` (HTTP 424) with a "Connect provider" state.
+- **Queues for anything slow or external.** Discovery, enrichment, scoring, sends, webhooks, analytics and workflows run as jobs with retries, exponential backoff and dead-lettering. `QUEUE_DRIVER=inline` runs the same processors in-process for Redis-less local development.
+- **n8n is an integration layer, not the core.** The app owns data, auth, billing and business rules; workflows can call n8n and n8n can call back (signed) or use the REST API with an API key.
+
+## Request lifecycle (REST)
+
+1. `proxy.ts` gates page routes on session-cookie presence and assigns a request id.
+2. `route()` in `apps/web/lib/api.ts` authenticates (session cookie or `Bearer rk_live_…` API key), enforces same-origin for cookie writes (CSRF), applies a per-actor rate limit, checks the RBAC permission, validates body/query with Zod, runs the handler with a `TenantContext`, and maps errors to a consistent envelope.
+3. Services validate business rules (plan features, usage limits, compliance), write through `ctx.db`, record events and audit logs, and enqueue jobs.
+
+## Background processing
+
+- Job contracts: `packages/queue/src/jobs.ts` (queue, Zod schema per job).
+- Processors: registered in `packages/core/src/jobs/*` via `registerProcessor`.
+- Worker: `apps/worker` starts one BullMQ `Worker` per queue with processors, upserts cron schedulers, writes heartbeats and dead-letters final failures.
+- Non-retryable application errors (validation, limits, not found) skip retries.
+
+## Security model (summary)
+
+Better Auth sessions (httpOnly cookies, DB-backed) · RBAC permissions checked in services · tenant-scoped Prisma client · Zod on every input · CSRF origin checks · per-actor rate limiting (Redis or in-memory) · AES-256-GCM encrypted provider credentials · HMAC-signed unsubscribe/callback tokens · webhook signature verification + idempotency · audit log · security headers. See [deployment.md](deployment.md) for production hardening.

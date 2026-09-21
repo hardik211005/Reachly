@@ -1,0 +1,23 @@
+{
+  "name": "@repo/ai",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.127.0",
+    "@repo/config": "*",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@repo/tsconfig": "*",
+    "vitest": "^5.0.1"
+  }
+}
