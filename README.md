@@ -6,7 +6,7 @@
 
 ## Status
 
-Built in phases (see [Roadmap](#roadmap)). **Phase 1 — Foundation is complete:** monorepo, database, auth, workspaces, RBAC, design system, app shell, onboarding with AI business analysis, overview dashboard backed by the event log, copilot with real tools, usage metering, tests.
+Built in phases (see [Roadmap](#roadmap)). Phases 1–2 are complete: foundation (auth, workspaces, RBAC, design system, onboarding with AI business analysis, event-backed overview, copilot) and the lead engine (natural-language discovery, provider abstraction with Google Places + demo data, compliant enrichment, dedupe, transparent AI-assisted scoring, lead table and lead workspace, CSV import/export).
 
 ## Tech stack
 
@@ -91,6 +91,7 @@ Documented inline in [`.env.example`](.env.example). Required: `DATABASE_URL`, `
 | `npm run build` | Production builds (Next.js + worker bundle) |
 | `npm run typecheck` / `lint` / `test` | Across all workspaces (Turborepo) |
 | `npm run test:integration` | Postgres-backed integration tests (uses `TEST_DATABASE_URL`) |
+| `npm run test:e2e` | Playwright end-to-end tests against a running app (uses installed Chrome locally) |
 | `npm run db:migrate` / `db:deploy` / `db:seed` / `db:studio` | Database lifecycle |
 | `npm run infra:up` / `infra:down` | Docker services |
 
@@ -103,7 +104,7 @@ See [docs/architecture.md](docs/architecture.md). In short: a modular monolith (
 | Phase | Scope | Status |
 |---|---|---|
 | 1. Foundation | Monorepo, DB, auth, workspaces/RBAC, design system, shell, onboarding + ICP, overview, copilot, usage metering | ✅ |
-| 2. Lead engine | Discovery (NL → criteria), provider abstraction, enrichment, dedupe, transparent scoring, lead table & workspace | ⏳ |
+| 2. Lead engine | Discovery (NL → criteria), provider abstraction, enrichment, dedupe, transparent scoring, lead table & workspace | ✅ |
 | 3. Campaigns | Campaign builder, outreach generation, email + WhatsApp, sequences, approvals, compliance | ⏳ |
 | 4. AI calling | Voice provider abstraction, call prep, transcripts, call analysis | ⏳ |
 | 5. Automation | Workflow engine & builder, n8n integration, execution visibility | ⏳ |

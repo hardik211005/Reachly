@@ -1,7 +1,7 @@
 import type { Channel } from "@repo/config";
 import { icpSchema, type Icp } from "../../business/schemas";
 import { SIGNAL_CATALOG, type SignalKey } from "../../leads/signals";
-import { CATEGORIES, getCategory, matchCategories, matchCity, CITIES } from "../../shared/taxonomy";
+import { CATEGORIES, getCategory, matchCategories, matchCity, CITIES } from "@repo/config/taxonomy";
 import { defineAgent } from "../agent";
 
 export interface BusinessUnderstandingInput {

@@ -8,7 +8,9 @@
     "./env": "./src/env.ts",
     "./brand": "./src/brand.ts",
     "./plans": "./src/plans.ts",
-    "./ai-models": "./src/ai-models.ts"
+    "./ai-models": "./src/ai-models.ts",
+    "./taxonomy": "./src/taxonomy.ts",
+    "./events": "./src/events.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

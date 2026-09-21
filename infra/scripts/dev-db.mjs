@@ -22,6 +22,8 @@ const pg = new EmbeddedPostgres({
   password: "reachai",
   port,
   persistent: true,
+  // Force UTF-8 regardless of the OS locale (Windows defaults to WIN1252).
+  initdbFlags: ["--encoding=UTF8", "--locale=C"],
   onLog: (message) => { if (process.env.LOCAL_PG_DEBUG) console.log(String(message).trim()); },
   onError: (message) => console.error(String(message).trim()),
 });

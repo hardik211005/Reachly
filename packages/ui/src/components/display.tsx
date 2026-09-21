@@ -146,7 +146,12 @@ export function MetricCard({
 
 export function DeltaBadge({ delta }: { delta: MetricDelta }) {
   if (delta.value === null || !Number.isFinite(delta.value)) {
-    return <span className="text-[11px] text-foreground-subtle">{delta.label ?? "no prior data"}</span>;
+    // Nothing to compare against (previous period was empty): keep the header compact.
+    return (
+      <span title={delta.label ?? "No data in the previous period"} className="shrink-0 text-[11px] text-foreground-subtle">
+        new
+      </span>
+    );
   }
   const up = delta.value > 0.0005;
   const down = delta.value < -0.0005;

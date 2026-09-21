@@ -1223,6 +1223,8 @@ model ImportJob {
   /// [{row, message}]
   errors         Json         @default("[]")
   mapping        Json         @default("{}")
+  /// Uploaded CSV text, kept until processing finishes (then cleared).
+  sourceData     String?
   campaignId     String?      @db.Uuid
   createdById    String?      @db.Uuid
   createdAt      DateTime     @default(now())
