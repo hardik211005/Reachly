@@ -8,6 +8,7 @@ import "./leads";
 import "./outreach";
 import "./calls";
 import "./workflows";
+import "./crm";
 
 export { processJob, registeredJobNames, hasProcessor, registerProcessor, NonRetryableJobError } from "./registry";
 export { recordDeadLetter, recentDeadLetters } from "./dead-letter";

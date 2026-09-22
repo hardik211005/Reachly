@@ -6,13 +6,14 @@
 
 ## Status
 
-Built in phases (see [Roadmap](#roadmap)). Phases 1–5 are complete:
+Built in phases (see [Roadmap](#roadmap)). Phases 1–6 are complete:
 
 - **Foundation** — auth, workspaces, RBAC, design system, onboarding with AI business analysis, event-backed overview, copilot.
 - **Lead engine** — natural-language discovery, provider abstraction (Google Places + demo data), compliant enrichment, dedupe, transparent AI-assisted scoring, lead table and workspace, CSV import/export.
 - **Campaigns & outreach** — 5-step campaign builder with live audience and message previews, launch estimate (volume, reachability, AI credits, cost) with explicit confirmation, sequence engine (steps, delays, stop-on-reply), Manual / Assisted / Automated modes with a human review queue, email (Resend/SendGrid/SMTP) with unsubscribe + List-Unsubscribe, official WhatsApp Cloud API with templates, opt-in and the 24-hour window, signed provider webhooks, unified inbox with AI reply classification and suggested replies, per-lead pitch packs, email/WhatsApp channel dashboards, and copilot tools over campaigns, inbox and leads. See [docs/outreach.md](docs/outreach.md).
 - **AI calling** — voice provider abstraction (Vapi hosted agent, Twilio with a turn-by-turn AI conversation over TwiML, labelled demo simulator), AI call briefs, explicit start confirmation, consent attestation / DND / suppression / calling-hours policy, live transcripts, post-call analysis (outcome, interest, objections, next step), meetings booked at the time the prospect said, voice-minute metering, campaign voice steps and a Calls workspace. See [docs/calling.md](docs/calling.md).
 - **Automation** — workflow engine (event, schedule, webhook and manual triggers; 12 step types incl. waits, email, call prep, signed webhooks and n8n) with persisted per-step progress, exactly-once triggering, retries from the failed step and full run history; a visual builder with inline validation, variables and dry-run tests on real leads; ready-made templates; two-way n8n (signed calls out, callbacks that resume a waiting run, signed inbound trigger URLs, importable n8n templates); outbound webhook endpoints with signed, retried deliveries. See [docs/automation.md](docs/automation.md).
+- **CRM & quotes** — drag-and-drop pipeline (New → Won/Lost) kept in step with lead statuses automatically, deal side panel (value, probability, owner, next steps, meetings with calendar invites, notes, activity), tasks and meetings views, contacts directory, and a quotation system: catalog + pricing rules (volume tiers, discounts, minimum orders, setup-fee waivers, GST) as the only source of prices, AI quote drafts from the conversation that never invent prices, live-priced editor, PDF, email / WhatsApp / share-link sending, and a public page where prospects accept or decline — which wins the deal. See [docs/crm.md](docs/crm.md).
 
 ## Tech stack
 
@@ -80,7 +81,7 @@ npm run dev                 # web on http://localhost:3000 (+ worker when QUEUE_
 
 Demo login (seeded): `demo@reachai.dev` / `demo-password-2026`.
 
-The seed builds **Demo Growth Agency** through the same services the app uses: ~100 leads discovered with the demo provider, three campaigns (*Delhi Cafés* — assisted email + WhatsApp, *Gurgaon Startups* — automated email, *Noida D2C Brands* — completed) with six weeks of backdated sends, deliveries, opens, AI-classified replies, opt-outs and a booked meeting, AI drafts waiting in the review queue, a dozen analysed AI calls (with transcripts, outcomes and booked meetings) plus calls waiting to be started, three live workflows whose run history comes from the real engine replaying those events (plus two drafts), and a fresh *Restaurants in Gurgaon* segment to build a new campaign from. Every chart reads these stored records.
+The seed builds **Demo Growth Agency** through the same services the app uses: ~100 leads discovered with the demo provider, three campaigns (*Delhi Cafés* — assisted email + WhatsApp, *Gurgaon Startups* — automated email, *Noida D2C Brands* — completed) with six weeks of backdated sends, deliveries, opens, AI-classified replies, opt-outs and a booked meeting, AI drafts waiting in the review queue, a dozen analysed AI calls (with transcripts, outcomes and booked meetings) plus calls waiting to be started, three live workflows whose run history comes from the real engine replaying those events (plus two drafts), a pipeline of deals from those replies and calls with quotes in every state (sent, viewed, accepted, declined, expired and an AI draft), next steps and upcoming meetings, and a fresh *Restaurants in Gurgaon* segment to build a new campaign from. Every chart reads these stored records.
 
 ### Demo mode
 
@@ -115,7 +116,7 @@ See [docs/architecture.md](docs/architecture.md). In short: a modular monolith (
 | 3. Campaigns | Campaign builder, outreach generation, email + WhatsApp, sequences, approvals, inbox, compliance | ✅ |
 | 4. AI calling | Voice provider abstraction, call prep, compliance, live transcripts, call analysis | ✅ |
 | 5. Automation | Workflow engine & builder, n8n integration, execution visibility | ✅ |
-| 6. CRM | Pipeline, deals, tasks, notes, quotes + PDF | ⏳ |
+| 6. CRM | Pipeline, deals, tasks, notes, quotes + PDF | ✅ |
 | 7. Analytics | Funnels, cohorts, heatmaps, AI insights | ⏳ |
 | 8. Billing | Stripe checkout/portal/webhooks, plan limits | ⏳ |
 | 9. Hardening | Security, observability/system health, e2e, Docker images, docs | ⏳ |

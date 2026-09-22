@@ -70,6 +70,7 @@ export const JOBS = {
 
   // Housekeeping
   "maintenance.cleanup": { queue: "maintenance", schema: z.object({}) },
+  "quotes.expire": { queue: "maintenance", schema: z.object({}) },
 
   // Demo-mode provider simulator (only enqueued when DEMO_MODE + DEMO_SIMULATE_EVENTS)
   "demo.simulate": {
@@ -113,6 +114,7 @@ export const SCHEDULES: Array<{
     pattern: "0 6 * * *",
     inlineEveryMs: 6 * 60 * 60_000,
   },
+  { id: "quotes-expire", job: "quotes.expire", pattern: "5 * * * *", inlineEveryMs: 60 * 60_000 },
   {
     id: "maintenance-daily",
     job: "maintenance.cleanup",

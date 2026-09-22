@@ -77,6 +77,8 @@ function payloadFor(event: Pick<Event, "id" | "type" | "occurredAt" | "leadId" |
 export async function fanOutToEndpoints(ctx: TenantContext, event: Event) {
   const endpoints = await ctx.db.webhookEndpoint.findMany({ where: { isActive: true, events: { has: event.type } } });
   for (const endpoint of endpoints) {
+    // The fan-out job is retried when another subscriber fails; never queue an event twice.
+    if (await prisma.webhookDelivery.findFirst({ where: { endpointId: endpoint.id, payload: { path: ["id"], equals: event.id } }, select: { id: true } })) continue;
     const delivery = await prisma.webhookDelivery.create({ data: { endpointId: endpoint.id, eventType: event.type, payload: payloadFor(event) as Prisma.InputJsonValue } });
     await getQueue().enqueue("webhooks.deliver", { deliveryId: delivery.id }, { jobId: `delivery:${delivery.id}`, attempts: DELIVERY_ATTEMPTS });
   }

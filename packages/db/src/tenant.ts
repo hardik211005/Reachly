@@ -34,6 +34,7 @@ export const TENANT_MODELS: ReadonlySet<Prisma.ModelName> = new Set<Prisma.Model
   "PricingRule",
   "ScoringProfile",
   "ComplianceSettings",
+  "QuoteSettings",
   "Lead",
   "LeadSource",
   "LeadScore",

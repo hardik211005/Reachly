@@ -6,6 +6,7 @@ import {
   CircleStop,
   Clock,
   Filter,
+  Handshake,
   Hash,
   ListChecks,
   Mail,
@@ -18,7 +19,7 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
-import { CALL_OUTCOME_LABELS, LEAD_STATUS_LABELS, REPLY_INTENT_LABELS, type CallOutcome, type LeadStatus, type ReplyIntent } from "@repo/config";
+import { CALL_OUTCOME_LABELS, DEAL_STAGE_LABELS, LEAD_STATUS_LABELS, REPLY_INTENT_LABELS, type CallOutcome, type LeadStatus, type ReplyIntent } from "@repo/config";
 import { CONDITION_FIELDS, EVENT_TRIGGER_META, STEP_CATALOG, type WorkflowCondition, type WorkflowStep, type WorkflowStepType, type WorkflowTrigger } from "@repo/core/workflows/schemas";
 import { StatusBadge, cn, type StatusTone } from "@repo/ui";
 
@@ -27,6 +28,7 @@ export const STEP_ICONS: Record<WorkflowStepType, LucideIcon> = {
   delay: Clock,
   update_lead_status: Tag,
   add_tag: Hash,
+  move_deal: Handshake,
   add_to_campaign: Megaphone,
   stop_sequences: CircleStop,
   send_email: Mail,
@@ -125,6 +127,8 @@ export function stepSummary(step: WorkflowStep, lookups: { campaigns?: Array<{ i
       return `Set to ${LEAD_STATUS_LABELS[step.status]}`;
     case "add_tag":
       return `#${step.tag}`;
+    case "move_deal":
+      return `To ${DEAL_STAGE_LABELS[step.stage]} (or keep a later stage)`;
     case "create_task":
       return `${step.title} · due ${step.dueInDays === 0 ? "today" : `in ${step.dueInDays}d`}`;
     case "add_to_campaign":
@@ -185,6 +189,8 @@ export function defaultStep(type: WorkflowStepType): WorkflowStep {
       return { id, type, status: "INTERESTED" };
     case "add_tag":
       return { id, type, tag: "follow-up" };
+    case "move_deal":
+      return { id, type, stage: "INTERESTED" };
     case "create_task":
       return { id, type, title: "Follow up with {{lead.name}}", taskType: "FOLLOW_UP", priority: "MEDIUM", dueInDays: 1 };
     case "add_to_campaign":

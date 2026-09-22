@@ -66,6 +66,7 @@ Internal packages ship as TypeScript source (`exports` → `src/*.ts`); Next.js 
 - Outreach runs on jobs too: `sequences.tick` (every minute) → `outreach.prepare-step` → `messages.send`, plus `conversations.analyze-inbound`, `webhooks.process` and, in demo mode, `demo.simulate`. See [outreach.md](outreach.md).
 - Calls: `calls.start` hands a confirmed call to the voice provider and `calls.analyze` turns the transcript into an outcome. Voice webhooks share the `WebhookEvent` store and are applied through a registered `voice` handler. See [calling.md](calling.md).
 - Workflows: the `workflows` event subscriber starts matching runs, `workflows.execute` runs steps until a run finishes or waits, and `workflows.resume-due` (every minute) resumes waits, times out n8n waits and starts scheduled workflows. The `outbound-webhooks` subscriber queues `webhooks.deliver` for subscribed endpoints. See [automation.md](automation.md).
+- CRM: the `crm` event subscriber opens or advances a lead's deal when its status becomes Interested, Meeting, Quote sent, Won or Lost; `quotes.expire` (hourly) expires sent quotes past their validity. See [crm.md](crm.md).
 
 ## Security model (summary)
 

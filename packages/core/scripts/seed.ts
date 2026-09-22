@@ -16,17 +16,20 @@ const { seedDemoWorkspace, DEMO_USER, DEMO_ORG_NAME } = await import("../src/see
 const { seedDemoOutreach } = await import("../src/seed/demo-outreach");
 const { seedDemoCalls } = await import("../src/seed/demo-calls");
 const { seedDemoWorkflows } = await import("../src/seed/demo-workflows");
+const { seedDemoCrm } = await import("../src/seed/demo-crm");
 
 const started = Date.now();
-const { ctx } = await seedDemoWorkspace(hashPassword);
+const { ctx, userId } = await seedDemoWorkspace(hashPassword);
 const campaigns = await seedDemoOutreach(ctx);
 const calls = await seedDemoCalls(ctx);
 const workflows = await seedDemoWorkflows(ctx);
+const crm = await seedDemoCrm(ctx, userId);
 
 console.log(`\nSeeded "${DEMO_ORG_NAME}" in ${((Date.now() - started) / 1000).toFixed(1)}s`);
 console.table(campaigns);
 console.log(`Calls: ${calls.completed} conversations, ${calls.unreached} unanswered, ${calls.queued} waiting in the queue`);
 console.log(`Workflows: ${workflows.live} live, ${workflows.drafts} drafts, ${workflows.runs} runs replayed`);
+console.log(`CRM: ${crm.deals} deals (${crm.won} won), ${crm.quotes} quotes, ${crm.tasks} next steps, ${crm.meetings} upcoming meetings`);
 console.log(`Sign in with ${DEMO_USER.email} / ${DEMO_USER.password}\n`);
 await disconnectPrisma();
 process.exit(0);

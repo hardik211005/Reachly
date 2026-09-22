@@ -460,8 +460,10 @@ enum EventType {
   meeting_created
   quote_created
   quote_sent
+  quote_viewed
   quote_accepted
   quote_rejected
+  quote_expired
   deal_created
   deal_stage_changed
   deal_won
@@ -571,51 +573,52 @@ model Organization {
   updatedAt           DateTime  @updatedAt
   deletedAt           DateTime?
 
-  memberships          Membership[]
-  invitations          Invitation[]
-  apiKeys              ApiKey[]
-  auditLogs            AuditLog[]
-  subscription         Subscription?
-  usageRecords         UsageRecord[]
-  usageCounters        UsageCounter[]
-  creditGrants         CreditGrant[]
-  invoices             Invoice[]
-  payments             Payment[]
-  businessProfile      BusinessProfile?
-  scoringProfile       ScoringProfile?
-  complianceSettings   ComplianceSettings?
-  offerings            Offering[]
-  pricingRules         PricingRule[]
-  leads                Lead[]
-  leadSources          LeadSource[]
-  leadScores           LeadScore[]
-  contacts             Contact[]
-  discoveryRuns        DiscoveryRun[]
-  savedSearches        SavedSearch[]
-  savedViews           SavedView[]
-  importJobs           ImportJob[]
-  campaigns            Campaign[]
-  whatsappTemplates    WhatsAppTemplate[]
-  campaignLeads        CampaignLead[]
-  conversations        Conversation[]
-  messages             Message[]
-  attachments          Attachment[]
-  calls                Call[]
-  suppressions         Suppression[]
-  workflows            Workflow[]
-  workflowExecutions   WorkflowExecution[]
-  deals                Deal[]
-  tasks                Task[]
-  notes                Note[]
-  meetings             Meeting[]
-  quotes               Quote[]
-  aiRequests           AIRequest[]
-  aiCacheEntries       AICacheEntry[]
-  integrations         Integration[]
-  webhookEndpoints     WebhookEndpoint[]
-  notifications        Notification[]
-  events               Event[]
-  insights             Insight[]
+  memberships        Membership[]
+  invitations        Invitation[]
+  apiKeys            ApiKey[]
+  auditLogs          AuditLog[]
+  subscription       Subscription?
+  usageRecords       UsageRecord[]
+  usageCounters      UsageCounter[]
+  creditGrants       CreditGrant[]
+  invoices           Invoice[]
+  payments           Payment[]
+  businessProfile    BusinessProfile?
+  scoringProfile     ScoringProfile?
+  complianceSettings ComplianceSettings?
+  quoteSettings      QuoteSettings?
+  offerings          Offering[]
+  pricingRules       PricingRule[]
+  leads              Lead[]
+  leadSources        LeadSource[]
+  leadScores         LeadScore[]
+  contacts           Contact[]
+  discoveryRuns      DiscoveryRun[]
+  savedSearches      SavedSearch[]
+  savedViews         SavedView[]
+  importJobs         ImportJob[]
+  campaigns          Campaign[]
+  whatsappTemplates  WhatsAppTemplate[]
+  campaignLeads      CampaignLead[]
+  conversations      Conversation[]
+  messages           Message[]
+  attachments        Attachment[]
+  calls              Call[]
+  suppressions       Suppression[]
+  workflows          Workflow[]
+  workflowExecutions WorkflowExecution[]
+  deals              Deal[]
+  tasks              Task[]
+  notes              Note[]
+  meetings           Meeting[]
+  quotes             Quote[]
+  aiRequests         AIRequest[]
+  aiCacheEntries     AICacheEntry[]
+  integrations       Integration[]
+  webhookEndpoints   WebhookEndpoint[]
+  notifications      Notification[]
+  events             Event[]
+  insights           Insight[]
 
   @@map("organizations")
 }
@@ -705,22 +708,22 @@ model AuditLog {
 // -----------------------------------------------------------------------------
 
 model Plan {
-  id              String   @id @default(uuid()) @db.Uuid
-  key             String   @unique
-  name            String
-  description     String
-  priceMonthly    Int
-  currency        String   @default("USD")
-  stripePriceId   String?
+  id            String   @id @default(uuid()) @db.Uuid
+  key           String   @unique
+  name          String
+  description   String
+  priceMonthly  Int
+  currency      String   @default("USD")
+  stripePriceId String?
   /// Validated against planLimitsSchema in @repo/config.
-  limits          Json
+  limits        Json
   /// Validated against planFeaturesSchema in @repo/config.
-  features        Json
-  highlighted     Boolean  @default(false)
-  isActive        Boolean  @default(true)
-  sortOrder       Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  features      Json
+  highlighted   Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   subscriptions Subscription[]
 
@@ -846,8 +849,8 @@ model Payment {
 // -----------------------------------------------------------------------------
 
 model BusinessProfile {
-  id                  String        @id @default(uuid()) @db.Uuid
-  organizationId      String        @unique @db.Uuid
+  id                  String       @id @default(uuid()) @db.Uuid
+  organizationId      String       @unique @db.Uuid
   name                String
   website             String?
   industry            String
@@ -855,18 +858,18 @@ model BusinessProfile {
   city                String?
   region              String?
   country             String?
-  businessSize        BusinessSize  @default(SMALL)
+  businessSize        BusinessSize @default(SMALL)
   pricingModel        String?
   targetIndustries    String[]
   targetCustomerTypes String[]
   valueProposition    String?
-  outreachTone        String        @default("professional")
+  outreachTone        String       @default("professional")
   preferredChannels   Channel[]
   /// AI-generated, user-editable Ideal Customer Profile (see IcpSchema in @repo/core).
   icp                 Json?
   aiAnalyzedAt        DateTime?
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -875,26 +878,26 @@ model BusinessProfile {
 
 /// A product, service or package the organisation sells. Quotes may only use prices from here.
 model Offering {
-  id              String       @id @default(uuid()) @db.Uuid
-  organizationId  String       @db.Uuid
-  type            OfferingType
-  name            String
-  description     String?
-  sku             String?
-  unit            String       @default("unit")
-  unitPrice       Decimal?     @db.Decimal(14, 2)
-  currency        String       @default("INR")
+  id               String       @id @default(uuid()) @db.Uuid
+  organizationId   String       @db.Uuid
+  type             OfferingType
+  name             String
+  description      String?
+  sku              String?
+  unit             String       @default("unit")
+  unitPrice        Decimal?     @db.Decimal(14, 2)
+  currency         String       @default("INR")
   minOrderQuantity Int?
-  setupFee        Decimal?     @db.Decimal(14, 2)
-  taxRatePercent  Decimal?     @db.Decimal(5, 2)
-  isActive        Boolean      @default(true)
-  attributes      Json         @default("{}")
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  deletedAt       DateTime?
+  setupFee         Decimal?     @db.Decimal(14, 2)
+  taxRatePercent   Decimal?     @db.Decimal(5, 2)
+  isActive         Boolean      @default(true)
+  attributes       Json         @default("{}")
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  deletedAt        DateTime?
 
-  organization  Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  pricingRules  PricingRule[]
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  pricingRules   PricingRule[]
   quoteLineItems QuoteLineItem[]
 
   @@index([organizationId, isActive])
@@ -922,20 +925,44 @@ model PricingRule {
   @@map("pricing_rules")
 }
 
+/// Quote numbering, validity and the seller details printed on quotes.
+model QuoteSettings {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @unique @db.Uuid
+  numberPrefix   String   @default("Q")
+  /// Next sequence number; incremented atomically when a quote is created.
+  nextNumber     Int      @default(1)
+  validityDays   Int      @default(15)
+  legalName      String?
+  address        String?
+  /// Tax registration printed on quotes (e.g. a GSTIN).
+  taxId          String?
+  email          String?
+  phone          String?
+  terms          String?
+  footer         String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("quote_settings")
+}
+
 /// Per-organisation lead scoring configuration (weights and custom rules).
 model ScoringProfile {
-  id                  String   @id @default(uuid()) @db.Uuid
-  organizationId      String   @unique @db.Uuid
+  id                 String   @id @default(uuid()) @db.Uuid
+  organizationId     String   @unique @db.Uuid
   /// Factor weights, e.g. {"icpMatch": 25, "locationMatch": 15, ...}
-  weights             Json
+  weights            Json
   /// User-defined rules: [{field, operator, value, points, label}]
-  rules               Json     @default("[]")
-  qualifiedThreshold  Int      @default(65)
-  highFitThreshold    Int      @default(80)
-  useAI               Boolean  @default(true)
-  version             Int      @default(1)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  rules              Json     @default("[]")
+  qualifiedThreshold Int      @default(65)
+  highFitThreshold   Int      @default(80)
+  useAI              Boolean  @default(true)
+  version            Int      @default(1)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -943,30 +970,30 @@ model ScoringProfile {
 }
 
 model ComplianceSettings {
-  id                          String   @id @default(uuid()) @db.Uuid
-  organizationId              String   @unique @db.Uuid
+  id                                 String    @id @default(uuid()) @db.Uuid
+  organizationId                     String    @unique @db.Uuid
   /// Physical mailing address appended to commercial email (CAN-SPAM / similar).
-  postalAddress               String?
-  emailFooter                 String?
-  includeUnsubscribeLink      Boolean  @default(true)
-  requireApprovalFirstTouch   Boolean  @default(true)
-  callingEnabled              Boolean  @default(false)
+  postalAddress                      String?
+  emailFooter                        String?
+  includeUnsubscribeLink             Boolean   @default(true)
+  requireApprovalFirstTouch          Boolean   @default(true)
+  callingEnabled                     Boolean   @default(false)
   /// Operator attests they have a lawful basis/consent to place automated calls.
-  callingConsentAttested      Boolean  @default(false)
-  callingConsentAttestedAt    DateTime?
-  callingConsentAttestedById  String?  @db.Uuid
-  recordCalls                 Boolean  @default(false)
-  announceAiOnCalls           Boolean  @default(true)
-  dndCheckEnabled             Boolean  @default(true)
+  callingConsentAttested             Boolean   @default(false)
+  callingConsentAttestedAt           DateTime?
+  callingConsentAttestedById         String?   @db.Uuid
+  recordCalls                        Boolean   @default(false)
+  announceAiOnCalls                  Boolean   @default(true)
+  dndCheckEnabled                    Boolean   @default(true)
   /// Local-time window when outreach may be sent, e.g. {"start": 9, "end": 19, "days": [1,2,3,4,5]}
-  quietHours                  Json     @default("{\"start\": 9, \"end\": 19, \"days\": [1, 2, 3, 4, 5]}")
-  optOutKeywords              String[] @default(["stop", "unsubscribe", "remove me", "don't contact", "do not contact", "not interested"])
+  quietHours                         Json      @default("{\"start\": 9, \"end\": 19, \"days\": [1, 2, 3, 4, 5]}")
+  optOutKeywords                     String[]  @default(["stop", "unsubscribe", "remove me", "don't contact", "do not contact", "not interested"])
   /// WhatsApp Business Policy: business-initiated messages need recorded opt-in.
-  whatsappRequireOptIn        Boolean  @default(true)
+  whatsappRequireOptIn               Boolean   @default(true)
   /// Leads sourced from demo data can never be contacted through a real provider.
-  blockSimulatedLeadsOnRealProviders Boolean @default(true)
-  createdAt                   DateTime @default(now())
-  updatedAt                   DateTime @updatedAt
+  blockSimulatedLeadsOnRealProviders Boolean   @default(true)
+  createdAt                          DateTime  @default(now())
+  updatedAt                          DateTime  @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -1082,19 +1109,19 @@ model LeadSource {
 
 /// Score history. Lead.score holds the latest total for fast sorting.
 model LeadScore {
-  id              String        @id @default(uuid()) @db.Uuid
-  organizationId  String        @db.Uuid
-  leadId          String        @db.Uuid
-  campaignId      String?       @db.Uuid
-  total           Int
-  fitTier         FitTier
-  qualification   Qualification
+  id             String        @id @default(uuid()) @db.Uuid
+  organizationId String        @db.Uuid
+  leadId         String        @db.Uuid
+  campaignId     String?       @db.Uuid
+  total          Int
+  fitTier        FitTier
+  qualification  Qualification
   /// [{factor, label, score, weight, reasons: string[]}]
-  breakdown       Json
-  reasoning       String?
-  scoringVersion  String
-  aiRequestId     String?       @db.Uuid
-  createdAt       DateTime      @default(now())
+  breakdown      Json
+  reasoning      String?
+  scoringVersion String
+  aiRequestId    String?       @db.Uuid
+  createdAt      DateTime      @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   lead         Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
@@ -1105,31 +1132,32 @@ model LeadScore {
 }
 
 model Contact {
-  id               String      @id @default(uuid()) @db.Uuid
-  organizationId   String      @db.Uuid
-  leadId           String      @db.Uuid
-  kind             ContactKind @default(PERSON)
-  name             String?
-  title            String?
-  email            String?
-  phone            String?
-  whatsapp         String?
-  linkedinUrl      String?
-  isPrimary        Boolean     @default(false)
-  emailVerified    Boolean?
+  id              String      @id @default(uuid()) @db.Uuid
+  organizationId  String      @db.Uuid
+  leadId          String      @db.Uuid
+  kind            ContactKind @default(PERSON)
+  name            String?
+  title           String?
+  email           String?
+  phone           String?
+  whatsapp        String?
+  linkedinUrl     String?
+  isPrimary       Boolean     @default(false)
+  emailVerified   Boolean?
   /// Where this contact detail came from (provider/website/manual) — shown in the UI.
-  source           String
-  whatsappOptIn    Boolean     @default(false)
-  whatsappOptInAt  DateTime?
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
-  deletedAt        DateTime?
+  source          String
+  whatsappOptIn   Boolean     @default(false)
+  whatsappOptInAt DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  deletedAt       DateTime?
 
   organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   lead          Lead           @relation(fields: [leadId], references: [id], onDelete: Cascade)
   conversations Conversation[]
   calls         Call[]
   deals         Deal[]
+  quotes        Quote[]
 
   @@index([organizationId, email])
   @@index([organizationId, phone])
@@ -1180,15 +1208,15 @@ model DiscoveryRunLead {
 }
 
 model SavedSearch {
-  id             String   @id @default(uuid()) @db.Uuid
-  organizationId String   @db.Uuid
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @db.Uuid
   name           String
   query          String
   criteria       Json
-  createdById    String?  @db.Uuid
+  createdById    String?   @db.Uuid
   lastRunAt      DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -1290,22 +1318,22 @@ model Campaign {
 
 /// One step of a campaign's outreach sequence (Day 0 email, Day 3 follow-up, ...).
 model CampaignStep {
-  id           String        @id @default(uuid()) @db.Uuid
-  campaignId   String        @db.Uuid
-  order        Int
-  channel      Channel
+  id                 String        @id @default(uuid()) @db.Uuid
+  campaignId         String        @db.Uuid
+  order              Int
+  channel            Channel
   /// Days to wait after the previous step (0 for the first step).
-  delayDays    Int           @default(0)
-  condition    StepCondition @default(NO_REPLY)
-  name         String
-  subject      String?
+  delayDays          Int           @default(0)
+  condition          StepCondition @default(NO_REPLY)
+  name               String
+  subject            String?
   /// Template body with {{variables}}; when useAI is true the Outreach Agent personalises it.
-  body         String
-  useAI        Boolean       @default(true)
+  body               String
+  useAI              Boolean       @default(true)
   /// Approved WhatsApp template used for business-initiated messages on this step.
-  whatsappTemplateId String?  @db.Uuid
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  whatsappTemplateId String?       @db.Uuid
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
   campaign         Campaign          @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   whatsappTemplate WhatsAppTemplate? @relation(fields: [whatsappTemplateId], references: [id], onDelete: SetNull)
@@ -1450,15 +1478,15 @@ model Attachment {
 }
 
 model Call {
-  id              String       @id @default(uuid()) @db.Uuid
-  organizationId  String       @db.Uuid
-  leadId          String       @db.Uuid
-  contactId       String?      @db.Uuid
-  campaignId      String?      @db.Uuid
-  conversationId  String?      @db.Uuid
+  id              String           @id @default(uuid()) @db.Uuid
+  organizationId  String           @db.Uuid
+  leadId          String           @db.Uuid
+  contactId       String?          @db.Uuid
+  campaignId      String?          @db.Uuid
+  conversationId  String?          @db.Uuid
   type            CallType
   direction       MessageDirection @default(OUTBOUND)
-  status          CallStatus   @default(PREPARED)
+  status          CallStatus       @default(PREPARED)
   provider        String?
   providerCallId  String?
   fromNumber      String?
@@ -1478,10 +1506,10 @@ model Call {
   followUpAt      DateTime?
   costCents       Int?
   error           String?
-  createdById     String?      @db.Uuid
-  metadata        Json         @default("{}")
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  createdById     String?          @db.Uuid
+  metadata        Json             @default("{}")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   lead         Lead            @relation(fields: [leadId], references: [id], onDelete: Cascade)
@@ -1538,23 +1566,23 @@ model Suppression {
 }
 
 model WhatsAppTemplate {
-  id                 String   @id @default(uuid()) @db.Uuid
-  organizationId     String   @db.Uuid
+  id                 String    @id @default(uuid()) @db.Uuid
+  organizationId     String    @db.Uuid
   name               String
-  language           String   @default("en")
+  language           String    @default("en")
   /// MARKETING | UTILITY | AUTHENTICATION (Meta template categories)
-  category           String   @default("MARKETING")
+  category           String    @default("MARKETING")
   /// Body with positional parameters {{1}}, {{2}} …
   body               String
   /// Human labels for the positional parameters, e.g. ["first_name", "business_name"].
   variables          String[]
   /// APPROVED | PENDING | REJECTED — only APPROVED templates can be sent.
-  status             String   @default("PENDING")
+  status             String    @default("PENDING")
   provider           String
   providerTemplateId String?
   syncedAt           DateTime?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   steps        CampaignStep[]
@@ -1618,8 +1646,8 @@ model WorkflowExecution {
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
 
-  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  workflow     Workflow           @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workflow     Workflow          @relation(fields: [workflowId], references: [id], onDelete: Cascade)
   stepRuns     WorkflowStepRun[]
 
   @@unique([workflowId, idempotencyKey])
@@ -1672,6 +1700,7 @@ model Deal {
   lostAt            DateTime?
   /// Ordering within a pipeline column (fractional indexing).
   position          Float     @default(0)
+  stageChangedAt    DateTime  @default(now())
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?
@@ -1766,32 +1795,39 @@ model Meeting {
 }
 
 model Quote {
-  id             String      @id @default(uuid()) @db.Uuid
-  organizationId String      @db.Uuid
-  leadId         String      @db.Uuid
-  dealId         String?     @db.Uuid
-  number         String
-  status         QuoteStatus @default(DRAFT)
-  currency       String
-  subtotal       Decimal     @db.Decimal(14, 2)
-  discountTotal  Decimal     @default(0) @db.Decimal(14, 2)
-  taxTotal       Decimal     @default(0) @db.Decimal(14, 2)
-  total          Decimal     @db.Decimal(14, 2)
-  validUntil     DateTime?
-  notes          String?
-  terms          String?
-  generatedByAI  Boolean     @default(false)
-  sentAt         DateTime?
-  acceptedAt     DateTime?
-  rejectedAt     DateTime?
-  createdById    String?     @db.Uuid
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  deletedAt      DateTime?
+  id              String      @id @default(uuid()) @db.Uuid
+  organizationId  String      @db.Uuid
+  leadId          String      @db.Uuid
+  dealId          String?     @db.Uuid
+  contactId       String?     @db.Uuid
+  number          String
+  title           String?
+  status          QuoteStatus @default(DRAFT)
+  currency        String
+  subtotal        Decimal     @db.Decimal(14, 2)
+  discountTotal   Decimal     @default(0) @db.Decimal(14, 2)
+  taxTotal        Decimal     @default(0) @db.Decimal(14, 2)
+  total           Decimal     @db.Decimal(14, 2)
+  validUntil      DateTime?
+  notes           String?
+  terms           String?
+  generatedByAI   Boolean     @default(false)
+  sentAt          DateTime?
+  viewedAt        DateTime?
+  acceptedAt      DateTime?
+  rejectedAt      DateTime?
+  /// Name typed by the prospect when accepting or declining on the quote page.
+  respondedByName String?
+  responseNote    String?
+  createdById     String?     @db.Uuid
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  deletedAt       DateTime?
 
   organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   lead         Lead            @relation(fields: [leadId], references: [id], onDelete: Cascade)
   deal         Deal?           @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  contact      Contact?        @relation(fields: [contactId], references: [id], onDelete: SetNull)
   lineItems    QuoteLineItem[]
   attachments  Attachment[]
 
@@ -1802,19 +1838,22 @@ model Quote {
 }
 
 model QuoteLineItem {
-  id             String   @id @default(uuid()) @db.Uuid
-  quoteId        String   @db.Uuid
-  offeringId     String?  @db.Uuid
+  id             String  @id @default(uuid()) @db.Uuid
+  quoteId        String  @db.Uuid
+  offeringId     String? @db.Uuid
   description    String
+  details        String?
   quantity       Int
-  unit           String   @default("unit")
-  unitPrice      Decimal  @db.Decimal(14, 2)
-  setupFee       Decimal  @default(0) @db.Decimal(14, 2)
-  discount       Decimal  @default(0) @db.Decimal(14, 2)
-  taxRatePercent Decimal  @default(0) @db.Decimal(5, 2)
-  lineTotal      Decimal  @db.Decimal(14, 2)
+  unit           String  @default("unit")
+  unitPrice      Decimal @db.Decimal(14, 2)
+  setupFee       Decimal @default(0) @db.Decimal(14, 2)
+  discount       Decimal @default(0) @db.Decimal(14, 2)
+  taxRatePercent Decimal @default(0) @db.Decimal(5, 2)
+  lineTotal      Decimal @db.Decimal(14, 2)
   /// Which pricing rules produced the discount — keeps quotes explainable.
-  appliedRules   Json     @default("[]")
+  appliedRules   Json    @default("[]")
+  /// "catalog" (from the offering and pricing rules) or "manual" (entered by a user).
+  priceSource    String  @default("catalog")
   position       Int
 
   quote    Quote     @relation(fields: [quoteId], references: [id], onDelete: Cascade)
@@ -1883,27 +1922,27 @@ model AICacheEntry {
 
 /// Analytics-backed insight. Numbers come from queries; AI may only phrase them.
 model Insight {
-  id               String           @id @default(uuid()) @db.Uuid
-  organizationId   String           @db.Uuid
-  kind             String
-  title            String
-  body             String
-  metric           String
-  currentValue     Float
-  comparisonValue  Float?
-  comparisonLabel  String?
+  id              String           @id @default(uuid()) @db.Uuid
+  organizationId  String           @db.Uuid
+  kind            String
+  title           String
+  body            String
+  metric          String
+  currentValue    Float
+  comparisonValue Float?
+  comparisonLabel String?
   /// Sample sizes and supporting rows used to compute the insight.
-  supportingData   Json
+  supportingData  Json
   /// 0..1 — share of relevant records the insight is based on / statistical confidence.
-  confidence       Float
-  sentiment        InsightSentiment
-  campaignId       String?          @db.Uuid
-  periodStart      DateTime
-  periodEnd        DateTime
-  fingerprint      String
-  phrasedByAI      Boolean          @default(false)
-  dismissedAt      DateTime?
-  createdAt        DateTime         @default(now())
+  confidence      Float
+  sentiment       InsightSentiment
+  campaignId      String?          @db.Uuid
+  periodStart     DateTime
+  periodEnd       DateTime
+  fingerprint     String
+  phrasedByAI     Boolean          @default(false)
+  dismissedAt     DateTime?
+  createdAt       DateTime         @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -1981,17 +2020,17 @@ model WebhookEndpoint {
 }
 
 model WebhookDelivery {
-  id           String         @id @default(uuid()) @db.Uuid
-  endpointId   String         @db.Uuid
-  eventType    String
-  payload      Json
-  status       DeliveryStatus @default(PENDING)
-  responseCode Int?
-  attempts     Int            @default(0)
-  lastError    String?
+  id            String         @id @default(uuid()) @db.Uuid
+  endpointId    String         @db.Uuid
+  eventType     String
+  payload       Json
+  status        DeliveryStatus @default(PENDING)
+  responseCode  Int?
+  attempts      Int            @default(0)
+  lastError     String?
   nextAttemptAt DateTime?
-  createdAt    DateTime       @default(now())
-  deliveredAt  DateTime?
+  createdAt     DateTime       @default(now())
+  deliveredAt   DateTime?
 
   endpoint WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
 

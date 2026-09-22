@@ -187,6 +187,26 @@ describe("workflow engine", () => {
     expect((await ctx.db.lead.findUniqueOrThrow({ where: { id: lead.id } })).tags).toEqual(["from-n8n"]);
   });
 
+  it("moves the lead's deal forward (never back) from a workflow", async () => {
+    const { ctx } = await setup();
+    const lead = await createLead(ctx, { name: "Deal Cafe", status: "REPLIED" });
+    const workflow = await activeWorkflow(ctx, { name: "To meeting", trigger: { type: "manual" }, steps: [{ id: "deal", type: "move_deal", stage: "MEETING" }] });
+    const test = await runWorkflow(ctx, workflow.id, { leadId: lead.id, dryRun: true });
+    expect(test.stepRuns[0]?.output).toMatchObject({ wouldMoveDeal: "Meeting" });
+    expect(await ctx.db.deal.count()).toBe(0);
+
+    const run = await runWorkflow(ctx, workflow.id, { leadId: lead.id, dryRun: false });
+    await executeWorkflow(ctx, run.id);
+    const deal = await ctx.db.deal.findFirstOrThrow({ where: { leadId: lead.id } });
+    expect(deal.stage).toBe("MEETING");
+    expect((await ctx.db.lead.findUniqueOrThrow({ where: { id: lead.id } })).status).toBe("MEETING");
+
+    await ctx.db.deal.update({ where: { id: deal.id }, data: { stage: "NEGOTIATION" } });
+    const again = await runWorkflow(ctx, workflow.id, { leadId: lead.id, dryRun: false });
+    await executeWorkflow(ctx, again.id);
+    expect((await ctx.db.deal.findUniqueOrThrow({ where: { id: deal.id } })).stage).toBe("NEGOTIATION");
+  });
+
   it("workflows need the plan feature", async () => {
     const { ctx } = await setup("free");
     await expect(createWorkflow(ctx, { template: "opt-out-alert" })).rejects.toBeInstanceOf(FeatureNotInPlanError);

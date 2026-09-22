@@ -1,4 +1,4 @@
-import { EVENT_LABELS } from "@repo/config";
+import { DEAL_STAGE_LABELS, EVENT_LABELS } from "@repo/config";
 import { getEnv } from "@repo/config/env";
 import { prisma, type Event, type Prisma, type Workflow, type WorkflowExecution } from "@repo/db";
 import { HttpN8nClient, IntegrationError, MockN8nClient, providerFetch, signHmacSha256, type N8nClient } from "@repo/integrations";
@@ -7,6 +7,7 @@ import { resolvePlan } from "../billing/plans";
 import { addLeadsToCampaign } from "../campaigns/audience";
 import { prepareCall } from "../calls/service";
 import { systemContext, type TenantContext } from "../context";
+import { ensureDealAtStage } from "../crm/deals";
 import { createTask } from "../crm/tasks";
 import { hmacSha256, signToken, verifyToken, type SignedTokenPayload } from "../crypto";
 import { AppError, NotFoundError, PreconditionError, ProviderNotConfiguredError } from "../errors";
@@ -207,6 +208,13 @@ async function runStep(ctx: TenantContext, step: WorkflowStep, data: ExecutionDa
       await ctx.db.lead.update({ where: { id: lead.id }, data: { tags: { push: tag } } });
       data.lead = { ...lead, tags: [...lead.tags, tag] };
       return next({ tag });
+    }
+    case "move_deal": {
+      const lead = requireLead(data, step);
+      if (lead.doNotContact) return next({ skipped: "Lead is do-not-contact" });
+      if (dry) return next({ wouldMoveDeal: DEAL_STAGE_LABELS[step.stage] });
+      const deal = await ensureDealAtStage(ctx, lead.id, step.stage, { source: "workflow", reason: `Workflow: ${data.workflow.name}` });
+      return next({ dealId: deal?.id ?? null, stage: deal?.stage ?? null });
     }
     case "create_task": {
       const title = interpolate(step.title, data);

@@ -78,8 +78,9 @@ export function noContent() {
 function json(body: unknown, status: number, requestId: string, extraHeaders: Record<string, string> = {}) {
   if (status === 204) return new NextResponse(null, { status, headers: { "x-request-id": requestId, ...extraHeaders } });
   // Non-JSON payloads (CSV exports, files) are sent as-is with their own content type.
-  if (typeof body === "string" && extraHeaders["content-type"] && !extraHeaders["content-type"].includes("json")) {
-    return new NextResponse(body, { status, headers: { "x-request-id": requestId, "cache-control": "no-store", ...extraHeaders } });
+  if ((typeof body === "string" || body instanceof Uint8Array) && extraHeaders["content-type"] && !extraHeaders["content-type"].includes("json")) {
+    const payload = typeof body === "string" ? body : new Blob([new Uint8Array(body)]);
+    return new NextResponse(payload, { status, headers: { "x-request-id": requestId, "cache-control": "no-store", ...extraHeaders } });
   }
   return new NextResponse(JSON.stringify(body, jsonReplacer), {
     status,

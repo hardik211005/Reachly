@@ -16,6 +16,7 @@ import {
   ExternalLink,
   FileText,
   Globe,
+  Handshake,
   ListTodo,
   Mail,
   MapPin,
@@ -74,6 +75,8 @@ import { api, errorMessage } from "@/lib/api-client";
 import { useCanWrite } from "../shell/shell-context";
 import { LocalTime, RelativeTime } from "../time";
 import { LeadOutreachPanel } from "../outreach/lead-outreach";
+import { LeadDeals } from "../crm/lead-deals";
+import type { CrmSettings } from "../crm/shared";
 import type { ProviderState } from "../outreach/shared";
 import { AddToCampaignMenu, FitBadge, LeadStatusBadge, SourceLabel, type LeadSignalView } from "./shared";
 
@@ -459,10 +462,14 @@ export function LeadWorkspace({
   lead,
   timeline,
   providers,
+  crm,
+  initialTab = "overview",
 }: {
   lead: LeadDetail;
   timeline: { events: TimelineEvent[]; notes: NoteRow[] };
   providers: { EMAIL: ProviderState; WHATSAPP: ProviderState };
+  crm: CrmSettings;
+  initialTab?: string;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -598,7 +605,7 @@ export function LeadWorkspace({
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <Tabs defaultValue="overview" className="min-w-0">
+        <Tabs defaultValue={initialTab} className="min-w-0">
           <TabsList className="w-full justify-start overflow-x-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="outreach">
@@ -609,6 +616,9 @@ export function LeadWorkspace({
             </TabsTrigger>
             <TabsTrigger value="contacts">
               <UserRound /> Contacts <span className="text-foreground-subtle">{lead.contacts.length}</span>
+            </TabsTrigger>
+            <TabsTrigger value="deals">
+              <Handshake /> Deals & quotes <span className="text-foreground-subtle">{lead.deals.length}</span>
             </TabsTrigger>
             <TabsTrigger value="tasks">
               <ListTodo /> Tasks <span className="text-foreground-subtle">{lead.tasks.length}</span>
@@ -687,6 +697,10 @@ export function LeadWorkspace({
 
           <TabsContent value="contacts" className="pt-4">
             <ContactsPanel lead={lead} />
+          </TabsContent>
+
+          <TabsContent value="deals" className="pt-4">
+            <LeadDeals lead={{ id: lead.id, name: lead.name }} settings={crm} />
           </TabsContent>
 
           <TabsContent value="tasks" className="pt-4">

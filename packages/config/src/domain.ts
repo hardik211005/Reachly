@@ -69,6 +69,38 @@ export const DEAL_STAGE_PROBABILITY: Record<DealStage, number> = {
   LOST: 0,
 };
 
+/** Common reasons offered when a deal is marked lost (free text is always allowed). */
+export const DEAL_LOST_REASONS = ["Price", "Timing", "Chose a competitor", "No response", "Not a fit"] as const;
+
+export const QUOTE_STATUSES = ["DRAFT", "SENT", "ACCEPTED", "REJECTED", "EXPIRED"] as const;
+export type QuoteStatus = (typeof QUOTE_STATUSES)[number];
+
+export const QUOTE_STATUS_LABELS: Record<QuoteStatus, string> = {
+  DRAFT: "Draft",
+  SENT: "Sent",
+  ACCEPTED: "Accepted",
+  REJECTED: "Declined",
+  EXPIRED: "Expired",
+};
+
+export const TASK_TYPES = ["TODO", "CALL", "EMAIL", "FOLLOW_UP", "MEETING"] as const;
+export type TaskType = (typeof TASK_TYPES)[number];
+
+export const TASK_TYPE_LABELS: Record<TaskType, string> = {
+  TODO: "To-do",
+  CALL: "Call",
+  EMAIL: "Email",
+  FOLLOW_UP: "Follow-up",
+  MEETING: "Meeting",
+};
+
+export const MEETING_STATUS_LABELS: Record<string, string> = {
+  SCHEDULED: "Scheduled",
+  COMPLETED: "Completed",
+  CANCELED: "Canceled",
+  NO_SHOW: "No-show",
+};
+
 export const CHANNELS = ["EMAIL", "WHATSAPP", "VOICE", "MANUAL_CALL"] as const;
 export type Channel = (typeof CHANNELS)[number];
 

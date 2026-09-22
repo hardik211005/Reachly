@@ -21,7 +21,9 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   transpilePackages: ["@repo/ui", "@repo/core", "@repo/config", "@repo/db", "@repo/ai", "@repo/integrations", "@repo/queue"],
-  serverExternalPackages: ["pino", "bullmq", "ioredis", "pg", "@prisma/adapter-pg", "nodemailer", "pdf-lib", "stripe"],
+  serverExternalPackages: ["pino", "bullmq", "ioredis", "pg", "@prisma/adapter-pg", "nodemailer", "pdf-lib", "@pdf-lib/fontkit", "stripe"],
+  // Quote PDFs embed these fonts; standalone builds must ship them.
+  outputFileTracingIncludes: { "/**": ["../../packages/core/assets/fonts/*"] },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

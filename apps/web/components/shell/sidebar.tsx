@@ -24,11 +24,11 @@ import { Logo } from "../brand/logo";
 import { NAV_FOOTER, NAV_GROUPS, isActive, type NavItem } from "./nav";
 import { useCanManage, useShell } from "./shell-context";
 
-/** Attention counts shown next to nav items: replies needing a response, drafts awaiting review. */
+/** Attention counts shown next to nav items: replies needing a response, drafts awaiting review, calls, tasks due. */
 function useNavCounts(): Record<string, number> {
   const summary = useQuery({
     queryKey: ["inbox-summary"],
-    queryFn: () => api<{ needsResponse: number; unread: number; pendingApproval: number; callsWaiting: number }>("/api/v1/conversations/summary"),
+    queryFn: () => api<{ needsResponse: number; unread: number; pendingApproval: number; callsWaiting: number; tasksDue: number }>("/api/v1/conversations/summary"),
     refetchInterval: 30_000,
     staleTime: 15_000,
   });
@@ -36,6 +36,7 @@ function useNavCounts(): Record<string, number> {
     "/app/conversations": summary.data?.needsResponse ?? 0,
     "/app/campaigns": summary.data?.pendingApproval ?? 0,
     "/app/calls": summary.data?.callsWaiting ?? 0,
+    "/app/crm": summary.data?.tasksDue ?? 0,
   };
 }
 

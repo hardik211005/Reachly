@@ -37,6 +37,19 @@ describe("mock copilot router", () => {
     expect("text" in response ? response.text : "").toContain("No AI requests");
   });
 
+  it("routes pipeline, task and quote questions to the CRM tools", async () => {
+    await import("./crm-tools");
+    const crmTools = [...tools, "get_pipeline", "get_my_tasks", "list_quotes"];
+    const route = (text: string) => {
+      const response = mockCopilotResponder({ model: "mock-1", agent: "copilot", agentInput: { tools: crmTools }, messages: [{ role: "user", content: text }] });
+      return "toolCalls" in response ? response.toolCalls[0] : null;
+    };
+    expect(route("How does my pipeline look?")).toMatchObject({ name: "get_pipeline", input: {} });
+    expect(route("which deals are in negotiation")).toMatchObject({ name: "get_pipeline", input: { stage: "NEGOTIATION" } });
+    expect(route("what's overdue on my tasks?")).toMatchObject({ name: "get_my_tasks", input: { due: "overdue" } });
+    expect(route("show accepted quotes")).toMatchObject({ name: "list_quotes", input: { status: "ACCEPTED" } });
+  });
+
   it("explains its capabilities for unrecognised questions", () => {
     const response = ask("tell me a joke");
     expect("text" in response ? response.text : "").toContain("recognise");

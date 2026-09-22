@@ -172,7 +172,7 @@ export const directMessageSchema = z.object({
 });
 
 /** One-off message from the lead workspace (outside any campaign). */
-export async function sendDirectMessage(ctx: TenantContext, leadId: string, input: z.input<typeof directMessageSchema>) {
+export async function sendDirectMessage(ctx: TenantContext, leadId: string, input: z.input<typeof directMessageSchema>, options: { metadata?: Record<string, string | number | boolean | null> } = {}) {
   assertCan(ctx, "outreach:send");
   const data = directMessageSchema.parse(input);
   const lead = await ctx.db.lead.findFirst({ where: { id: leadId, deletedAt: null }, include: { contacts: { where: { deletedAt: null } } } });
@@ -200,7 +200,7 @@ export async function sendDirectMessage(ctx: TenantContext, leadId: string, inpu
       toAddress: to,
       createdById: ctx.userId,
       ...(data.sendNow ? { approvedById: ctx.userId, approvedAt: now } : {}),
-      metadata: { manual: true },
+      metadata: { manual: true, ...options.metadata },
     },
   });
   if (data.sendNow) await queueSend(ctx, message.id);

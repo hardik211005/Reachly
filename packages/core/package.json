@@ -15,21 +15,22 @@
     "seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
+    "@pdf-lib/fontkit": "^1.1.1",
     "@repo/ai": "*",
     "@repo/config": "*",
     "@repo/db": "*",
     "@repo/integrations": "*",
     "@repo/queue": "*",
     "date-fns": "^4.4.0",
+    "ioredis": "^5.8.2",
     "pdf-lib": "^1.17.1",
     "pino": "^10.3.1",
-    "zod": "^4.6.5",
-    "ioredis": "^5.8.2"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@repo/tsconfig": "*",
-    "vitest": "^5.0.1",
+    "better-auth": "^1.7.5",
     "tsx": "^4.23.15",
-    "better-auth": "^1.7.5"
+    "vitest": "^5.0.1"
   }
 }

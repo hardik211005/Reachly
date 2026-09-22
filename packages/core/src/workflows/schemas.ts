@@ -1,4 +1,4 @@
-import { CALL_OUTCOMES, LEAD_STATUSES, REPLY_INTENTS } from "@repo/config";
+import { CALL_OUTCOMES, DEAL_STAGES, LEAD_STATUSES, REPLY_INTENTS } from "@repo/config";
 import { z } from "zod";
 
 /**
@@ -68,6 +68,7 @@ export const stepSchema = z.discriminatedUnion("type", [
   z.object({ id, type: z.literal("delay"), amount: z.number().int().min(1).max(90), unit: z.enum(["minutes", "hours", "days"]) }),
   z.object({ id, type: z.literal("update_lead_status"), status: z.enum(LEAD_STATUSES).exclude(["DO_NOT_CONTACT"]) }),
   z.object({ id, type: z.literal("add_tag"), tag: text(40).min(1) }),
+  z.object({ id, type: z.literal("move_deal"), stage: z.enum(DEAL_STAGES).exclude(["NEW", "LOST"]) }),
   z.object({
     id,
     type: z.literal("create_task"),
@@ -105,6 +106,7 @@ export const STEP_CATALOG: Record<WorkflowStepType, { label: string; description
   delay: { label: "Wait", description: "Pause before the next step", category: "logic", needsLead: false, icon: "clock" },
   update_lead_status: { label: "Update lead status", description: "Move the lead to another status", category: "lead", needsLead: true, icon: "tag" },
   add_tag: { label: "Add tag", description: "Tag the lead", category: "lead", needsLead: true, icon: "hash" },
+  move_deal: { label: "Move deal forward", description: "Open the lead's deal or move it to a later stage (never backwards)", category: "lead", needsLead: true, icon: "handshake" },
   add_to_campaign: { label: "Add to campaign", description: "Enrol the lead in a campaign", category: "outreach", needsLead: true, icon: "megaphone" },
   stop_sequences: { label: "Stop sequences", description: "Stop all running campaign sequences for the lead", category: "outreach", needsLead: true, icon: "octagon" },
   send_email: { label: "Send email", description: "Email the lead (as a draft for approval by default)", category: "outreach", needsLead: true, icon: "mail" },

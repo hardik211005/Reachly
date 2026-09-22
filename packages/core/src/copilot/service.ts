@@ -9,6 +9,7 @@ import { logger } from "../logger";
 import { mockCopilotResponder } from "./mock";
 import { getCopilotTool, listCopilotTools } from "./tools";
 import "./outreach-tools";
+import "./crm-tools";
 
 export const copilotRequestSchema = z.object({
   messages: z

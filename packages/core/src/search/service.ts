@@ -74,7 +74,7 @@ export async function globalSearch(ctx: TenantContext, query: string, limitPerTy
       id: deal.id,
       title: deal.title,
       subtitle: deal.stage.toLowerCase(),
-      href: `/app/leads/${deal.leadId}?tab=deals`,
+      href: `/app/crm?deal=${deal.id}`,
     })),
     ...conversations.map((conversation) => ({
       type: "conversation" as const,

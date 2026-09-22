@@ -97,8 +97,22 @@ export async function listTasks(ctx: TenantContext, input: z.input<typeof taskLi
       ...(query.dealId ? { dealId: query.dealId } : {}),
       ...dueFilter,
     },
-    orderBy: [{ dueAt: { sort: "asc", nulls: "last" } }, { createdAt: "desc" }],
+    orderBy: query.status === "OPEN" ? [{ dueAt: { sort: "asc", nulls: "last" } }, { createdAt: "desc" }] : [{ completedAt: { sort: "desc", nulls: "last" } }, { updatedAt: "desc" }],
     take: 200,
-    include: { assignee: { select: { id: true, name: true } }, lead: { select: { id: true, name: true } } },
+    include: { assignee: { select: { id: true, name: true } }, lead: { select: { id: true, name: true } }, deal: { select: { id: true, title: true, stage: true } } },
   });
+}
+
+export async function deleteTask(ctx: TenantContext, id: string) {
+  assertCan(ctx, "crm:write");
+  const task = await ctx.db.task.findFirst({ where: { id } });
+  if (!task) throw new NotFoundError("Task", id);
+  await ctx.db.task.delete({ where: { id } });
+}
+
+/** Open tasks due today or earlier for the current user (sidebar badge). */
+export async function dueTaskCount(ctx: TenantContext) {
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+  return ctx.db.task.count({ where: { status: "OPEN", assigneeId: ctx.userId, dueAt: { lte: endOfDay } } });
 }

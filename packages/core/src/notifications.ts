@@ -14,6 +14,9 @@ export type NotificationType =
   | "payment.failed"
   | "discovery.completed"
   | "import.completed"
+  | "quote.viewed"
+  | "quote.accepted"
+  | "quote.declined"
   | "system";
 
 export interface NotifyInput {

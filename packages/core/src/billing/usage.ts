@@ -140,7 +140,8 @@ export async function consumeUsage(
       },
     });
     return { used: row.used, duplicate: false };
-  });
+    // Parallel jobs (e.g. scoring a discovery batch) queue on the same counter row; give them room.
+  }, { maxWait: 10_000, timeout: 20_000 });
 
   if (result.duplicate) return { used: 0, limit, duplicate: true };
 

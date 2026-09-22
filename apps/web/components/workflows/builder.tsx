@@ -23,7 +23,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { LEAD_STATUS_LABELS, LEAD_STATUSES, type LeadStatus } from "@repo/config";
+import { DEAL_STAGE_LABELS, DEAL_STAGES, LEAD_STATUS_LABELS, LEAD_STATUSES, type LeadStatus } from "@repo/config";
 import {
   CONDITION_FIELDS,
   EVENT_TRIGGER_META,
@@ -471,6 +471,25 @@ function StepInspector({ step, onChange, options, signingSecret }: { step: Workf
             </SelectContent>
           </Select>
           <FieldHint>Do-not-contact leads are never changed by workflows.</FieldHint>
+        </Field>
+      );
+    case "move_deal":
+      return (
+        <Field>
+          <Label>Stage</Label>
+          <Select value={step.stage} onValueChange={(stage) => onChange({ ...step, stage: stage as typeof step.stage })}>
+            <SelectTrigger aria-label="Deal stage">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {DEAL_STAGES.filter((stage) => stage !== "NEW" && stage !== "LOST").map((stage) => (
+                <SelectItem key={stage} value={stage}>
+                  {DEAL_STAGE_LABELS[stage]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <FieldHint>Opens a deal if the lead has none. A deal already further along stays where it is.</FieldHint>
         </Field>
       );
     case "add_tag":

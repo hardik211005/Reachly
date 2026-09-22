@@ -56,6 +56,7 @@ export function outcomeText(run: StepRun | undefined): { tone: "done" | "skipped
       wouldWaitUntil: "Would wait until",
       wouldChange: "Would change status",
       wouldAdd: "Would add tag",
+      wouldMoveDeal: "Would move the deal (forward only) to",
       wouldCreate: "Would create task",
       wouldAddTo: "Would add to campaign",
       wouldStop: "Would stop sequences",
@@ -72,6 +73,7 @@ export function outcomeText(run: StepRun | undefined): { tone: "done" | "skipped
   if (typeof output.title === "string") return { tone: "done", text: `Done — ${output.title}` };
   if (typeof output.to === "string") return { tone: "done", text: `Status ${String(output.from)} → ${output.to}` };
   if (typeof output.tag === "string") return { tone: "done", text: `Tagged #${output.tag}` };
+  if (typeof output.dealId === "string") return { tone: "done", text: `Deal is at ${String(output.stage ?? "").toLowerCase()}` };
   if (typeof output.status === "number") return { tone: "done", text: `HTTP ${output.status}${output.simulated ? " (demo n8n — simulated)" : ""}` };
   if (typeof output.campaign === "string") return { tone: "done", text: `${output.added ? "Added to" : "Not added to"} ${output.campaign}` };
   return { tone: "done", text: "Done" };
