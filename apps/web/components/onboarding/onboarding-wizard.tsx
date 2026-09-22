@@ -341,7 +341,7 @@ function AnalysisProgress() {
   );
 }
 
-function IcpEditor({ icp, onChange }: { icp: Icp; onChange: (icp: Icp) => void }) {
+export function IcpEditor({ icp, onChange }: { icp: Icp; onChange: (icp: Icp) => void }) {
   const set = <K extends keyof Icp>(key: K, value: Icp[K]) => onChange({ ...icp, [key]: value });
   return (
     <div className="grid gap-5">

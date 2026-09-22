@@ -15,7 +15,6 @@ import {
   Mail,
   MessageCircle,
   PhoneCall,
-  Plus,
   Radar,
   ScrollText,
   ShieldCheck,
@@ -24,25 +23,11 @@ import {
   Workflow,
 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion, useScroll, useSpring, useTransform } from "motion/react";
-import { brand, CHANNELS, type PlanDefinition } from "@repo/config";
+import { CHANNELS, type PlanDefinition } from "@repo/config";
 import { STEP_CATALOG } from "@repo/core/workflows/schemas";
-import { AnimatedNumber, Aurora, Button, EASE_OUT, Reveal, SpotlightCard, Stagger, StaggerItem, cn } from "@repo/ui";
-import { Logo } from "../brand/logo";
-
-function SectionHeading({ eyebrow, title, highlight, description, center = true }: { eyebrow: string; title: string; highlight?: string; description?: string; center?: boolean }) {
-  const [before, after] = highlight && title.includes(highlight) ? title.split(highlight) : [title, undefined];
-  return (
-    <Reveal className={cn("max-w-2xl", center && "mx-auto text-center")}>
-      <p className="text-xs font-semibold tracking-[0.14em] text-brand-1 uppercase">{eyebrow}</p>
-      <h2 className="mt-3 text-[32px] leading-[1.1] font-semibold tracking-[-0.03em] text-balance sm:text-[40px]">
-        {before}
-        {highlight && after !== undefined ? <span className="text-gradient">{highlight}</span> : null}
-        {after}
-      </h2>
-      {description ? <p className="mt-4 text-[15px] leading-relaxed text-foreground-secondary">{description}</p> : null}
-    </Reveal>
-  );
-}
+import { AnimatedNumber, Button, EASE_OUT, Reveal, SpotlightCard, Stagger, StaggerItem, cn } from "@repo/ui";
+import { USE_CASES } from "./site";
+import { SectionHeading } from "./ui";
 
 // ----------------------------------------------------------------------------- Integrations marquee
 
@@ -257,13 +242,13 @@ function CopilotChat() {
 }
 
 const FEATURES = [
-  { icon: Telescope, title: "Lead engine", body: "Natural-language discovery across providers, enrichment from public sources, de-duplication and a transparent score for every lead.", visual: PulseMap, span: "md:col-span-2" },
-  { icon: Mail, title: "AI outreach", body: "Messages grounded in real facts about each business, in your tone. Review each one, auto-approve, or go fully automated.", visual: MessageStack, span: "" },
-  { icon: PhoneCall, title: "AI voice agent", body: "Calls with a brief, answers objections honestly, books meetings at the time the prospect said — and discloses it's an AI.", visual: Waveform, span: "" },
-  { icon: Workflow, title: "Workflows & n8n", body: "Visual automations with test runs, full step history, signed webhooks and two-way n8n.", visual: FlowGraph, span: "" },
-  { icon: Handshake, title: "CRM & quotes", body: "Drag-and-drop pipeline that updates itself, and priced quotes from your catalog with PDF and online acceptance.", visual: MiniKanban, span: "" },
-  { icon: BarChart3, title: "Analytics & AI insights", body: "Funnels, cohorts, heatmaps and cost per meeting — plus insights with sample sizes and confidence.", visual: GrowingBars, span: "lg:col-span-2" },
-  { icon: Bot, title: "AI copilot", body: "Ask in plain words — what needs you, which deals are stuck, which quotes went unopened — and jump straight to it.", visual: CopilotChat, span: "" },
+  { icon: Telescope, title: "Lead engine", href: "/product/lead-discovery", body: "Natural-language discovery across providers, enrichment from public sources, de-duplication and a transparent score for every lead.", visual: PulseMap, span: "md:col-span-2" },
+  { icon: Mail, title: "AI outreach", href: "/product/ai-outreach", body: "Messages grounded in real facts about each business, in your tone. Review each one, auto-approve, or go fully automated.", visual: MessageStack, span: "" },
+  { icon: PhoneCall, title: "AI voice agent", href: "/product/ai-calling", body: "Calls with a brief, answers objections honestly, books meetings at the time the prospect said — and discloses it's an AI.", visual: Waveform, span: "" },
+  { icon: Workflow, title: "Workflows & n8n", href: "/product/workflows", body: "Visual automations with test runs, full step history, signed webhooks and two-way n8n.", visual: FlowGraph, span: "" },
+  { icon: Handshake, title: "CRM & quotes", href: "/product/crm-quotes", body: "Drag-and-drop pipeline that updates itself, and priced quotes from your catalog with PDF and online acceptance.", visual: MiniKanban, span: "" },
+  { icon: BarChart3, title: "Analytics & AI insights", href: "/product/analytics", body: "Funnels, cohorts, heatmaps and cost per meeting — plus insights with sample sizes and confidence.", visual: GrowingBars, span: "lg:col-span-2" },
+  { icon: Bot, title: "AI copilot", href: "/product", body: "Ask in plain words — what needs you, which deals are stuck, which quotes went unopened — and jump straight to it.", visual: CopilotChat, span: "" },
 ];
 
 export function FeaturesBento() {
@@ -274,15 +259,22 @@ export function FeaturesBento() {
         <Stagger inView step={0.08} className="mt-14 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((feature) => (
             <StaggerItem key={feature.title} className={feature.span}>
-              <SpotlightCard className="lift group flex h-full flex-col rounded-2xl border border-border bg-surface p-5 shadow-xs">
+              <SpotlightCard className="lift group relative flex h-full flex-col rounded-2xl border border-border bg-surface p-5 shadow-xs">
                 <feature.visual />
                 <div className="mt-5 flex items-center gap-2">
                   <span className="flex size-7 items-center justify-center rounded-md bg-accent-soft text-accent-soft-foreground">
                     <feature.icon className="size-4" />
                   </span>
-                  <h3 className="text-[15px] font-semibold">{feature.title}</h3>
+                  <h3 className="text-[15px] font-semibold">
+                    <Link href={feature.href} className="after:absolute after:inset-0 after:rounded-2xl after:content-['']">
+                      {feature.title}
+                    </Link>
+                  </h3>
                 </div>
                 <p className="mt-2 text-[13.5px] leading-relaxed text-foreground-secondary">{feature.body}</p>
+                <span className="mt-auto inline-flex items-center gap-1 pt-4 text-[12.5px] font-medium text-brand-1">
+                  Learn more <ArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+                </span>
               </SpotlightCard>
             </StaggerItem>
           ))}
@@ -378,11 +370,11 @@ const PLAN_POINTS = (plan: PlanDefinition): string[] => {
   ];
 };
 
-export function Pricing({ plans }: { plans: PlanDefinition[] }) {
+export function Pricing({ plans, heading = true, compareLink = true }: { plans: PlanDefinition[]; heading?: boolean; compareLink?: boolean }) {
   return (
-    <section id="pricing" className="scroll-mt-20 py-24 sm:py-32">
+    <section id="pricing" className={cn("scroll-mt-20", heading ? "py-24 sm:py-32" : "pb-8")}>
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <SectionHeading eyebrow="Pricing" title="Start free. Upgrade when it’s paying for itself." highlight="paying for itself" description="Plans differ by volume and automation. Every plan includes the lead engine, the CRM and full data export." />
+        {heading ? <SectionHeading eyebrow="Pricing" title="Start free. Upgrade when it’s paying for itself." highlight="paying for itself" description="Plans differ by volume and automation. Every plan includes the lead engine, the CRM and full data export." /> : null}
         <Stagger inView step={0.1} className="mt-14 grid gap-4 lg:grid-cols-3">
           {plans.map((plan) => {
             const featured = plan.highlighted;
@@ -415,113 +407,49 @@ export function Pricing({ plans }: { plans: PlanDefinition[] }) {
             );
           })}
         </Stagger>
-      </div>
-    </section>
-  );
-}
-
-// ----------------------------------------------------------------------------- FAQ
-
-const FAQS = [
-  { q: "Does the AI send messages without my approval?", a: "Only if you choose Automated mode for a campaign. In Manual and Assisted modes every AI-written message waits in a review queue, and AI calls always need an explicit start." },
-  { q: "Where do the leads come from?", a: "From discovery providers such as Google Places and public business information, plus your own CSV imports. Every lead shows its sources, and nothing is scraped from private data." },
-  { q: "Is it compliant with email, WhatsApp and calling rules?", a: "Unsubscribe links and one-click unsubscribe are added to email, opt-outs are enforced across channels, WhatsApp uses approved templates and the 24-hour window, and AI calls require consent attestation, DND checks and calling hours." },
-  { q: "Can I use my own email domain and WhatsApp number?", a: "Yes — connect Resend, SendGrid or SMTP for email, the official WhatsApp Cloud API for WhatsApp, and Twilio or Vapi for voice. Keys are encrypted." },
-  { q: "Will the AI make up prices or facts?", a: "No. Prices only come from your catalog or a price you type. Agents are grounded in each lead’s real data, and AI insights can’t add numbers the analysis didn’t produce." },
-  { q: "What's the live demo?", a: "A fully seeded workspace — leads, campaigns, calls, deals and analytics — running on demo providers, so you can try everything without connecting anything." },
-];
-
-export function Faq() {
-  const [open, setOpen] = React.useState<number | null>(0);
-  return (
-    <section id="faq" className="scroll-mt-20 py-24 sm:py-32">
-      <div className="mx-auto grid max-w-6xl gap-12 px-4 sm:px-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-        <SectionHeading eyebrow="FAQ" title="Questions, answered" highlight="answered" center={false} description={`Anything else? Write to ${brand.supportEmail}.`} />
-        <Reveal>
-          <ul className="divide-y divide-border rounded-2xl border border-border bg-surface">
-            {FAQS.map((item, index) => {
-              const isOpen = open === index;
-              return (
-                <li key={item.q}>
-                  <button type="button" className="flex w-full items-center gap-4 px-5 py-4 text-left" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : index)}>
-                    <span className="flex-1 text-[14.5px] font-medium">{item.q}</span>
-                    <motion.span animate={{ rotate: isOpen ? 45 : 0 }} transition={{ duration: 0.2 }} className="text-foreground-muted">
-                      <Plus className="size-4" />
-                    </motion.span>
-                  </button>
-                  <AnimatePresence initial={false}>
-                    {isOpen ? (
-                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: EASE_OUT }} className="overflow-hidden">
-                        <p className="px-5 pb-5 text-[14px] leading-relaxed text-foreground-secondary">{item.a}</p>
-                      </motion.div>
-                    ) : null}
-                  </AnimatePresence>
-                </li>
-              );
-            })}
-          </ul>
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
-// ----------------------------------------------------------------------------- CTA & footer
-
-export function FinalCta() {
-  return (
-    <section className="px-4 pb-24 sm:px-6">
-      <Reveal className="relative isolate mx-auto max-w-6xl overflow-hidden rounded-3xl border border-border bg-surface px-6 py-16 text-center shadow-lg sm:py-20">
-        <Aurora intensity={1.4} />
-        <div aria-hidden className="bg-grid absolute inset-0 -z-10 opacity-40 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" />
-        <h2 className="mx-auto max-w-2xl text-[32px] leading-[1.1] font-semibold tracking-[-0.03em] text-balance sm:text-[44px]">
-          Your next customers are already out there. <span className="text-gradient animate-gradient-pan">Go meet them.</span>
-        </h2>
-        <p className="mx-auto mt-4 max-w-lg text-[15px] text-foreground-secondary">Set up in minutes. Start on the free plan and keep every lead you find.</p>
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Button asChild variant="primary" size="lg" className="px-6 shadow-[var(--brand-glow)]">
-            <Link href="/signup">
-              Start free <ArrowRight />
+        {compareLink ? (
+          <Reveal className="mt-8 text-center">
+            <Link href="/pricing#compare" className="group inline-flex items-center gap-1.5 text-[13.5px] font-medium text-foreground-secondary transition-colors hover:text-foreground">
+              Compare every feature and limit <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
             </Link>
-          </Button>
-          <Button asChild variant="secondary" size="lg" className="px-6">
-            <Link href="/login">Explore the demo</Link>
-          </Button>
-        </div>
-      </Reveal>
+          </Reveal>
+        ) : null}
+      </div>
     </section>
   );
 }
 
-export function Footer() {
+// ----------------------------------------------------------------------------- Use cases strip
+
+export function UseCasesStrip({ heading = true }: { heading?: boolean }) {
   return (
-    <footer className="border-t border-border py-10">
-      <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div>
-          <Logo />
-          <p className="mt-2 max-w-sm text-[13px] text-foreground-muted">{brand.tagline}</p>
-        </div>
-        <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-foreground-secondary">
-          <a href="#features" className="hover:text-foreground">
-            Product
-          </a>
-          <a href="#pricing" className="hover:text-foreground">
-            Pricing
-          </a>
-          <a href="#faq" className="hover:text-foreground">
-            FAQ
-          </a>
-          <Link href="/login" className="hover:text-foreground">
-            Sign in
-          </Link>
-          <a href={`mailto:${brand.supportEmail}`} className="hover:text-foreground">
-            Contact
-          </a>
-        </nav>
+    <section className={heading ? "py-24 sm:py-28" : "pb-24"}>
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        {heading ? <SectionHeading eyebrow="Use cases" title="Built for teams that sell to businesses" highlight="sell to businesses" description="The same engine, pointed at different buyers. Pick the one closest to you." /> : null}
+        <Stagger inView step={0.08} className={cn("grid gap-4 sm:grid-cols-2 lg:grid-cols-4", heading && "mt-14")}>
+          {USE_CASES.map((item) => (
+            <StaggerItem key={item.slug}>
+              <SpotlightCard className="lift group relative flex h-full flex-col rounded-2xl border border-border bg-surface p-5 shadow-xs">
+                <span className="border-gradient flex size-10 items-center justify-center rounded-xl bg-surface">
+                  <item.icon className="size-5 text-brand-1" />
+                </span>
+                <h3 className="mt-4 text-[15px] font-semibold">
+                  <Link href={`/use-cases/${item.slug}`} className="after:absolute after:inset-0 after:rounded-2xl after:content-['']">
+                    {item.name}
+                  </Link>
+                </h3>
+                <p className="mt-1.5 text-[13.5px] leading-relaxed text-foreground-secondary">{item.summary}</p>
+                <p className="mt-4 rounded-lg bg-surface-muted px-3 py-2 text-[12px] leading-snug text-foreground-secondary">
+                  <span className="font-medium text-foreground">Try: </span>“{item.exampleSearch}”
+                </p>
+                <span className="mt-auto inline-flex items-center gap-1 pt-4 text-[12.5px] font-medium text-brand-1">
+                  See the playbook <ArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+                </span>
+              </SpotlightCard>
+            </StaggerItem>
+          ))}
+        </Stagger>
       </div>
-      <p className="mx-auto mt-8 max-w-6xl px-4 text-xs text-foreground-subtle sm:px-6">
-        © {new Date().getFullYear()} {brand.legalName}
-      </p>
-    </footer>
+    </section>
   );
 }

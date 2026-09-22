@@ -22,11 +22,12 @@ export function Reveal({
   className,
   delay = 0,
   y = 18,
+  x = 0,
   amount = 0.15,
   ...props
-}: { children: React.ReactNode; className?: string; delay?: number; y?: number; amount?: number } & Omit<HTMLMotionProps<"div">, "children" | "initial" | "whileInView">) {
+}: { children: React.ReactNode; className?: string; delay?: number; y?: number; x?: number; amount?: number } & Omit<HTMLMotionProps<"div">, "children" | "initial" | "whileInView">) {
   return (
-    <motion.div className={className} initial={{ opacity: 0, y }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount }} transition={{ duration: 0.55, ease: EASE_OUT, delay }} {...props}>
+    <motion.div className={className} initial={{ opacity: 0, y, x }} whileInView={{ opacity: 1, y: 0, x: 0 }} viewport={{ once: true, amount }} transition={{ duration: 0.55, ease: EASE_OUT, delay }} {...props}>
       {children}
     </motion.div>
   );

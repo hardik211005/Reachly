@@ -460,8 +460,8 @@ export function CatalogTab() {
   const { offerings, rules, currency } = catalog.data;
 
   return (
-    <div className="grid gap-8">
-      <section className="grid gap-3">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8">
+      <section className="grid grid-cols-[minmax(0,1fr)] gap-3">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
             <h2 className="flex items-center gap-2 text-sm font-semibold">
@@ -534,7 +534,7 @@ export function CatalogTab() {
         )}
       </section>
 
-      <section className="grid gap-3">
+      <section className="grid grid-cols-[minmax(0,1fr)] gap-3">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
             <h2 className="flex items-center gap-2 text-sm font-semibold">
@@ -576,7 +576,7 @@ export function CatalogTab() {
         )}
       </section>
 
-      <section className="grid gap-3">
+      <section className="grid grid-cols-[minmax(0,1fr)] gap-3">
         <div>
           <h2 className="flex items-center gap-2 text-sm font-semibold">
             <Settings2 className="size-4 text-foreground-muted" /> Quote settings

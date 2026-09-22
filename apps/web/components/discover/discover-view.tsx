@@ -7,25 +7,32 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNowStrict } from "date-fns";
 import {
   AlertTriangle,
+  ArrowRight,
   Bookmark,
   Building2,
   Check,
   Download,
   History,
+  Lightbulb,
   Loader2,
   MapPin,
   Radar,
+  ShieldCheck,
   Sparkles,
   Star,
   Telescope,
   Wand2,
   X,
 } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
+  AnimatedNumber,
+  Aurora,
   Badge,
   Button,
   Callout,
   Checkbox,
+  EASE_OUT,
   EmptyState,
   Field,
   Input,
@@ -38,6 +45,8 @@ import {
   SelectTrigger,
   SelectValue,
   Skeleton,
+  Stagger,
+  StaggerItem,
   Table,
   TableBody,
   TableCell,
@@ -46,7 +55,6 @@ import {
   TableRow,
   Textarea,
   cn,
-  formatNumber,
   toast,
 } from "@repo/ui";
 import { api, ApiError, errorMessage } from "@/lib/api-client";
@@ -115,6 +123,12 @@ interface ResultLead {
   contacts: Array<{ email: string | null; phone: string | null; name: string | null }>;
 }
 
+export interface SearchIdea {
+  audience: string;
+  location: string;
+  offer: string;
+}
+
 export interface DiscoverDefaults {
   offer: string;
   audience: string;
@@ -141,7 +155,7 @@ function humanCategory(key: string): string {
   return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-// ----------------------------------------------------------------------------- Search form
+// ----------------------------------------------------------------------------- Search console
 
 function SearchForm({
   defaults,
@@ -174,94 +188,184 @@ function SearchForm({
   }
 
   return (
-    <form onSubmit={submit} className="rounded-xl border border-border bg-surface p-5 shadow-xs">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <SegmentedControl
-          size="sm"
-          value={mode}
-          onValueChange={setMode}
-          options={[
-            { value: "guided", label: "Guided" },
-            { value: "describe", label: "Describe it" },
-          ]}
-        />
-        {defaults.campaign ? (
-          <Badge tone="accent">
-            <Radar /> For campaign: {defaults.campaign.name}
-          </Badge>
-        ) : null}
+    <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: EASE_OUT }} className="relative isolate overflow-hidden rounded-2xl border border-border bg-surface shadow-xs">
+      <Aurora intensity={1} className="-z-10" />
+      <div aria-hidden className="bg-grid absolute inset-0 -z-10 opacity-40 [mask-image:radial-gradient(ellipse_at_top_right,black,transparent_65%)]" />
+      <div className="px-5 pt-6 sm:px-7">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.03em]">
+              Find potential <span className="text-gradient animate-gradient-pan">customers</span>
+            </h1>
+            <p className="mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-foreground-secondary">Tell us what you sell and who buys it. We search approved data sources, enrich every business and score it against your ideal customer profile.</p>
+          </div>
+          {defaults.campaign ? (
+            <Badge tone="accent">
+              <Radar /> For campaign: {defaults.campaign.name}
+            </Badge>
+          ) : null}
+        </div>
       </div>
+      <form onSubmit={submit} className="m-3 mt-5 rounded-xl border border-border bg-surface/85 p-4 shadow-sm backdrop-blur sm:m-5 sm:p-5">
+        <div className="mb-4">
+          <SegmentedControl
+            size="sm"
+            value={mode}
+            onValueChange={setMode}
+            options={[
+              { value: "guided", label: "Guided" },
+              { value: "describe", label: "Describe it" },
+            ]}
+          />
+        </div>
+        <AnimatePresence mode="wait" initial={false}>
+          {mode === "guided" ? (
+            <motion.div key="guided" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }} className="grid gap-4 md:grid-cols-[1.1fr_1.1fr_1fr_110px]">
+              <Field>
+                <Label htmlFor="offer">What are you selling?</Label>
+                <Input id="offer" value={offer} onChange={(event) => setOffer(event.target.value)} placeholder="Custom branded paper cups" />
+              </Field>
+              <Field>
+                <Label htmlFor="audience">Who do you want to sell to?</Label>
+                <Input id="audience" value={audience} onChange={(event) => setAudience(event.target.value)} placeholder="Cafés, restaurants, cloud kitchens" />
+              </Field>
+              <Field>
+                <Label htmlFor="location">Where?</Label>
+                <div className="relative">
+                  <MapPin className="pointer-events-none absolute top-2 left-2.5 size-3.5 text-foreground-muted" />
+                  <Input id="location" className="pl-8" value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Delhi NCR" />
+                </div>
+              </Field>
+              <Field>
+                <Label>Radius</Label>
+                <Select value={radius} onValueChange={setRadius}>
+                  <SelectTrigger aria-label="Radius">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["5", "10", "25", "50", "100"].map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {value} km
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            </motion.div>
+          ) : (
+            <motion.div key="describe" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}>
+              <Field>
+                <Label htmlFor="description">What are you looking for?</Label>
+                <Textarea
+                  id="description"
+                  rows={3}
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  placeholder="Find cafés in South Delhi with 2+ locations that may need custom branded paper cups"
+                />
+              </Field>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {mode === "guided" ? (
-        <div className="grid gap-4 md:grid-cols-[1.1fr_1.1fr_1fr_110px]">
-          <Field>
-            <Label htmlFor="offer">What are you selling?</Label>
-            <Input id="offer" value={offer} onChange={(event) => setOffer(event.target.value)} placeholder="Custom branded paper cups" />
-          </Field>
-          <Field>
-            <Label htmlFor="audience">Who do you want to sell to?</Label>
-            <Input id="audience" value={audience} onChange={(event) => setAudience(event.target.value)} placeholder="Cafés, restaurants, cloud kitchens" />
-          </Field>
-          <Field>
-            <Label htmlFor="location">Where?</Label>
-            <div className="relative">
-              <MapPin className="pointer-events-none absolute top-2 left-2.5 size-3.5 text-foreground-muted" />
-              <Input id="location" className="pl-8" value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Delhi NCR" />
-            </div>
-          </Field>
-          <Field>
-            <Label>Radius</Label>
-            <Select value={radius} onValueChange={setRadius}>
-              <SelectTrigger>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-xs text-foreground-muted">
+            <span>Up to</span>
+            <Select value={limit} onValueChange={setLimit}>
+              <SelectTrigger className="h-7 w-20" aria-label="Maximum results">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {["5", "10", "25", "50", "100"].map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {value} km
-                  </SelectItem>
-                ))}
+                {[10, 20, 40, 60, 100, 150, 250]
+                  .filter((value) => value <= defaults.maxResults)
+                  .map((value) => (
+                    <SelectItem key={value} value={String(value)}>
+                      {value}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
-          </Field>
+            <span>results · each new lead uses one lead credit</span>
+          </div>
+          <Button type="submit" variant="primary" size="lg" loading={busy} className="relative overflow-hidden px-5 shadow-[var(--brand-glow)]">
+            <Telescope /> Find leads
+            <span aria-hidden className="absolute inset-y-0 left-0 w-10 bg-white/25 blur-md" style={{ animation: "sheen 3.2s ease-in-out infinite" }} />
+          </Button>
         </div>
-      ) : (
-        <Field>
-          <Label htmlFor="description">What are you looking for?</Label>
-          <Textarea
-            id="description"
-            rows={3}
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            placeholder="Find cafés in South Delhi with 2+ locations that may need custom branded paper cups"
-          />
-        </Field>
-      )}
+      </form>
+    </motion.section>
+  );
+}
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs text-foreground-muted">
-          <span>Up to</span>
-          <Select value={limit} onValueChange={setLimit}>
-            <SelectTrigger className="h-7 w-20">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[10, 20, 40, 60, 100, 150, 250]
-                .filter((value) => value <= defaults.maxResults)
-                .map((value) => (
-                  <SelectItem key={value} value={String(value)}>
-                    {value}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-          <span>results · each new lead uses one lead credit</span>
-        </div>
-        <Button type="submit" variant="primary" size="lg" loading={busy}>
-          <Telescope /> Find leads
-        </Button>
-      </div>
-    </form>
+// ----------------------------------------------------------------------------- Before the first search
+
+const HOW = [
+  { icon: Wand2, title: "Understand", body: "Your words become categories, places and signals you can check." },
+  { icon: Telescope, title: "Search", body: "Approved sources are searched and duplicates removed." },
+  { icon: Sparkles, title: "Enrich", body: "Websites and public profiles fill in contacts and signals." },
+  { icon: Star, title: "Score", body: "Each lead is scored against your ideal customer, with reasons." },
+];
+
+function StartHere({ ideas, onPick }: { ideas: SearchIdea[]; onPick: (idea: SearchIdea) => void }) {
+  return (
+    <div className="grid gap-5">
+      {ideas.length ? (
+        <section>
+          <p className="mb-3 flex items-center gap-1.5 text-[13px] font-semibold">
+            <Lightbulb className="size-4 text-brand-2" /> Ideas from your ideal customer profile
+          </p>
+          <Stagger step={0.05} className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+            {ideas.map((idea) => (
+              <StaggerItem key={`${idea.audience}-${idea.location}`}>
+                <button type="button" onClick={() => onPick(idea)} className="group lift flex h-full w-full items-start gap-3 rounded-xl border border-border bg-surface p-3.5 text-left shadow-xs transition-colors hover:border-border-strong">
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent-soft-foreground">
+                    <Building2 className="size-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13.5px] font-medium">{idea.audience}</span>
+                    <span className="flex items-center gap-1 text-[12px] text-foreground-muted">
+                      <MapPin className="size-3" /> {idea.location}
+                    </span>
+                    {idea.offer ? <span className="mt-1 block truncate text-[11.5px] text-foreground-subtle">for {idea.offer}</span> : null}
+                  </span>
+                  <ArrowRight className="mt-1 size-4 shrink-0 text-foreground-subtle transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
+                </button>
+              </StaggerItem>
+            ))}
+          </Stagger>
+        </section>
+      ) : null}
+      <section className="rounded-xl border border-dashed border-border-strong p-5">
+        <p className="text-[13px] font-semibold">How discovery works</p>
+        <ol className="relative mt-4 grid gap-4 sm:grid-cols-4">
+          <motion.span aria-hidden initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.3, duration: 1, ease: EASE_OUT }} className="bg-brand-gradient absolute top-4 right-[12%] left-[12%] hidden h-px origin-left sm:block" />
+          {HOW.map((step, index) => (
+            <motion.li key={step.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + index * 0.12 }} className="relative text-center">
+              <span className="relative mx-auto flex size-8 items-center justify-center rounded-full border border-border bg-surface shadow-sm">
+                <step.icon className="size-4 text-brand-1" />
+              </span>
+              <p className="mt-2 text-[13px] font-semibold">{step.title}</p>
+              <p className="mt-0.5 text-[12px] leading-snug text-foreground-muted">{step.body}</p>
+            </motion.li>
+          ))}
+        </ol>
+        <p className="mt-5 flex items-center justify-center gap-1.5 text-[12px] text-foreground-muted">
+          <ShieldCheck className="size-3.5 text-good" /> Nothing is contacted until you add leads to a campaign.
+        </p>
+      </section>
+    </div>
+  );
+}
+
+function RadarPulse() {
+  const reduce = useReducedMotion();
+  return (
+    <span aria-hidden className="relative flex size-10 shrink-0 items-center justify-center">
+      {reduce ? null : [0, 0.6, 1.2].map((delay) => <span key={delay} className="absolute inset-0 rounded-full border border-brand-1/40" style={{ animation: `pulse-ring 1.8s ease-out ${delay}s infinite` }} />)}
+      <span className="bg-brand-gradient relative flex size-7 items-center justify-center rounded-full text-white shadow-[var(--brand-glow)]">
+        <Radar className="size-3.5" />
+      </span>
+    </span>
   );
 }
 
@@ -276,42 +380,62 @@ function RunProgress({ run }: { run: Run }) {
     { label: "Contactable", value: run.stats.contactable, hint: "Email or phone available" },
   ];
   const active = run.status === "PENDING" || run.status === "RUNNING";
+  const progress = run.status === "COMPLETED" ? 100 : Math.max(0, current) * (100 / (STAGES.length - 1));
   return (
     <div className="grid gap-3">
-      <ol className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg border border-border bg-surface px-4 py-3">
-        {STAGES.map((stage, index) => {
-          const done = index < current || run.status === "COMPLETED";
-          const inProgress = index === current && active;
-          return (
-            <li key={stage.key} className={cn("flex items-center gap-2 text-[13px]", !done && !inProgress && "text-foreground-subtle")}>
-              {done ? (
-                <span className="flex size-4 items-center justify-center rounded-full bg-good text-white">
-                  <Check className="size-2.5" strokeWidth={3} />
-                </span>
-              ) : inProgress ? (
-                <Loader2 className="size-4 animate-spin text-accent" />
-              ) : (
-                <span className="size-4 rounded-full border border-border-strong" />
-              )}
-              <span className={cn(inProgress && "font-medium text-foreground")}>
-                {stage.label}
-                {inProgress ? "…" : ""}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
+      <div className="rounded-xl border border-border bg-surface px-4 py-3.5 shadow-xs">
+        <div className="flex items-center gap-3">
+          {active ? <RadarPulse /> : null}
+          <ol className="flex flex-1 flex-wrap items-center gap-x-5 gap-y-2">
+            {STAGES.map((stage, index) => {
+              const done = index < current || run.status === "COMPLETED";
+              const inProgress = index === current && active;
+              return (
+                <li key={stage.key} className={cn("flex items-center gap-2 text-[13px]", !done && !inProgress && "text-foreground-subtle")}>
+                  {done ? (
+                    <motion.span initial={{ scale: 0.4 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 20 }} className="flex size-4 items-center justify-center rounded-full bg-good text-white">
+                      <Check className="size-2.5" strokeWidth={3} />
+                    </motion.span>
+                  ) : inProgress ? (
+                    <Loader2 className="size-4 animate-spin text-accent" />
+                  ) : (
+                    <span className="size-4 rounded-full border border-border-strong" />
+                  )}
+                  <span className={cn(inProgress && "font-medium text-foreground")}>
+                    {stage.label}
+                    {inProgress ? "…" : ""}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+        <div className="mt-3 h-1 overflow-hidden rounded-full bg-surface-sunken">
+          <motion.div className="bg-brand-gradient h-full rounded-full" initial={false} animate={{ width: `${progress}%` }} transition={{ duration: 0.6, ease: EASE_OUT }} />
+        </div>
+      </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {tiles.map((tile) => (
-          <div key={tile.label} className="rounded-lg border border-border bg-surface px-4 py-3">
+          <div key={tile.label} className="lift rounded-xl border border-border bg-surface px-4 py-3 shadow-xs">
             <p className="text-xs text-foreground-muted">{tile.label}</p>
-            <p className="mt-1 text-[22px] leading-none font-semibold tabular transition-all">{formatNumber(tile.value)}</p>
+            <p className="mt-1 text-[24px] leading-none font-semibold tracking-[-0.02em] tabular">
+              <AnimatedNumber value={tile.value} duration={0.6} />
+            </p>
             {tile.hint ? <p className="mt-1 text-[11px] text-foreground-subtle">{tile.hint}</p> : null}
           </div>
         ))}
       </div>
       {run.stats.creditsExhausted ? (
-        <Callout tone="warning" icon={AlertTriangle} title="Lead credits ran out" action={<Button asChild size="sm"><Link href="/app/billing">View plan</Link></Button>}>
+        <Callout
+          tone="warning"
+          icon={AlertTriangle}
+          title="Lead credits ran out"
+          action={
+            <Button asChild size="sm">
+              <Link href="/app/billing">View plan</Link>
+            </Button>
+          }
+        >
           Some businesses weren&apos;t saved because your plan&apos;s lead credits for this period are used up.
         </Callout>
       ) : null}
@@ -327,8 +451,8 @@ function RunProgress({ run }: { run: Run }) {
 function CriteriaSummary({ run, interpretation }: { run: Run; interpretation: string | null }) {
   const criteria = run.criteria;
   return (
-    <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-dashed border-border-strong px-3 py-2.5 text-[13px]">
-      <Wand2 className="mr-1 size-3.5 text-foreground-muted" />
+    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap items-center gap-1.5 rounded-xl border border-dashed border-border-strong bg-surface/60 px-3 py-2.5 text-[13px]">
+      <Wand2 className="mr-1 size-3.5 text-brand-1" />
       <span className="mr-1 text-foreground-muted">{interpretation ?? "Understood as"}</span>
       {criteria.categories.map((category) => (
         <Badge key={category} tone="accent">
@@ -348,7 +472,7 @@ function CriteriaSummary({ run, interpretation }: { run: Run; interpretation: st
       {criteria.criteria ? <Badge tone="outline">{criteria.criteria}</Badge> : null}
       {criteria.offer ? <Badge tone="outline">Offer: {criteria.offer}</Badge> : null}
       <span className="ml-auto text-[11px] text-foreground-subtle">Source: {run.providers.map((p) => (p === "mock" ? "demo data (simulated)" : p)).join(", ")}</span>
-    </div>
+    </motion.div>
   );
 }
 
@@ -361,11 +485,7 @@ function ResultsTable({ results, selected, onToggle, onToggleAll, scoring }: { r
       <TableHeader>
         <TableRow className="hover:bg-transparent">
           <TableHead className="w-9">
-            <Checkbox
-              aria-label="Select all results"
-              checked={allSelected ? true : selected.size ? "indeterminate" : false}
-              onCheckedChange={onToggleAll}
-            />
+            <Checkbox aria-label="Select all results" checked={allSelected ? true : selected.size ? "indeterminate" : false} onCheckedChange={onToggleAll} />
           </TableHead>
           <TableHead className="w-14">Score</TableHead>
           <TableHead>Business</TableHead>
@@ -376,32 +496,22 @@ function ResultsTable({ results, selected, onToggle, onToggleAll, scoring }: { r
         </TableRow>
       </TableHeader>
       <TableBody>
-        {results.map((lead) => (
-          <TableRow key={lead.id} data-state={selected.has(lead.id) ? "selected" : undefined} className="animate-fade-in">
+        {results.map((lead, index) => (
+          <TableRow key={lead.id} data-state={selected.has(lead.id) ? "selected" : undefined} className="animate-rise" style={{ animationDelay: `${Math.min(index, 20) * 35}ms` }}>
             <TableCell>
               <Checkbox aria-label={`Select ${lead.name}`} checked={selected.has(lead.id)} onCheckedChange={() => onToggle(lead.id)} />
             </TableCell>
-            <TableCell>
-              {lead.score === null && scoring ? <Loader2 className="size-4 animate-spin text-foreground-muted" /> : <ScoreIndicator score={lead.score} />}
-            </TableCell>
+            <TableCell>{lead.score === null && scoring ? <Loader2 className="size-4 animate-spin text-foreground-muted" /> : <ScoreIndicator score={lead.score} />}</TableCell>
             <TableCell className="max-w-[260px]">
               <Link href={`/app/leads/${lead.id}`} className="block truncate font-medium hover:underline">
                 {lead.name}
               </Link>
               <p className="truncate text-xs text-foreground-muted">
-                {[lead.category ? humanCategory(lead.category) : null, lead.locality ?? lead.city, lead.reviewCount ? `${lead.rating ?? "–"}★ · ${lead.reviewCount} reviews` : null]
-                  .filter(Boolean)
-                  .join(" · ")}
+                {[lead.category ? humanCategory(lead.category) : null, lead.locality ?? lead.city, lead.reviewCount ? `${lead.rating ?? "–"}★ · ${lead.reviewCount} reviews` : null].filter(Boolean).join(" · ")}
                 {!lead.isNew ? " · already in leads" : ""}
               </p>
             </TableCell>
-            <TableCell className="hidden max-w-[320px] lg:table-cell">
-              {lead.enrichmentStatus === "PENDING" || lead.enrichmentStatus === "ENRICHING" ? (
-                <Skeleton className="h-4 w-40" />
-              ) : (
-                <SignalBadges signals={lead.signals ?? []} />
-              )}
-            </TableCell>
+            <TableCell className="hidden max-w-[320px] lg:table-cell">{lead.enrichmentStatus === "PENDING" || lead.enrichmentStatus === "ENRICHING" ? <Skeleton className="h-4 w-40" /> : <SignalBadges signals={lead.signals ?? []} />}</TableCell>
             <TableCell>
               <ContactIndicators email={lead.email ?? lead.contacts.find((c) => c.email)?.email} phone={lead.phone ?? lead.contacts.find((c) => c.phone)?.phone} />
             </TableCell>
@@ -420,13 +530,24 @@ function ResultsTable({ results, selected, onToggle, onToggleAll, scoring }: { r
 
 // ----------------------------------------------------------------------------- History sidebar
 
+/** Consecutive runs of the same search collapse into one entry (the latest) with a count. */
+function groupRuns(runs: Run[]): Array<{ run: Run; repeats: number }> {
+  const groups: Array<{ run: Run; repeats: number }> = [];
+  for (const run of runs) {
+    const last = groups[groups.length - 1];
+    if (last && last.run.query.trim().toLowerCase() === run.query.trim().toLowerCase()) last.repeats += 1;
+    else groups.push({ run, repeats: 1 });
+  }
+  return groups;
+}
+
 function RunHistory({ activeId, onSelect }: { activeId: string | null; onSelect: (id: string) => void }) {
   const runs = useQuery({ queryKey: ["discovery-runs"], queryFn: () => api<Run[]>("/api/v1/discovery?limit=12"), refetchInterval: 15_000 });
   const saved = useQuery({ queryKey: ["saved-searches"], queryFn: () => api<Array<{ id: string; name: string; query: string }>>("/api/v1/saved-searches") });
   return (
-    <aside className="grid content-start gap-5">
-      <div>
-        <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-foreground-muted">
+    <aside className="grid content-start gap-5 xl:sticky xl:top-20">
+      <div className="rounded-xl border border-border bg-surface p-3 shadow-xs">
+        <p className="mb-2 flex items-center gap-1.5 px-1 text-xs font-medium text-foreground-muted">
           <Bookmark className="size-3.5" /> Saved searches
         </p>
         {saved.data?.length ? (
@@ -438,29 +559,25 @@ function RunHistory({ activeId, onSelect }: { activeId: string | null; onSelect:
             ))}
           </ul>
         ) : (
-          <p className="text-xs text-foreground-subtle">Save a search to rerun it later.</p>
+          <p className="px-1 text-xs text-foreground-subtle">Save a search to rerun it later.</p>
         )}
       </div>
-      <div>
-        <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-foreground-muted">
+      <div className="rounded-xl border border-border bg-surface p-3 shadow-xs">
+        <p className="mb-2 flex items-center gap-1.5 px-1 text-xs font-medium text-foreground-muted">
           <History className="size-3.5" /> Recent runs
         </p>
         {runs.isLoading ? <Skeleton className="h-20" /> : null}
         <ul className="grid gap-0.5">
-          {(runs.data ?? []).map((run) => (
+          {groupRuns(runs.data ?? []).map(({ run, repeats }) => (
             <li key={run.id}>
-              <button
-                type="button"
-                onClick={() => onSelect(run.id)}
-                className={cn(
-                  "w-full rounded-md px-2 py-1.5 text-left transition-colors hover:bg-surface-muted",
-                  run.id === activeId && "bg-surface-muted",
-                )}
-              >
-                <span className="line-clamp-2 text-[13px] text-foreground-secondary">{run.query}</span>
+              <button type="button" onClick={() => onSelect(run.id)} className={cn("relative w-full rounded-md px-2 py-1.5 text-left transition-colors hover:bg-surface-muted", run.id === activeId && "bg-surface-muted")}>
+                {run.id === activeId ? <span className="bg-brand-gradient absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded-full" /> : null}
+                <span className="line-clamp-2 text-[13px] text-foreground-secondary">
+                  {run.query}
+                  {repeats > 1 ? <span className="ml-1.5 rounded-sm bg-surface-sunken px-1 text-[10.5px] font-medium text-foreground-muted">×{repeats}</span> : null}
+                </span>
                 <span className="mt-0.5 block text-[11px] text-foreground-subtle">
-                  {run.status === "COMPLETED" ? `${run.stats.new ?? 0} new · ${run.stats.highFit ?? 0} high-fit` : run.status.toLowerCase()} ·{" "}
-                  {formatDistanceToNowStrict(new Date(run.createdAt), { addSuffix: true })}
+                  {run.status === "COMPLETED" ? `${run.stats.new ?? 0} new · ${run.stats.highFit ?? 0} high-fit` : run.status.toLowerCase()} · {formatDistanceToNowStrict(new Date(run.createdAt), { addSuffix: true })}
                 </span>
               </button>
             </li>
@@ -473,7 +590,7 @@ function RunHistory({ activeId, onSelect }: { activeId: string | null; onSelect:
 
 // ----------------------------------------------------------------------------- Page
 
-export function DiscoverView({ defaults }: { defaults: DiscoverDefaults }) {
+export function DiscoverView({ defaults, ideas = [] }: { defaults: DiscoverDefaults; ideas?: SearchIdea[] }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -481,6 +598,8 @@ export function DiscoverView({ defaults }: { defaults: DiscoverDefaults }) {
   const runId = params.get("run");
   const [interpretation, setInterpretation] = React.useState<string | null>(null);
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
+  // Picking an idea re-mounts the form with those values filled in.
+  const [preset, setPreset] = React.useState<{ key: number; values: DiscoverDefaults } | null>(null);
 
   const setRun = React.useCallback(
     (id: string | null) => {
@@ -554,25 +673,26 @@ export function DiscoverView({ defaults }: { defaults: DiscoverDefaults }) {
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_260px]">
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
       <div className="grid min-w-0 content-start gap-5">
-        <SearchForm defaults={defaults} onSearch={(input) => start.mutate(input)} busy={start.isPending} />
+        <SearchForm key={preset?.key ?? 0} defaults={preset?.values ?? defaults} onSearch={(input) => start.mutate(input)} busy={start.isPending} />
 
         {!runId ? (
-          <div className="rounded-xl border border-dashed border-border-strong">
-            <EmptyState
-              icon={Sparkles}
-              title="Describe your ideal buyers and we'll find them"
-              description="Every result shows where it came from, why it was selected and how it was scored. Nothing is contacted until you add leads to a campaign."
-            />
-          </div>
+          <StartHere
+            ideas={ideas}
+            onPick={(idea) => {
+              setPreset((current) => ({ key: (current?.key ?? 0) + 1, values: { ...defaults, audience: idea.audience, location: idea.location, offer: idea.offer || defaults.offer } }));
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              toast.success("Search filled in", { description: "Check the details, then press Find leads." });
+            }}
+          />
         ) : runQuery.isLoading ? (
-          <Skeleton className="h-40" />
+          <Skeleton className="h-40 rounded-xl" />
         ) : data ? (
           <>
             <CriteriaSummary run={data.run} interpretation={interpretation} />
             <RunProgress run={data.run} />
-            <section className="rounded-lg border border-border bg-surface shadow-xs">
+            <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
               <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2.5">
                 <div className="flex items-center gap-2 text-[13px]">
                   <span className="font-semibold">Results</span>
@@ -604,12 +724,7 @@ export function DiscoverView({ defaults }: { defaults: DiscoverDefaults }) {
                     ))}
                   </div>
                 ) : (
-                  <EmptyState
-                    compact
-                    icon={Telescope}
-                    title="No businesses matched"
-                    description="Try a broader area, a larger radius or different business types."
-                  />
+                  <EmptyState compact icon={Telescope} title="No businesses matched" description="Try a broader area, a larger radius or different business types." />
                 )
               ) : (
                 <ResultsTable

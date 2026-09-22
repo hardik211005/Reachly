@@ -2095,3 +2095,40 @@ model Event {
   @@index([campaignId, type, occurredAt])
   @@map("events")
 }
+
+// -----------------------------------------------------------------------------
+// Public website
+
+enum ContactTopic {
+  SALES
+  SUPPORT
+  PARTNERSHIP
+  PRESS
+  OTHER
+}
+
+enum ContactRequestStatus {
+  NEW
+  HANDLED
+  SPAM
+}
+
+/// A message sent through the public contact form. Not tenant-scoped.
+model ContactRequest {
+  id        String               @id @default(uuid()) @db.Uuid
+  name      String
+  email     String
+  company   String?
+  topic     ContactTopic
+  message   String
+  /// Page the visitor came from, e.g. /pricing.
+  source    String?
+  /// SHA-256 of the sender's IP, for abuse limits — never the IP itself.
+  ipHash    String?
+  status    ContactRequestStatus @default(NEW)
+  createdAt DateTime             @default(now())
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([email])
+  @@map("contact_requests")
+}

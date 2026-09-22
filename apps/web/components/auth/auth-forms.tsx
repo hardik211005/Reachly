@@ -142,13 +142,16 @@ const signupSchema = z.object({
 
 export function SignupForm({ googleEnabled, requireVerification }: { googleEnabled: boolean; requireVerification: boolean }) {
   const router = useRouter();
+  const params = useSearchParams();
+  // Invitations send people here with ?next=/invite/… and their address prefilled.
+  const next = safeNext(params.get("next"), "/onboarding");
   const [error, setError] = React.useState<string | null>(null);
   const [sentTo, setSentTo] = React.useState<string | null>(null);
-  const form = useForm<z.infer<typeof signupSchema>>({ resolver: zodResolver(signupSchema), defaultValues: { name: "", email: "", password: "" } });
+  const form = useForm<z.infer<typeof signupSchema>>({ resolver: zodResolver(signupSchema), defaultValues: { name: "", email: params.get("email") ?? "", password: "" } });
 
   const onSubmit = form.handleSubmit(async (values) => {
     setError(null);
-    const { error: signUpError } = await authClient.signUp.email({ ...values, callbackURL: "/onboarding" });
+    const { error: signUpError } = await authClient.signUp.email({ ...values, callbackURL: next });
     if (signUpError) {
       setError(signUpError.message ?? "Could not create your account");
       return;
@@ -157,7 +160,7 @@ export function SignupForm({ googleEnabled, requireVerification }: { googleEnabl
       setSentTo(values.email);
       return;
     }
-    router.push("/onboarding");
+    router.push(next);
     router.refresh();
   });
 

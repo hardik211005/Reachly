@@ -3,8 +3,7 @@ import { getCategory } from "@repo/config/taxonomy";
 import { resolvePlan } from "@repo/core/billing/plans";
 import { readIcp } from "@repo/core/business/service";
 import { campaignTargetSchema } from "@repo/core/campaigns/schemas";
-import { PageHeader } from "@repo/ui";
-import { DiscoverView, type DiscoverDefaults } from "@/components/discover/discover-view";
+import { DiscoverView, type DiscoverDefaults, type SearchIdea } from "@/components/discover/discover-view";
 import { PageContainer } from "@/components/page";
 import { requireWorkspace } from "@/lib/session";
 
@@ -36,14 +35,20 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Pro
     maxResults: plan.limits.resources.discoveryResultsPerSearch,
   };
 
+  // Ready-made searches from the ideal customer profile: each category paired with a location and an offer.
+  const ideaCategories = icp?.targetCategories.slice(0, 6) ?? [];
+  const ideaLocations = icp?.recommendedLocations.length ? icp.recommendedLocations : profile?.city ? [profile.city] : [];
+  const ideas: SearchIdea[] = ideaLocations.length
+    ? ideaCategories.map((category, index) => ({
+        audience: labelFor(category),
+        location: ideaLocations[index % ideaLocations.length]!,
+        offer: offerings[index % Math.max(1, offerings.length)]?.name ?? defaults.offer,
+      }))
+    : [];
+
   return (
     <PageContainer wide>
-      <PageHeader
-        title="Find potential customers"
-        description="Tell us what you sell and who buys it. We search approved data sources, enrich every business, and score it against your ideal customer profile."
-        className="mb-6"
-      />
-      <DiscoverView defaults={defaults} />
+      <DiscoverView defaults={defaults} ideas={ideas} />
     </PageContainer>
   );
 }

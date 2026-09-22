@@ -27,6 +27,7 @@ const LABELS: Partial<Record<IntegrationCategory, string>> = {
   PAYMENTS: "Billing",
   AUTOMATION: "n8n automation",
   STORAGE: "File storage",
+  NOTIFICATION: "Team notifications",
 };
 
 function platformProvider(category: IntegrationCategory): string | null {
@@ -52,6 +53,8 @@ function platformProvider(category: IntegrationCategory): string | null {
       return null;
     case "PAYMENTS":
       return env.STRIPE_SECRET_KEY ? "stripe" : null;
+    case "NOTIFICATION":
+      return env.SLACK_WEBHOOK_URL ? "slack" : null;
     case "AUTOMATION":
       return env.N8N_URL && env.N8N_API_KEY ? "n8n" : null;
     case "STORAGE":
@@ -67,7 +70,8 @@ const MOCKABLE: ReadonlySet<IntegrationCategory> = new Set(["AI", "LEAD_DATA", "
 
 export async function getProviderStatuses(ctx: TenantContext): Promise<ProviderStatus[]> {
   const env = getEnv();
-  const connected = await ctx.db.integration.findMany({ where: { status: "CONNECTED" }, select: { category: true, provider: true } });
+  // Later entries win in the map below, so the default (then most recent) connection is last.
+  const connected = await ctx.db.integration.findMany({ where: { status: "CONNECTED" }, select: { category: true, provider: true }, orderBy: [{ isDefault: "asc" }, { updatedAt: "asc" }] });
   const byCategory = new Map(connected.map((integration) => [integration.category, integration.provider]));
 
   return (Object.keys(LABELS) as IntegrationCategory[]).map((category) => {

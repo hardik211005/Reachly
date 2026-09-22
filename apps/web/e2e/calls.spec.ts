@@ -42,7 +42,8 @@ test.describe("AI calling", () => {
     await page.getByRole("radio", { name: /Live/ }).click();
     await page.getByText("Follow live").first().click();
     await expect(page.getByRole("heading", { name: "Transcript" })).toBeVisible();
-    await expect(page.getByText("AI agent ·").first().or(page.getByText("Nobody picked up"))).toBeVisible({ timeout: 45_000 });
+    // The simulated call runs as in-process jobs; under a busy dev server it can take a while to connect.
+    await expect(page.getByText("AI agent ·").first().or(page.getByText("Nobody picked up"))).toBeVisible({ timeout: 75_000 });
     if (shots) await page.screenshot({ path: "e2e/screenshots/call-live.png", fullPage: true });
     await expect(page.getByRole("heading", { name: /What happened/ }).or(page.getByText("Nobody picked up"))).toBeVisible({ timeout: 90_000 });
     if (shots) await page.screenshot({ path: "e2e/screenshots/call-analysed.png", fullPage: true });

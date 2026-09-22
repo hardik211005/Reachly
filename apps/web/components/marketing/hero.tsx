@@ -172,7 +172,7 @@ export function Hero() {
       <div aria-hidden className="bg-grid absolute inset-0 -z-10 opacity-50 [mask-image:radial-gradient(ellipse_60%_55%_at_50%_30%,black,transparent)]" />
       <div className="mx-auto grid max-w-6xl items-center gap-16 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
         <motion.div initial="hidden" animate="show" variants={{ hidden: {}, show: { transition: { staggerChildren: 0.08 } } }}>
-          <motion.a variants={word} href="#how" className="border-gradient inline-flex items-center gap-2 rounded-full bg-surface/70 px-3 py-1 text-xs font-medium text-foreground-secondary backdrop-blur">
+          <motion.a variants={word} href="/product" className="border-gradient inline-flex items-center gap-2 rounded-full bg-surface/70 px-3 py-1 text-xs font-medium text-foreground-secondary backdrop-blur">
             <Sparkles className="size-3.5 text-brand-2" /> Discovery → outreach → AI calls → CRM<span className="hidden sm:inline">, in one place</span> <ArrowRight className="size-3" />
           </motion.a>
           <h1 className="mt-6 text-[44px] leading-[1.02] font-semibold tracking-[-0.04em] text-balance sm:text-[60px]">
