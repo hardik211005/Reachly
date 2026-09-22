@@ -31,6 +31,7 @@ import {
   formatNumber,
   toast,
 } from "@repo/ui";
+import { PageHero } from "../page-hero";
 import { api, apiWithMeta, errorMessage } from "@/lib/api-client";
 import { useCanManage, useCanWrite } from "../shell/shell-context";
 import { RelativeTime } from "../time";
@@ -609,17 +610,18 @@ export function WorkflowsView({ plan }: { plan: { workflows: boolean; outboundWe
 
   return (
     <div className="grid gap-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-[-0.01em]">Workflows</h1>
-          <p className="mt-1 max-w-2xl text-[13px] text-foreground-muted">Automations that react to replies, calls and new leads — built on the same rules as everything else, with every run logged step by step.</p>
-        </div>
-        {canWrite && plan.workflows ? (
-          <Button size="sm" variant="primary" onClick={() => create.mutate(undefined)} disabled={creating !== null}>
-            <Plus /> New workflow
-          </Button>
-        ) : null}
-      </div>
+      <PageHero
+        title="Workflows"
+        highlight="Workflows"
+        description="Automations that react to replies, calls and new leads — built on the same rules as everything else, with every run logged step by step."
+        actions={
+          canWrite && plan.workflows ? (
+            <Button size="sm" variant="primary" onClick={() => create.mutate(undefined)} disabled={creating !== null}>
+              <Plus /> New workflow
+            </Button>
+          ) : null
+        }
+      />
       {!plan.workflows ? (
         <Callout tone="accent" icon={Lock} action={<Link href="/app/billing" className="text-xs font-medium text-accent hover:underline">View plans</Link>}>
           Workflows aren’t included in the {plan.name} plan. You can browse templates; activating automations needs Pro or Scale.

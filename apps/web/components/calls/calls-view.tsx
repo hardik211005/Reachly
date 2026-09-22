@@ -20,6 +20,7 @@ import {
   cn,
   formatNumber,
 } from "@repo/ui";
+import { PageHero } from "../page-hero";
 import { api, apiWithMeta, errorMessage } from "@/lib/api-client";
 import { formatDay } from "../dashboard/format";
 import { useCanManage, useCanWrite } from "../shell/shell-context";
@@ -257,12 +258,12 @@ export function CallsView({ initialReadiness }: { initialReadiness: CallReadines
 
   return (
     <div className="grid gap-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-[-0.01em]">Calls</h1>
-          <p className="mt-1 max-w-2xl text-[13px] text-foreground-muted">AI voice agent and manual calls: a brief before, a live transcript during, and an outcome with follow-ups after.</p>
-        </div>
-        <div className="flex items-center gap-2">
+      <PageHero
+        title="Calls"
+        highlight="Calls"
+        description="AI voice agent and manual calls: a brief before, a live transcript during, and an outcome with follow-ups after."
+        actions={
+        <>
           {canManage ? (
             <Button size="sm" variant="secondary" onClick={() => setSetupOpen(true)}>
               <Settings2 /> Calling setup
@@ -273,8 +274,9 @@ export function CallsView({ initialReadiness }: { initialReadiness: CallReadines
               <Plus /> New call
             </Button>
           ) : null}
-        </div>
-      </div>
+        </>
+        }
+      />
 
       <Readiness readiness={readiness.data} onSetup={canManage ? () => setSetupOpen(true) : null} />
 

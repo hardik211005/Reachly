@@ -10,7 +10,7 @@ import { AnimatedNumber, Aurora, Button, ErrorState, Input, Select, SelectConten
 import { api, errorMessage } from "@/lib/api-client";
 import { CatalogTab } from "../crm/catalog-tab";
 import { TagInput } from "../forms/tag-input";
-import { IcpEditor } from "../onboarding/onboarding-wizard";
+import { IcpEditor } from "../onboarding/icp-editor";
 import { useCanManage } from "../shell/shell-context";
 import { ReadOnlyNotice, Row, SaveBar, Section } from "./kit";
 

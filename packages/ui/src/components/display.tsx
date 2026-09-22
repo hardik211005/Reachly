@@ -1,7 +1,7 @@
 import * as React from "react";
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, Minus, RefreshCw, Sparkles } from "lucide-react";
 import { cn, formatNumber } from "../lib/utils";
-import { AnimatedNumber } from "../motion";
+import { AnimatedNumber, Aurora } from "../motion";
 import { Button } from "./button";
 
 // ----------------------------------------------------------------------------- PageHeader
@@ -19,15 +19,20 @@ export function PageHeader({
   eyebrow?: React.ReactNode;
   className?: string;
 }) {
+  // A banner with the brand glow, matching the animated page heroes across the app.
   return (
-    <div className={cn("flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between", className)}>
-      <div className="min-w-0">
-        {eyebrow ? <div className="mb-1 text-xs text-foreground-muted">{eyebrow}</div> : null}
-        <h1 className="truncate text-xl font-semibold tracking-[-0.01em] text-foreground">{title}</h1>
-        {description ? <p className="mt-1 max-w-2xl text-[13px] text-foreground-muted">{description}</p> : null}
+    <section className={cn("relative isolate animate-rise overflow-hidden rounded-xl border border-border bg-surface px-5 py-5 shadow-xs sm:px-6", className)}>
+      <Aurora intensity={0.8} className="-z-10" />
+      <div aria-hidden className="bg-grid absolute inset-0 -z-10 opacity-40 [mask-image:radial-gradient(ellipse_at_top_right,black,transparent_65%)]" />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          {eyebrow ? <div className="mb-1 text-xs font-medium tracking-wide text-foreground-muted uppercase">{eyebrow}</div> : null}
+          <h1 className="truncate text-[26px] leading-tight font-semibold tracking-[-0.03em] text-foreground">{typeof title === "string" ? <span className="text-gradient animate-gradient-pan">{title}</span> : title}</h1>
+          {description ? <p className="mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-foreground-secondary">{description}</p> : null}
+        </div>
+        {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
       </div>
-      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
-    </div>
+    </section>
   );
 }
 
