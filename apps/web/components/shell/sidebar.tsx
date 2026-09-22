@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Check, ChevronsUpDown, LogOut, Moon, PanelLeftClose, PanelLeftOpen, Plus, Sun, UserRound } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useQuery } from "@tanstack/react-query";
+import { motion } from "motion/react";
 import {
   Avatar,
   DropdownMenu,
@@ -50,18 +51,22 @@ function NavLink({ item, collapsed, onNavigate, count = 0 }: { item: NavItem; co
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group flex h-8 items-center gap-2.5 rounded-md px-2 text-[13px] font-medium transition-colors",
-        active ? "bg-surface-muted text-foreground" : "text-foreground-secondary hover:bg-surface-muted/70 hover:text-foreground",
+        "group relative flex h-8 items-center gap-2.5 rounded-md px-2 text-[13px] font-medium transition-colors",
+        active ? "text-foreground" : "text-foreground-secondary hover:bg-surface-muted/70 hover:text-foreground",
         collapsed && "justify-center px-0",
       )}
     >
+      {active ? (
+        // One indicator glides between items instead of each item lighting up on its own.
+        <motion.span layoutId="nav-active" aria-hidden className="absolute inset-0 -z-0 rounded-md bg-surface-muted shadow-xs ring-1 ring-border" transition={{ type: "spring", stiffness: 500, damping: 38 }} />
+      ) : null}
       <span className="relative">
         <item.icon className={cn("size-4 shrink-0", active ? "text-foreground" : "text-foreground-muted group-hover:text-foreground-secondary")} />
         {collapsed && count ? <span aria-hidden className="absolute -top-1 -right-1 size-2 rounded-full bg-accent ring-2 ring-background" /> : null}
       </span>
-      {collapsed ? <span className="sr-only">{label}</span> : <span className="truncate">{item.label}</span>}
+      {collapsed ? <span className="sr-only">{label}</span> : <span className="relative truncate">{item.label}</span>}
       {!collapsed && count ? (
-        <span className="ml-auto rounded-full bg-accent-soft px-1.5 text-[10.5px] leading-[18px] font-semibold text-accent-soft-foreground tabular" aria-label={`${count} need attention`}>
+        <span className="relative ml-auto rounded-full bg-accent-soft px-1.5 text-[10.5px] leading-[18px] font-semibold text-accent-soft-foreground tabular" aria-label={`${count} need attention`}>
           {count > 99 ? "99+" : count}
         </span>
       ) : null}

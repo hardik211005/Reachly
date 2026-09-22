@@ -12,6 +12,9 @@ import {
   EmptyState,
   FunnelChart,
   MetricCard,
+  Reveal,
+  Stagger,
+  StaggerItem,
   SERIES_COLORS,
   StatusBadge,
   Table,
@@ -85,23 +88,28 @@ export function OverviewView({ data, currency, insights }: { data: OverviewData;
 
   return (
     <div className="grid gap-4">
-      <section aria-label="Key metrics" className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        {data.kpis.map((kpi) => (
-          <MetricCard
-            key={kpi.key}
-            label={kpi.label}
-            value={formatKpi(kpi.value, kpi.format, currency)}
-            delta={{
-              value: kpi.delta,
-              upIsGood: kpi.upIsGood,
-              label: `vs previous ${data.range.days} days (${formatKpi(kpi.previous, kpi.format, currency)})`,
-            }}
-            hint={kpi.hint}
-          />
-        ))}
+      <section aria-label="Key metrics">
+        <Stagger step={0.04} delay={0.1} className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6 *:min-w-0">
+          {data.kpis.map((kpi) => (
+            <StaggerItem key={kpi.key}>
+              <MetricCard
+                label={kpi.label}
+                value={formatKpi(kpi.value, kpi.format, currency)}
+                numeric={{ value: kpi.value, format: (value) => formatKpi(value, kpi.format, currency) }}
+                delta={{
+                  value: kpi.delta,
+                  upIsGood: kpi.upIsGood,
+                  label: `vs previous ${data.range.days} days (${formatKpi(kpi.previous, kpi.format, currency)})`,
+                }}
+                hint={kpi.hint}
+                className="h-full"
+              />
+            </StaggerItem>
+          ))}
+        </Stagger>
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <Reveal className="grid gap-4 lg:grid-cols-3">
         <ChartCard
           className="lg:col-span-2"
           title="Outreach activity"
@@ -124,9 +132,9 @@ export function OverviewView({ data, currency, insights }: { data: OverviewData;
             <FunnelChart stages={data.funnel} />
           </div>
         </ChartCard>
-      </div>
+      </Reveal>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <Reveal className="grid gap-4 lg:grid-cols-3">
         <ChartCard
           title="Lead acquisition"
           description="New leads per day"
@@ -170,9 +178,9 @@ export function OverviewView({ data, currency, insights }: { data: OverviewData;
         >
           <BarChart data={data.scoreDistribution} categoryKey="bucket" series={[{ key: "count", label: "Leads", slot: 0 }]} />
         </ChartCard>
-      </div>
+      </Reveal>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <Reveal className="grid items-start gap-4 lg:grid-cols-3">
         <section className="rounded-lg border border-border bg-surface shadow-xs lg:col-span-2">
           <header className="flex items-center justify-between px-4 pt-3.5 pb-2">
             <div>
@@ -240,16 +248,20 @@ export function OverviewView({ data, currency, insights }: { data: OverviewData;
               />
             </div>
           ) : (
-            insights.map((insight) => (
-              <AIInsightCard
-                key={insight.id}
-                title={insight.title}
-                body={insight.body}
-                sentiment={insight.sentiment === "POSITIVE" ? "positive" : insight.sentiment === "NEGATIVE" ? "negative" : "neutral"}
-                comparison={insight.comparisonLabel ?? undefined}
-                confidence={insight.confidence}
-              />
-            ))
+            <Stagger inView step={0.08} className="grid gap-3">
+              {insights.map((insight) => (
+                <StaggerItem key={insight.id}>
+                  <AIInsightCard
+                    className="border-gradient border-transparent lift"
+                    title={insight.title}
+                    body={insight.body}
+                    sentiment={insight.sentiment === "POSITIVE" ? "positive" : insight.sentiment === "NEGATIVE" ? "negative" : "neutral"}
+                    comparison={insight.comparisonLabel ?? undefined}
+                    confidence={insight.confidence}
+                  />
+                </StaggerItem>
+              ))}
+            </Stagger>
           )}
           <Button asChild variant="secondary" size="sm" className="w-full">
             <Link href="/app/analytics">
@@ -257,7 +269,7 @@ export function OverviewView({ data, currency, insights }: { data: OverviewData;
             </Link>
           </Button>
         </section>
-      </div>
+      </Reveal>
     </div>
   );
 }

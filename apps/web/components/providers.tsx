@@ -3,7 +3,7 @@
 import * as React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider, useTheme } from "next-themes";
-import { Toaster, TooltipProvider } from "@repo/ui";
+import { MotionProvider, Toaster, TooltipProvider } from "@repo/ui";
 import { ApiError } from "@/lib/api-client";
 
 function ThemedToaster() {
@@ -32,7 +32,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider delayDuration={250}>
-          {children}
+          <MotionProvider>{children}</MotionProvider>
           <ThemedToaster />
         </TooltipProvider>
       </QueryClientProvider>

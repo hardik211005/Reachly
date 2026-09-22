@@ -79,6 +79,15 @@
   --shadow-md: 0 4px 16px -4px rgba(11, 11, 11, 0.1), 0 1px 3px rgba(11, 11, 11, 0.05);
   --shadow-lg: 0 16px 48px -12px rgba(11, 11, 11, 0.22), 0 2px 6px rgba(11, 11, 11, 0.06);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Brand aurora: the signature accent for hero, AI and celebration moments (never data) */
+  --brand-1: #5b5bf6;
+  --brand-2: #a855f7;
+  --brand-3: #1fb8e0;
+  --brand-gradient: linear-gradient(120deg, var(--brand-1) 0%, var(--brand-2) 50%, var(--brand-3) 100%);
+  --brand-glow: 0 0 0 1px rgba(91, 91, 246, 0.14), 0 12px 40px -12px rgba(91, 91, 246, 0.35);
+  --spotlight: rgba(91, 91, 246, 0.08);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -143,6 +152,12 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 16px -4px rgba(0, 0, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 16px 48px -12px rgba(0, 0, 0, 0.75), 0 2px 6px rgba(0, 0, 0, 0.4);
+
+  --brand-1: #8080ff;
+  --brand-2: #c084fc;
+  --brand-3: #3dd3f5;
+  --brand-glow: 0 0 0 1px rgba(128, 128, 255, 0.2), 0 12px 40px -12px rgba(128, 128, 255, 0.45);
+  --spotlight: rgba(128, 128, 255, 0.1);
 }
 
 @theme inline {
@@ -203,6 +218,15 @@
   --animate-slide-up: slide-up 200ms var(--ease-out);
   --animate-slide-in-right: slide-in-right 240ms var(--ease-out);
   --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-gradient-pan: gradient-pan 8s ease infinite;
+  --animate-pulse-ring: pulse-ring 2.4s var(--ease-out) infinite;
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-rise: rise 520ms var(--ease-out) both;
+  --animate-pop: pop 360ms var(--ease-spring) both;
+  --color-brand-1: var(--brand-1);
+  --color-brand-2: var(--brand-2);
+  --color-brand-3: var(--brand-3);
 
   @keyframes fade-in {
     from { opacity: 0; }
@@ -219,6 +243,114 @@
   @keyframes shimmer {
     from { background-position: -200% 0; }
     to { background-position: 200% 0; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  @keyframes gradient-pan {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  @keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand-1) 45%, transparent); }
+    100% { box-shadow: 0 0 0 10px transparent; }
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pop {
+    from { opacity: 0; transform: scale(0.92); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes aurora-a {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(8%, -6%) scale(1.1); }
+    66% { transform: translate(-6%, 4%) scale(0.95); }
+  }
+  @keyframes aurora-b {
+    0%, 100% { transform: translate(0, 0) scale(1.05); }
+    50% { transform: translate(-10%, 8%) scale(0.9); }
+  }
+  @keyframes marquee-down {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(250%); }
+  }
+  @keyframes sheen {
+    from { transform: translateX(-120%) skewX(-20deg); }
+    to { transform: translateX(220%) skewX(-20deg); }
+  }
+}
+
+/* ----------------------------------------------------------------------------- Brand utilities */
+
+@utility text-gradient {
+  background-image: var(--brand-gradient);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility bg-brand-gradient {
+  background-image: var(--brand-gradient);
+}
+
+/* 1px gradient border that follows the element radius. */
+@utility border-gradient {
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: var(--brand-gradient);
+    background-size: 200% 200%;
+    animation: gradient-pan 8s ease infinite;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+/* Soft light that follows the pointer (x/y set by SpotlightCard). */
+@utility spotlight {
+  position: relative;
+  isolation: isolate;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(360px circle at var(--x, 50%) var(--y, 0%), var(--spotlight), transparent 60%);
+    opacity: 0;
+    transition: opacity 300ms var(--ease-out);
+    pointer-events: none;
+  }
+  &:hover::after {
+    opacity: 1;
+  }
+}
+
+@utility bg-grid {
+  background-image: linear-gradient(var(--gridline) 1px, transparent 1px), linear-gradient(90deg, var(--gridline) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* Hover lift for interactive cards. */
+@utility lift {
+  transition: transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out), border-color 220ms var(--ease-out);
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
   }
 }
 

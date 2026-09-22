@@ -1,6 +1,6 @@
-import { formatCurrency, formatMicroUsd, formatNumber, formatPercent } from "@repo/ui";
+import { formatCurrency, formatNumber, formatPercent } from "@repo/ui";
 
-export type KpiFormat = "number" | "percent" | "currency" | "usd_micro";
+export type KpiFormat = "number" | "percent" | "currency" | "cost";
 
 export function formatKpi(value: number, format: KpiFormat, currency: string): string {
   switch (format) {
@@ -8,8 +8,8 @@ export function formatKpi(value: number, format: KpiFormat, currency: string): s
       return formatPercent(value);
     case "currency":
       return formatCurrency(value, currency, { compact: value >= 100_000 });
-    case "usd_micro":
-      return formatMicroUsd(value);
+    case "cost":
+      return formatCurrency(value, currency, { decimals: value < 1_000 ? 2 : 0 });
     default:
       return formatNumber(value);
   }

@@ -5,12 +5,14 @@ import { addLeadsToCampaign } from "../../src/campaigns/audience";
 import { launchCampaign } from "../../src/campaigns/lifecycle";
 import { createCampaign } from "../../src/campaigns/service";
 import { CallBlockedError, callReadiness } from "../../src/calls/policy";
-import { analyzeCall, appendTranscript, applyCallStatus, executeCallStart, logManualCall, prepareCall, startCall } from "../../src/calls/service";
+import { analyzeCall, appendTranscript, applyCallStatus, executeCallStart, listCalls, logManualCall, prepareCall, startCall } from "../../src/calls/service";
 import { ingestVoiceWebhook } from "../../src/calls/webhooks";
 import { updateCallingSettings } from "../../src/compliance/settings";
 import type { TenantContext } from "../../src/context";
 import { encryptJson } from "../../src/crypto";
 import { FeatureNotInPlanError, PreconditionError } from "../../src/errors";
+import { deleteLeads } from "../../src/leads/service";
+import { inboxSummary } from "../../src/outreach/inbox";
 import { prepareCampaignStep } from "../../src/outreach/sequence";
 import { processWebhookEvent } from "../../src/outreach/webhooks";
 import { createLead, createWorkspace, resetDatabase, setPlan } from "./helpers";
@@ -213,5 +215,19 @@ describe("AI calling", () => {
     const realCall = await prepareCall(ctx, { leadId: realLead.id, type: "AI_AGENT" });
     await expect(startCall(ctx, realCall.id, { confirm: true })).rejects.toBeInstanceOf(CallBlockedError);
     await expect(startCall(ctx, realCall.id, { confirm: true })).rejects.toMatchObject({ reason: "DND_UNVERIFIED" });
+  });
+
+  it("calls on deleted leads leave the call lists and the waiting count", async () => {
+    const { ctx } = await setup();
+    const kept = await prepareCall(ctx, { leadId: (await phoneLead(ctx, "Kept Cafe")).id, type: "AI_AGENT" });
+    const gone = await phoneLead(ctx, "Closed Cafe");
+    await prepareCall(ctx, { leadId: gone.id, type: "AI_AGENT" });
+    expect((await listCalls(ctx, { view: "queue" })).total).toBe(2);
+
+    await deleteLeads(ctx, [gone.id]);
+    const queue = await listCalls(ctx, { view: "queue" });
+    expect(queue.items.map((call) => call.id)).toEqual([kept.id]);
+    expect(queue.counts.queue).toBe(1);
+    expect((await inboxSummary(ctx)).callsWaiting).toBe(1);
   });
 });

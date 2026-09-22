@@ -16,3 +16,21 @@ export const CHANNEL_UNIT_COST_USD = {
 export const AI_CREDITS_PER_MESSAGE_ESTIMATE = 2;
 /** Assumed average AI call length in minutes (for estimates). */
 export const AVERAGE_CALL_MINUTES_ESTIMATE = 2.5;
+
+/**
+ * Approximate USD → currency rates for showing USD-priced costs (AI, channel estimates) in a
+ * workspace's currency. Estimates for analytics only — operators can tune them.
+ */
+export const USD_EXCHANGE_RATE: Record<string, number> = {
+  USD: 1,
+  INR: 83,
+  EUR: 0.92,
+  GBP: 0.79,
+  AED: 3.67,
+  SGD: 1.35,
+  AUD: 1.52,
+};
+
+export function usdTo(currency: string, amountUsd: number): number {
+  return amountUsd * (USD_EXCHANGE_RATE[currency] ?? 1);
+}

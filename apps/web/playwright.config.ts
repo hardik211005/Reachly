@@ -12,6 +12,8 @@ export default defineConfig({
   timeout: devServer ? 90_000 : 60_000,
   expect: { timeout: devServer ? 30_000 : 15_000 },
   fullyParallel: false,
+  // The dev server also runs background jobs in-process (inline queue); more workers starve them.
+  workers: devServer ? 2 : undefined,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : [["list"]],
   outputDir: "test-results",

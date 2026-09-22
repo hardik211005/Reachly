@@ -17,8 +17,15 @@ test.describe("AI calling", () => {
     if (shots) await page.screenshot({ path: "e2e/screenshots/call-detail.png", fullPage: true });
   });
 
-  test("an AI call runs live from the queue to an analysed outcome", async ({ page }) => {
+  test("an AI call runs live from the queue to an analysed outcome", async ({ page, request, baseURL }) => {
     test.setTimeout(150_000);
+    // Queue a call of our own so the test doesn't depend on seeded calls still waiting.
+    const headers = { origin: baseURL ?? "http://localhost:3000" };
+    const lead = await request.post("/api/v1/leads", { headers, data: { name: `E2E call ${Date.now().toString(36)}`, phone: `+9198${String(Date.now()).slice(-8)}`, city: "New Delhi", category: "cafe" } });
+    expect(lead.ok()).toBeTruthy();
+    const leadId = ((await lead.json()) as { data: { id: string } }).data.id;
+    expect((await request.post("/api/v1/calls", { headers, data: { leadId } })).ok()).toBeTruthy();
+
     await page.goto("/app/calls");
     await page.getByRole("radio", { name: /To call/ }).click();
     const start = page.getByRole("button", { name: "Start AI call" }).first();
@@ -39,12 +46,14 @@ test.describe("AI calling", () => {
     if (shots) await page.screenshot({ path: "e2e/screenshots/call-live.png", fullPage: true });
     await expect(page.getByRole("heading", { name: /What happened/ }).or(page.getByText("Nobody picked up"))).toBeVisible({ timeout: 90_000 });
     if (shots) await page.screenshot({ path: "e2e/screenshots/call-analysed.png", fullPage: true });
+    await request.delete(`/api/v1/leads/${leadId}`, { headers });
   });
 
   test("lead workspace lists calls", async ({ page }) => {
     await page.goto("/app/calls");
     await page.getByRole("radio", { name: /History/ }).click();
-    await page.locator("tbody tr a").first().click();
+    // Skip throwaway leads other tests create (and delete) while this one runs.
+    await page.locator("tbody tr", { hasNotText: "E2E" }).locator("a").first().click();
     await expect(page.getByRole("heading", { name: "Transcript" })).toBeVisible();
     await page.locator('main a[href^="/app/leads/"]').first().click();
     await page.getByRole("tab", { name: /Outreach/ }).click();

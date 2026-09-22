@@ -18,6 +18,7 @@ import {
   YAxis,
 } from "recharts";
 import { BarChart3, Table2 } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
 import { cn, formatNumber } from "../lib/utils";
 
 /**
@@ -54,6 +55,17 @@ function seriesColor(series: SeriesDef, index: number): string {
 }
 
 type ValueFormatter = (value: number) => string;
+
+/** Integer axes for counts; decimal ticks when any value is fractional (rates, money). */
+function allIntegers(data: Array<Record<string, unknown>>, keys: string[]): boolean {
+  return data.every((row) => keys.every((key) => Number.isInteger(Number(row[key] ?? 0))));
+}
+
+/** Chart entrance: draw on mount unless the user prefers reduced motion. */
+function useChartAnimation() {
+  const reduce = useReducedMotion();
+  return { isAnimationActive: !reduce, animationDuration: 900, animationEasing: "ease-out" as const };
+}
 const defaultFormat: ValueFormatter = (value) => formatNumber(value);
 
 const axisProps = {
@@ -232,12 +244,14 @@ export function TimeSeriesChart({
   stacked?: boolean;
 }) {
   const Chart = variant === "area" ? AreaChart : LineChart;
+  const animation = useChartAnimation();
+  const integers = allIntegers(data, series.map((item) => item.key));
   return (
     <ResponsiveContainer width="100%" height="100%">
       <Chart data={data} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
         <CartesianGrid vertical={false} stroke="var(--gridline)" strokeWidth={1} />
         <XAxis dataKey={xKey} {...axisProps} tickFormatter={xFormat} minTickGap={24} dy={4} />
-        <YAxis {...axisProps} width={44} tickFormatter={(value: number) => format(value)} allowDecimals={false} />
+        <YAxis {...axisProps} width={44} tickFormatter={(value: number) => format(value)} allowDecimals={!integers} />
         <RechartsTooltip
           cursor={{ stroke: "var(--baseline)", strokeWidth: 1 }}
           content={<ChartTooltip format={format} labelFormat={xFormat} />}
@@ -257,7 +271,7 @@ export function TimeSeriesChart({
               stackId={stacked ? "stack" : undefined}
               dot={false}
               activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--surface)" }}
-              isAnimationActive={false}
+              {...animation}
             />
           ) : (
             <Line
@@ -271,7 +285,7 @@ export function TimeSeriesChart({
               strokeLinejoin="round"
               dot={false}
               activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--surface)" }}
-              isAnimationActive={false}
+              {...animation}
             />
           );
         })}
@@ -301,6 +315,8 @@ export function BarChart({
   categoryWidth?: number;
 }) {
   const horizontal = layout === "horizontal-bars";
+  const animation = useChartAnimation();
+  const integers = allIntegers(data, series.map((item) => item.key));
   return (
     <ResponsiveContainer width="100%" height="100%">
       <RechartsBarChart
@@ -313,13 +329,13 @@ export function BarChart({
         <CartesianGrid horizontal={!horizontal} vertical={horizontal} stroke="var(--gridline)" strokeWidth={1} />
         {horizontal ? (
           <>
-            <XAxis type="number" {...axisProps} tickFormatter={(value: number) => format(value)} allowDecimals={false} />
+            <XAxis type="number" {...axisProps} tickFormatter={(value: number) => format(value)} allowDecimals={!integers} />
             <YAxis type="category" dataKey={categoryKey} {...axisProps} width={categoryWidth} />
           </>
         ) : (
           <>
             <XAxis dataKey={categoryKey} {...axisProps} dy={4} interval={0} />
-            <YAxis {...axisProps} width={44} tickFormatter={(value: number) => format(value)} allowDecimals={false} />
+            <YAxis {...axisProps} width={44} tickFormatter={(value: number) => format(value)} allowDecimals={!integers} />
           </>
         )}
         <RechartsTooltip cursor={{ fill: "var(--surface-muted)" }} content={<ChartTooltip format={format} />} />
@@ -334,7 +350,7 @@ export function BarChart({
             radius={stacked && index < series.length - 1 ? 0 : horizontal ? [0, 4, 4, 0] : [4, 4, 0, 0]}
             stroke="var(--surface)"
             strokeWidth={stacked ? 2 : 0}
-            isAnimationActive={false}
+            {...animation}
           />
         ))}
       </RechartsBarChart>
@@ -356,6 +372,7 @@ export function DonutChart({
   centerValue?: string;
 }) {
   const total = data.reduce((sum, item) => sum + item.value, 0);
+  const animation = useChartAnimation();
   return (
     <div className="flex h-full items-center gap-4">
       <div className="relative h-full min-w-0 flex-1">
@@ -371,7 +388,7 @@ export function DonutChart({
               paddingAngle={data.length > 1 ? 1.5 : 0}
               stroke="var(--surface)"
               strokeWidth={2}
-              isAnimationActive={false}
+              {...animation}
             >
               {data.map((item, index) => (
                 <Cell key={item.label} fill={SERIES_COLORS[(item.slot ?? index) % SERIES_COLORS.length]} />
@@ -408,21 +425,27 @@ export function FunnelChart({ stages, format = defaultFormat }: { stages: Array<
     <ol className="grid gap-1.5 px-2">
       {stages.map((stage, index) => {
         const previous = index > 0 ? stages[index - 1]?.value : undefined;
+        // Stages can be skipped (a quote without a meeting), so a rate above 100% isn't shown.
         const conversion = previous ? stage.value / previous : null;
+        const conversionText = conversion === null || conversion > 1 ? "" : `${Math.round(conversion * 100)}%`;
         const rampIndex = Math.min(ORDINAL_RAMP.length - 1, Math.floor((index / Math.max(1, stages.length - 1)) * (ORDINAL_RAMP.length - 1)));
         return (
           <li key={stage.label} className="grid grid-cols-[96px_1fr_auto] items-center gap-3 text-xs">
             <span className="truncate text-foreground-secondary">{stage.label}</span>
             <div className="h-5 overflow-hidden rounded-[4px] bg-surface-sunken/60">
-              <div
-                className="h-full rounded-r-[4px] transition-[width] duration-500"
-                style={{ width: `${Math.max(stage.value > 0 ? 1.5 : 0, (stage.value / max) * 100)}%`, background: ORDINAL_RAMP[rampIndex] }}
+              <motion.div
+                className="h-full rounded-r-[4px]"
+                style={{ background: ORDINAL_RAMP[rampIndex] }}
+                initial={{ width: 0 }}
+                whileInView={{ width: `${Math.max(stage.value > 0 ? 1.5 : 0, (stage.value / max) * 100)}%` }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: index * 0.07, ease: [0.22, 1, 0.36, 1] }}
               />
             </div>
             <span className="flex w-24 items-baseline justify-end gap-2 tabular">
               <span className="font-medium text-foreground">{format(stage.value)}</span>
               <span className="w-10 text-right text-foreground-muted">
-                {conversion === null ? "" : `${Math.round(conversion * 100)}%`}
+                {conversionText}
               </span>
             </span>
           </li>
@@ -472,8 +495,8 @@ export function Heatmap({
                   <td
                     key={column}
                     title={`${row} · ${column}: ${format(value)}`}
-                    className="h-6 min-w-6 rounded-[3px]"
-                    style={{ background: step ?? "var(--surface-muted)" }}
+                    className="h-6 min-w-6 animate-pop rounded-[3px]"
+                    style={{ background: step ?? "var(--surface-muted)", animationDelay: `${rowIndex * 40 + columnIndex * 6}ms` }}
                   />
                 );
               })}

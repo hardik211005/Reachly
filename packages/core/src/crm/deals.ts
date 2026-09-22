@@ -143,7 +143,10 @@ export async function createDeal(ctx: TenantContext, input: DealInput, options: 
       lostAt: data.stage === "LOST" ? now : null,
     },
   });
-  await recordEvent(ctx, { type: "deal_created", leadId: lead.id, dealId: deal.id, campaignId: deal.campaignId, properties: { title: deal.title, stage: deal.stage, value: Number(deal.value), source: options.source ?? "manual" } });
+  await recordEvent(ctx, { type: "deal_created", leadId: lead.id, dealId: deal.id, campaignId: deal.campaignId, channel: deal.sourceChannel, properties: { title: deal.title, stage: deal.stage, value: Number(deal.value), source: options.source ?? "manual" } });
+  // A deal created already closed still counts as won/lost revenue.
+  if (deal.stage === "WON") await recordEvent(ctx, { type: "deal_won", leadId: lead.id, dealId: deal.id, campaignId: deal.campaignId, channel: deal.sourceChannel, value: Number(deal.value), properties: { title: deal.title, value: Number(deal.value), currency: deal.currency, daysOpen: 0 } });
+  if (deal.stage === "LOST") await recordEvent(ctx, { type: "deal_lost", leadId: lead.id, dealId: deal.id, campaignId: deal.campaignId, channel: deal.sourceChannel, properties: { title: deal.title, value: Number(deal.value), reason: null } });
   await syncLeadToStage(ctx, lead.id, deal.stage as DealStage, `Deal “${deal.title}”`);
   return deal;
 }
@@ -194,9 +197,10 @@ export async function changeDealStage(ctx: TenantContext, deal: Deal, change: St
   });
   if (!moved) return updated;
   const value = Number(updated.value);
-  const base = { leadId: deal.leadId, dealId: deal.id, campaignId: deal.campaignId };
+  // Deal events carry the credited channel and campaign, so revenue can be attributed.
+  const base = { leadId: deal.leadId, dealId: deal.id, campaignId: deal.campaignId, channel: updated.sourceChannel };
   await recordEvent(ctx, { ...base, type: "deal_stage_changed", properties: { title: deal.title, from, to, fromLabel: DEAL_STAGE_LABELS[from], toLabel: DEAL_STAGE_LABELS[to], value } });
-  if (to === "WON") await recordEvent(ctx, { ...base, type: "deal_won", properties: { title: deal.title, value, currency: deal.currency, daysOpen: Math.round((now.getTime() - deal.createdAt.getTime()) / 86_400_000) } });
+  if (to === "WON") await recordEvent(ctx, { ...base, type: "deal_won", value, properties: { title: deal.title, value, currency: deal.currency, daysOpen: Math.round((now.getTime() - deal.createdAt.getTime()) / 86_400_000) } });
   if (to === "LOST") await recordEvent(ctx, { ...base, type: "deal_lost", properties: { title: deal.title, value, reason: change.lostReason ?? null } });
   if (!change.fromLead) await syncLeadToStage(ctx, deal.leadId, to, change.reason ?? `Deal moved to ${DEAL_STAGE_LABELS[to]}`);
   return updated;

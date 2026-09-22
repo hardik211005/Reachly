@@ -3,9 +3,10 @@
 import * as React from "react";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
-import { Button, ErrorState, SearchInput, SegmentedControl, cn, formatPercent } from "@repo/ui";
+import { AnimatedNumber, Button, ErrorState, SearchInput, SegmentedControl, SpotlightCard, cn, formatPercent } from "@repo/ui";
 import { api, errorMessage } from "@/lib/api-client";
 import { useCanWrite } from "../shell/shell-context";
+import { PageHero } from "../page-hero";
 import { CatalogTab } from "./catalog-tab";
 import { ContactsTab, MeetingsTab, TasksTab } from "./crm-tabs";
 import { NewDealDialog } from "./deal-dialogs";
@@ -55,11 +56,11 @@ function useUrlState(initialTab: CrmTab, initialDeal: string | null) {
   };
 }
 
-function Stat({ label, value, hint, tone }: { label: string; value: React.ReactNode; hint?: React.ReactNode; tone?: "good" }) {
+function Stat({ label, value, format, hint, tone }: { label: string; value: number | null | undefined; format: (value: number) => string; hint?: React.ReactNode; tone?: "good" }) {
   return (
     <div className="min-w-0 px-4 py-3">
       <p className="truncate text-xs text-foreground-muted">{label}</p>
-      <p className={cn("mt-1 truncate text-lg leading-tight font-semibold tabular tracking-[-0.01em]", tone === "good" && "text-success-text")}>{value}</p>
+      <p className={cn("mt-1 truncate text-lg leading-tight font-semibold tabular tracking-[-0.01em]", tone === "good" && "text-success-text")}>{value === null || value === undefined ? "—" : <AnimatedNumber value={value} format={format} />}</p>
       {hint ? <p className="mt-0.5 truncate text-[11px] text-foreground-muted">{hint}</p> : null}
     </div>
   );
@@ -67,13 +68,13 @@ function Stat({ label, value, hint, tone }: { label: string; value: React.ReactN
 
 function SummaryStrip({ summary, currency }: { summary: PipelineSummary | undefined; currency: string }) {
   return (
-    <div className="grid grid-cols-2 divide-border overflow-hidden rounded-lg border border-border bg-surface shadow-xs sm:grid-cols-3 lg:grid-cols-5 lg:divide-x *:min-w-0">
-      <Stat label="Open pipeline" value={summary ? money(summary.openValue, currency, { compact: summary.openValue >= 10_000_000 }) : "—"} hint={summary ? `${summary.openCount} open deal${summary.openCount === 1 ? "" : "s"}` : undefined} />
-      <Stat label="Weighted forecast" value={summary ? money(summary.weightedValue, currency, { compact: summary.weightedValue >= 10_000_000 }) : "—"} hint="Value × stage probability" />
-      <Stat label="Won this month" tone="good" value={summary ? money(summary.wonThisMonth.value, currency, { compact: summary.wonThisMonth.value >= 10_000_000 }) : "—"} hint={summary ? `${summary.wonThisMonth.count} deal${summary.wonThisMonth.count === 1 ? "" : "s"}` : undefined} />
-      <Stat label="Win rate" value={summary?.winRate !== null && summary?.winRate !== undefined ? formatPercent(summary.winRate, 0) : "—"} hint="Closed in the last 90 days" />
-      <Stat label="Average won deal" value={summary?.averageWon ? money(summary.averageWon, currency, { compact: summary.averageWon >= 10_000_000 }) : "—"} hint="Last 90 days" />
-    </div>
+    <SpotlightCard className="grid grid-cols-2 divide-border overflow-hidden rounded-lg border border-border bg-surface shadow-xs sm:grid-cols-3 lg:grid-cols-5 lg:divide-x *:min-w-0">
+      <Stat label="Open pipeline" value={summary?.openValue} format={(value) => money(value, currency, { compact: value >= 10_000_000 })} hint={summary ? `${summary.openCount} open deal${summary.openCount === 1 ? "" : "s"}` : undefined} />
+      <Stat label="Weighted forecast" value={summary?.weightedValue} format={(value) => money(value, currency, { compact: value >= 10_000_000 })} hint="Value × stage probability" />
+      <Stat label="Won this month" tone="good" value={summary?.wonThisMonth.value} format={(value) => money(value, currency, { compact: value >= 10_000_000 })} hint={summary ? `${summary.wonThisMonth.count} deal${summary.wonThisMonth.count === 1 ? "" : "s"}` : undefined} />
+      <Stat label="Win rate" value={summary?.winRate} format={(value) => formatPercent(value, 0)} hint="Closed in the last 90 days" />
+      <Stat label="Average won deal" value={summary?.averageWon} format={(value) => money(value, currency, { compact: value >= 10_000_000 })} hint="Last 90 days" />
+    </SpotlightCard>
   );
 }
 
@@ -127,17 +128,18 @@ export function CrmView({ settings, initialTab, initialDeal }: { settings: CrmSe
   return (
     <CrmProvider value={settings}>
       <div className="grid gap-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-xl font-semibold tracking-[-0.01em]">CRM</h1>
-            <p className="mt-1 max-w-2xl text-[13px] text-foreground-muted">Deals, next steps, meetings and quotes for the companies your outreach warms up — kept in step with replies, calls and quote answers automatically.</p>
-          </div>
-          {canWrite ? (
-            <Button size="sm" variant="primary" onClick={() => setCreating(true)}>
-              <Plus /> New deal
-            </Button>
-          ) : null}
-        </div>
+        <PageHero
+          title="CRM"
+          highlight="CRM"
+          description="Deals, next steps, meetings and quotes for the companies your outreach warms up — kept in step with replies, calls and quote answers automatically."
+          actions={
+            canWrite ? (
+              <Button size="sm" variant="primary" onClick={() => setCreating(true)}>
+                <Plus /> New deal
+              </Button>
+            ) : null
+          }
+        />
         <SummaryStrip summary={pipeline.data?.summary} currency={settings.currency} />
         <SegmentedControl size="sm" value={tab} onValueChange={setTab} options={TABS} className="max-w-full overflow-x-auto" />
         <div className="min-w-0">

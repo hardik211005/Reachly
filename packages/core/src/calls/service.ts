@@ -533,7 +533,8 @@ export async function listCalls(ctx: TenantContext, filters: z.input<typeof call
     ...(input.outcome ? { outcome: input.outcome } : {}),
     ...(input.leadId ? { leadId: input.leadId } : {}),
     ...(input.campaignId ? { campaignId: input.campaignId } : {}),
-    ...(input.q ? { lead: { name: { contains: input.q, mode: "insensitive" } } } : {}),
+    // Calls on deleted leads leave the workspace views with the lead.
+    lead: { deletedAt: null, ...(input.q ? { name: { contains: input.q, mode: "insensitive" as const } } : {}) },
   };
   const [items, total, counts] = await Promise.all([
     ctx.db.call.findMany({
@@ -544,7 +545,7 @@ export async function listCalls(ctx: TenantContext, filters: z.input<typeof call
       include: { lead: { select: { id: true, name: true, city: true, locality: true, score: true, category: true } }, campaign: { select: { id: true, name: true } } },
     }),
     ctx.db.call.count({ where }),
-    ctx.db.call.groupBy({ by: ["status"], _count: { _all: true } }),
+    ctx.db.call.groupBy({ by: ["status"], where: { lead: { deletedAt: null } }, _count: { _all: true } }),
   ]);
   const byStatus = Object.fromEntries(counts.map((row) => [row.status, row._count._all])) as Partial<Record<Call["status"], number>>;
   const sum = (statuses: Array<Call["status"]>) => statuses.reduce((total, status) => total + (byStatus[status] ?? 0), 0);

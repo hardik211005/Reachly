@@ -1,4 +1,4 @@
-import { DEAL_STAGE_PROBABILITY, POSITIVE_INTENTS } from "@repo/config";
+import { DEAL_STAGE_PROBABILITY, POSITIVE_INTENTS, usdTo } from "@repo/config";
 import { Prisma } from "@repo/db";
 import type { TenantContext } from "../context";
 import { delta, eventFilterSql, ratio, resolveFilters, type AnalyticsFilterInput, type ResolvedFilters } from "./filters";
@@ -102,7 +102,7 @@ export interface Kpi {
   value: number;
   previous: number;
   delta: number | null;
-  format: "number" | "percent" | "currency" | "usd_micro";
+  format: "number" | "percent" | "currency" | "cost";
   upIsGood: boolean;
   hint?: string;
 }
@@ -303,7 +303,7 @@ export async function pipelineSnapshot(ctx: TenantContext) {
   };
 }
 
-export async function getOverview(ctx: TenantContext, input: AnalyticsFilterInput, timezone: string) {
+export async function getOverview(ctx: TenantContext, input: AnalyticsFilterInput, timezone: string, currency = "USD") {
   const filters = resolveFilters(input);
   const [current, previous, series, stages, channels, distribution, campaigns, pipeline, aiNow, aiPrev, voiceNow, voicePrev, totalLeads] =
     await Promise.all([
@@ -326,8 +326,11 @@ export async function getOverview(ctx: TenantContext, input: AnalyticsFilterInpu
   const previousConversion = ratio(previous.dealsWon, previous.contactedLeads);
   const replyRate = ratio(current.replies, current.outreachSent);
   const previousReplyRate = ratio(previous.replies, previous.outreachSent);
-  // Voice cost is stored in cents of the org currency; AI cost in micro-USD. They are
-  // reported separately rather than summed across currencies.
+  // Voice cost is stored in cents of the org currency; AI cost in micro-USD, converted
+  // at the configured exchange rate so the two can be shown as one figure.
+  const aiSpend = (micro: number) => usdTo(currency, micro / 1_000_000);
+  const spendNow = aiSpend(aiNow) + voiceNow / 100;
+  const spendPrev = aiSpend(aiPrev) + voicePrev / 100;
   const kpis: Kpi[] = [
     { key: "leads", label: "New leads", value: current.leadsCreated, previous: previous.leadsCreated, delta: delta(current.leadsCreated, previous.leadsCreated), format: "number", upIsGood: true, hint: `${totalLeads.toLocaleString()} total in workspace` },
     { key: "qualified", label: "Qualified leads", value: current.leadsQualified, previous: previous.leadsQualified, delta: delta(current.leadsQualified, previous.leadsQualified), format: "number", upIsGood: true },
@@ -340,7 +343,7 @@ export async function getOverview(ctx: TenantContext, input: AnalyticsFilterInpu
     { key: "won", label: "Deals won", value: current.dealsWon, previous: previous.dealsWon, delta: delta(current.dealsWon, previous.dealsWon), format: "number", upIsGood: true },
     { key: "conversion", label: "Conversion rate", value: conversion ?? 0, previous: previousConversion ?? 0, delta: conversion === null || previousConversion === null ? null : conversion - previousConversion, format: "percent", upIsGood: true, hint: "Deals won ÷ leads contacted" },
     { key: "revenue", label: "Revenue won", value: current.revenue, previous: previous.revenue, delta: delta(current.revenue, previous.revenue), format: "currency", upIsGood: true, hint: `${Math.round(pipeline.weightedValue).toLocaleString()} weighted pipeline` },
-    { key: "aiCost", label: "AI cost", value: aiNow, previous: aiPrev, delta: delta(aiNow, aiPrev), format: "usd_micro", upIsGood: false, hint: voiceNow || voicePrev ? `Voice: ${(voiceNow / 100).toFixed(2)} (org currency)` : undefined },
+    { key: "aiCost", label: "AI & voice cost", value: spendNow, previous: spendPrev, delta: delta(spendNow, spendPrev), format: "cost", upIsGood: false, hint: `AI ${aiSpend(aiNow).toFixed(2)} · voice ${(voiceNow / 100).toFixed(2)}` },
   ];
 
   return {

@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { getOverview } from "@repo/core/analytics/overview";
-import { PageHeader } from "@repo/ui";
 import { OverviewView, type InsightSummary } from "@/components/dashboard/overview-view";
-import { RangePicker } from "@/components/dashboard/range-picker";
+import { OverviewHero } from "@/components/dashboard/overview-hero";
 import { PageContainer } from "@/components/page";
 import { requireWorkspace } from "@/lib/session";
 
@@ -14,7 +13,7 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
   const range = Number(days) > 0 ? Math.min(Number(days), 730) : 30;
 
   const [overview, insights] = await Promise.all([
-    getOverview(ctx, { days: range }, membership.organization.timezone),
+    getOverview(ctx, { days: range }, membership.organization.timezone, membership.organization.currency),
     ctx.db.insight.findMany({ where: { dismissedAt: null }, orderBy: { createdAt: "desc" }, take: 3 }),
   ]);
 
@@ -32,11 +31,13 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
 
   return (
     <PageContainer wide>
-      <PageHeader
-        title={`${greeting}, ${session.user.name.split(" ")[0]}`}
-        description={`Here's what happened in ${membership.organization.name} over the last ${range} days.`}
-        actions={<RangePicker />}
-        className="mb-6"
+      <OverviewHero
+        greeting={`${greeting}, ${session.user.name.split(" ")[0]}`}
+        workspace={membership.organization.name}
+        days={range}
+        revenue={overview.kpis.find((kpi) => kpi.key === "revenue")?.value ?? 0}
+        meetings={overview.kpis.find((kpi) => kpi.key === "meetings")?.value ?? 0}
+        currency={membership.organization.currency}
       />
       <OverviewView data={JSON.parse(JSON.stringify(overview))} currency={membership.organization.currency} insights={insightSummaries} />
     </PageContainer>

@@ -1,6 +1,7 @@
 import * as React from "react";
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, Minus, RefreshCw, Sparkles } from "lucide-react";
 import { cn, formatNumber } from "../lib/utils";
+import { AnimatedNumber } from "../motion";
 import { Button } from "./button";
 
 // ----------------------------------------------------------------------------- PageHeader
@@ -50,7 +51,7 @@ export function EmptyState({
   return (
     <div className={cn("flex flex-col items-center justify-center text-center", compact ? "px-4 py-8" : "px-6 py-16", className)}>
       {Icon ? (
-        <div className="mb-3 flex size-10 items-center justify-center rounded-lg border border-border bg-surface-muted">
+        <div className="mb-3 flex size-10 animate-float items-center justify-center rounded-lg border border-border bg-surface-muted shadow-xs">
           <Icon className="size-5 text-foreground-muted" />
         </div>
       ) : null}
@@ -108,9 +109,12 @@ export function MetricCard({
   sparkline,
   className,
   href,
+  numeric,
 }: {
   label: string;
   value: React.ReactNode;
+  /** Counts up to this number (formatted) instead of showing `value` statically. */
+  numeric?: { value: number; format?: (value: number) => string };
   delta?: MetricDelta;
   hint?: React.ReactNode;
   sparkline?: React.ReactNode;
@@ -124,15 +128,15 @@ export function MetricCard({
         {delta ? <DeltaBadge delta={delta} /> : null}
       </div>
       <div className="mt-1.5 flex items-end justify-between gap-3">
-        <span className="text-[22px] leading-none font-semibold tracking-[-0.02em] text-foreground">{value}</span>
+        <span className="text-[22px] leading-none font-semibold tracking-[-0.02em] text-foreground">{numeric ? <AnimatedNumber value={numeric.value} format={numeric.format} /> : value}</span>
         {sparkline ? <div className="h-7 w-20 shrink-0">{sparkline}</div> : null}
       </div>
       {hint ? <div className="mt-1.5 truncate text-[11px] text-foreground-muted">{hint}</div> : null}
     </>
   );
   const classes = cn(
-    "block rounded-lg border border-border bg-surface px-4 py-3.5 shadow-xs",
-    href && "transition-colors hover:border-border-strong",
+    "block rounded-lg border border-border bg-surface px-4 py-3.5 shadow-xs transition-[border-color,box-shadow,transform] duration-200",
+    href && "hover:-translate-y-0.5 hover:border-border-strong hover:shadow-md",
     className,
   );
   return href ? (

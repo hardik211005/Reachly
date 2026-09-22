@@ -533,7 +533,7 @@ export async function sendQuote(ctx: TenantContext, id: string, input: z.input<t
 
   const now = new Date();
   await ctx.db.quote.update({ where: { id }, data: { status: "SENT", sentAt: quote.sentAt ?? now } });
-  await recordEvent(ctx, { type: "quote_sent", leadId: quote.leadId, dealId: quote.dealId, channel: data.channel === "LINK" ? null : data.channel, properties: { quoteId: id, number: quote.number, total: view.total, channel: data.channel } });
+  await recordEvent(ctx, { type: "quote_sent", leadId: quote.leadId, dealId: quote.dealId, channel: data.channel === "LINK" ? null : data.channel, value: view.taxableTotal, properties: { quoteId: id, number: quote.number, total: view.total, channel: data.channel } });
   // The pipeline follows: the deal moves to Proposal and takes the quote's value (before tax).
   const deal = await ensureDealAtStage(ctx, quote.leadId, "PROPOSAL", { value: view.taxableTotal, reason: `Quote ${quote.number} sent`, source: "quote" });
   if (deal && !quote.dealId) await ctx.db.quote.update({ where: { id }, data: { dealId: deal.id } });

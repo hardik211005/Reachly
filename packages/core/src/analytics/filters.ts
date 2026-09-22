@@ -12,6 +12,8 @@ export const analyticsFilterSchema = z.object({
   channel: z.enum(CHANNELS).optional(),
   city: z.string().trim().min(1).max(120).optional(),
   industry: z.string().trim().min(1).max(120).optional(),
+  /** Business type from the taxonomy (cafe, restaurant, …). */
+  category: z.string().trim().min(1).max(80).optional(),
   source: z.string().trim().min(1).max(60).optional(),
   minScore: z.coerce.number().int().min(0).max(100).optional(),
 });
@@ -27,6 +29,7 @@ export interface ResolvedFilters {
   channel?: (typeof CHANNELS)[number];
   city?: string;
   industry?: string;
+  category?: string;
   source?: string;
   minScore?: number;
 }
@@ -46,26 +49,42 @@ export function resolveFilters(input: AnalyticsFilterInput = {}): ResolvedFilter
     channel: parsed.channel,
     city: parsed.city,
     industry: parsed.industry,
+    category: parsed.category,
     source: parsed.source,
     minScore: parsed.minScore,
   };
 }
 
+/** Event types that count as reaching out to a lead (messages sent or a call attempted). */
+export const CONTACT_EVENT_TYPES = ["email_sent", "whatsapp_sent", "call_started", "call_failed", "call_completed"];
+
+/** Lead-level predicates (city, industry, category, source, score) on a `leads` alias. */
+export function leadClauses(filters: ResolvedFilters, alias = "l"): Prisma.Sql[] {
+  const l = Prisma.raw(alias);
+  const clauses: Prisma.Sql[] = [];
+  if (filters.city) clauses.push(Prisma.sql`${l}.city ILIKE ${filters.city}`);
+  if (filters.industry) clauses.push(Prisma.sql`${l}.industry ILIKE ${filters.industry}`);
+  if (filters.category) clauses.push(Prisma.sql`${l}.category = ${filters.category}`);
+  if (filters.source) clauses.push(Prisma.sql`${l}."sourceProvider" = ${filters.source}`);
+  if (filters.minScore !== undefined) clauses.push(Prisma.sql`${l}.score >= ${filters.minScore}`);
+  return clauses;
+}
+
+export function hasLeadFilters(filters: ResolvedFilters): boolean {
+  return Boolean(filters.city || filters.industry || filters.category || filters.source || filters.minScore !== undefined);
+}
+
 /**
  * SQL predicate for `events e` rows matching the dimension filters. Lead-level filters
- * (city, industry, source, score) join through the lead the event belongs to.
+ * (city, industry, category, source, score) join through the lead the event belongs to.
  */
-export function eventFilterSql(filters: ResolvedFilters): Prisma.Sql {
+export function eventFilterSql(filters: ResolvedFilters, options: { ignoreChannel?: boolean } = {}): Prisma.Sql {
   const clauses: Prisma.Sql[] = [];
   if (filters.campaignId) clauses.push(Prisma.sql`e."campaignId" = ${filters.campaignId}::uuid`);
-  if (filters.channel) clauses.push(Prisma.sql`e.channel = ${filters.channel}::"Channel"`);
-  const leadClauses: Prisma.Sql[] = [];
-  if (filters.city) leadClauses.push(Prisma.sql`l.city ILIKE ${filters.city}`);
-  if (filters.industry) leadClauses.push(Prisma.sql`l.industry ILIKE ${filters.industry}`);
-  if (filters.source) leadClauses.push(Prisma.sql`l."sourceProvider" = ${filters.source}`);
-  if (filters.minScore !== undefined) leadClauses.push(Prisma.sql`l.score >= ${filters.minScore}`);
-  if (leadClauses.length) {
-    clauses.push(Prisma.sql`EXISTS (SELECT 1 FROM leads l WHERE l.id = e."leadId" AND ${Prisma.join(leadClauses, " AND ")})`);
+  if (filters.channel && !options.ignoreChannel) clauses.push(Prisma.sql`e.channel = ${filters.channel}::"Channel"`);
+  const lead = leadClauses(filters);
+  if (lead.length) {
+    clauses.push(Prisma.sql`EXISTS (SELECT 1 FROM leads l WHERE l.id = e."leadId" AND ${Prisma.join(lead, " AND ")})`);
   }
   return clauses.length ? Prisma.sql`AND ${Prisma.join(clauses, " AND ")}` : Prisma.empty;
 }

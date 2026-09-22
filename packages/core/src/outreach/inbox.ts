@@ -214,7 +214,7 @@ export async function inboxSummary(ctx: TenantContext) {
     ctx.db.conversation.count({ where: { status: "NEEDS_RESPONSE", lead: { deletedAt: null } } }),
     ctx.db.conversation.aggregate({ _sum: { unreadCount: true }, where: { lead: { deletedAt: null } } }),
     ctx.db.message.count({ where: { direction: "OUTBOUND", status: { in: ["DRAFT", "PENDING_APPROVAL"] } } }),
-    ctx.db.call.count({ where: { status: { in: ["PREPARED", "RINGING", "IN_PROGRESS"] } } }),
+    ctx.db.call.count({ where: { status: { in: ["PREPARED", "RINGING", "IN_PROGRESS"] }, lead: { deletedAt: null } } }),
   ]);
   return { needsResponse, unread: unread._sum.unreadCount ?? 0, pendingApproval, callsWaiting };
 }
