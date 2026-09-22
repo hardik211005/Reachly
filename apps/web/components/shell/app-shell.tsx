@@ -3,9 +3,10 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FlaskConical, Menu, Search, Sparkles } from "lucide-react";
+import { FlaskConical, Menu, MessageSquareText, Search } from "lucide-react";
 import { Button, Kbd, Sheet, SheetContent, SheetTitle, Tooltip } from "@repo/ui";
 import { Logo } from "../brand/logo";
+import { ThemeToggle } from "../theme-toggle";
 import { CommandMenu } from "./command-menu";
 import { ALL_NAV_ITEMS } from "./nav";
 import { NotificationsButton } from "./notifications";
@@ -88,7 +89,7 @@ export function AppShell({ data, children }: { data: ShellData; children: React.
       <div className="flex min-h-dvh">
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-30 flex h-11 items-center gap-2 border-b border-border bg-background/85 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:px-4">
+          <header className="sticky top-0 z-30 flex h-[72px] items-center gap-2 border-b border-border bg-background/85 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:px-5">
             <Button variant="ghost" size="icon-sm" className="md:hidden" aria-label="Open navigation" onClick={() => setMobileNavOpen(true)}>
               <Menu />
             </Button>
@@ -98,7 +99,7 @@ export function AppShell({ data, children }: { data: ShellData; children: React.
             <button
               type="button"
               onClick={openCommand}
-              className="flex h-7 w-full max-w-sm items-center gap-2 rounded-md border border-border bg-surface px-2 text-[13px] text-foreground-subtle shadow-xs transition-colors hover:border-border-strong"
+              className="flex h-9 w-full max-w-md items-center gap-2 rounded-lg border border-border bg-surface px-3 text-[13px] text-foreground-subtle shadow-xs transition-colors hover:border-border-strong"
             >
               <Search className="size-3.5" />
               <span className="flex-1 truncate text-left">Search or jump to…</span>
@@ -107,10 +108,11 @@ export function AppShell({ data, children }: { data: ShellData; children: React.
             <div className="ml-auto flex items-center gap-1.5">
               {data.demoMode ? <DemoModeBadge mockProviders={data.mockProviders} /> : null}
               <Tooltip content="Ask Copilot (⌘J)">
-                <Button variant="ghost" size="icon-sm" aria-label="Open copilot" onClick={toggleCopilot}>
-                  <Sparkles />
+                <Button variant="ghost" size="icon" aria-label="Open copilot" onClick={toggleCopilot}>
+                  <MessageSquareText />
                 </Button>
               </Tooltip>
+              <ThemeToggle />
               <NotificationsButton />
             </div>
           </header>

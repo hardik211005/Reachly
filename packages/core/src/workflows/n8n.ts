@@ -8,19 +8,19 @@ export const N8N_TEMPLATES = [
   {
     file: "reachai-meeting-booked.json",
     name: "Meeting booked → your tools",
-    description: "Receives ReachAI's “Run n8n workflow” step, verifies the signature and appends the meeting to Google Sheets (enable the Sheets node once credentials are set).",
+    description: "Receives Reachly's “Run n8n workflow” step, verifies the signature and appends the meeting to Google Sheets (enable the Sheets node once credentials are set).",
     webhookPath: "reachai-meeting-booked",
   },
   {
     file: "reachai-enrich-callback.json",
     name: "Enrich and call back",
-    description: "Pattern for steps that wait: does work in n8n, then POSTs the result to ReachAI's callback URL so the workflow continues with the data.",
+    description: "Pattern for steps that wait: does work in n8n, then POSTs the result to Reachly's callback URL so the workflow continues with the data.",
     webhookPath: "reachai-enrich",
   },
   {
     file: "reachai-daily-digest.json",
     name: "Daily digest to Slack",
-    description: "Every morning, reads yesterday's numbers from the ReachAI API with an API key and posts them to Slack.",
+    description: "Every morning, reads yesterday's numbers from the Reachly API with an API key and posts them to Slack.",
     webhookPath: null,
   },
 ] as const;

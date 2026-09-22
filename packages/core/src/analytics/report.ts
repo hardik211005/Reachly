@@ -367,7 +367,7 @@ function dimensionSql(dimension: BreakdownDimension): Prisma.Sql {
   }
 }
 
-const SOURCE_LABELS: Record<string, string> = { mock: "Demo data", google_places: "Google Places", manual: "Added manually", csv: "CSV import", import: "CSV import" };
+const SOURCE_LABELS: Record<string, string> = { mock: "Demo data", google_places: "Google Places", openstreetmap: "OpenStreetMap", manual: "Added manually", csv: "CSV import", import: "CSV import" };
 
 export async function breakdown(ctx: TenantContext, filters: ResolvedFilters, dimension: BreakdownDimension, currency: string, limit = 12): Promise<BreakdownRow[]> {
   const dim = dimensionSql(dimension);

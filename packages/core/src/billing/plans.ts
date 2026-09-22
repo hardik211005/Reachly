@@ -7,6 +7,7 @@ import {
   type PlanFeatures,
   type PlanLimits,
 } from "@repo/config";
+import { addMonths } from "date-fns";
 import { prisma, type Plan, type PrismaClient, type Subscription } from "@repo/db";
 import type { TenantContext } from "../context";
 import { FeatureNotInPlanError, LimitExceededError, NotFoundError } from "../errors";
@@ -72,9 +73,30 @@ export async function listPlans(): Promise<Array<Plan & { parsed: ReturnType<typ
   return plans.map((plan) => ({ ...plan, parsed: parsePlan(plan) }));
 }
 
+/** Days a paid period stays usable after it ends, while a renewal or webhook catches up. */
+const LAPSE_GRACE_MS = 3 * 24 * 60 * 60 * 1000;
+
+/**
+ * A prepaid (UPI) month that has run out, or a card subscription set to cancel whose period
+ * is over but whose cancellation webhook never arrived.
+ */
+export function hasLapsed(subscription: Pick<Subscription, "billingProvider" | "currentPeriodEnd" | "cancelAtPeriodEnd">, now: Date = new Date()): boolean {
+  if (subscription.currentPeriodEnd.getTime() + LAPSE_GRACE_MS > now.getTime()) return false;
+  return subscription.billingProvider === "razorpay" || (subscription.billingProvider === "stripe" && subscription.cancelAtPeriodEnd);
+}
+
 export async function resolvePlan(ctx: TenantContext): Promise<ResolvedPlan> {
-  const subscription = await ctx.db.subscription.findFirst({ include: { plan: true } });
+  let subscription = await ctx.db.subscription.findFirst({ include: { plan: true } });
   if (!subscription) throw new NotFoundError("Subscription");
+  if (hasLapsed(subscription)) {
+    const free = await getDefaultPlan();
+    const now = new Date();
+    subscription = await ctx.db.subscription.update({
+      where: { id: subscription.id },
+      data: { planId: free.id, status: "ACTIVE", billingProvider: "none", providerSubscriptionId: null, cancelAtPeriodEnd: false, currentPeriodStart: now, currentPeriodEnd: addMonths(now, 1) },
+      include: { plan: true },
+    });
+  }
   const { limits, features } = parsePlan(subscription.plan);
   const { plan, ...rest } = subscription;
   return { id: plan.id, key: plan.key, name: plan.name, limits, features, subscription: rest };

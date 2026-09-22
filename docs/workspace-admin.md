@@ -37,12 +37,20 @@ This document covers the public site, the in-app settings, integrations, billing
 
 | Section | What it does | Who can change it |
 |---|---|---|
-| General | Workspace name, time zone (searchable), currency, country | Admins |
+| General | Workspace name, time zone (searchable), currency, country, brand logo | Admins |
 | Your profile | Name, password (with strength meter), active sessions with sign-out, theme | You |
 | Business & services | Business profile, the catalog of services and products with pricing rules and quote settings, and the AI-drafted ideal customer profile (edit or re-analyse) | Admins |
 | Team | Invite by email, change roles, remove members, withdraw or resend invitations, leave the workspace | Admins (owners for owner changes) |
 | Compliance | Sending window and days, approval of first messages, WhatsApp opt-in, postal address and email footer, opt-out phrases, AI calling consent and rules, block list | Admins |
 | API keys | Create keys with scopes and expiry (shown once), revoke, quick-start example | Admins, on plans with API access |
+
+### Brand logo
+
+- **Upload**: General → Brand logo (drag and drop or click). PNG, JPG or WebP up to 1 MB (`packages/core/src/organizations/logo.ts`).
+  - The type is detected from the file's bytes, not its name. SVG is refused because it can carry scripts.
+  - Stored in `organization_logos` (one row per workspace) with a SHA-256 hash.
+- **Where it shows**: the sidebar workspace switcher, the quote page and quote PDFs (PNG/JPG are embedded; WebP shows on the page only).
+- **Serving**: `GET /api/public/logos/:organizationId?v=<hash>` — public so shared quotes can show it, cached for a year when the version matches, with `nosniff` and a `default-src 'none'` CSP. A deleted workspace's logo is no longer served.
 
 ### Invitations
 
@@ -65,7 +73,7 @@ This document covers the public site, the in-app settings, integrations, billing
 | Category | Providers |
 |---|---|
 | AI | Anthropic, OpenAI, Google Gemini (with a model choice) |
-| Lead data | Google Places |
+| Lead data | Google Places (without it, discovery uses OpenStreetMap) |
 | Email | Resend, SendGrid, SMTP (with sender details) |
 | WhatsApp | Meta WhatsApp Cloud API |
 | Voice | Twilio, Vapi |
@@ -81,7 +89,7 @@ This document covers the public site, the in-app settings, integrations, billing
   - Provided by the operator's environment variables.
   - Demo (simulated).
   - Not set up.
-- **Server-wide services**: n8n, Stripe and file storage are configured on the server and shown as status only.
+- **Server-wide services**: n8n, Stripe, Razorpay and file storage are configured on the server and shown as status only.
 
 ## Billing
 
@@ -92,7 +100,7 @@ This document covers the public site, the in-app settings, integrations, billing
 - the plans on offer;
 - invoices.
 
-Until a payment provider is configured, owners can switch plans directly. The page states that no payment is collected, and the change is audited. When Stripe is configured, plan changes go through checkout instead.
+Owners pay by card (Stripe) or UPI (Razorpay) from a payment-method dialog; see [billing.md](billing.md). Without payment keys the page says so, and in development owners can switch plans directly (labelled "no payment collected" and audited). In production that path is refused.
 
 ## System health
 
@@ -122,6 +130,10 @@ Until a payment provider is configured, owners can switch plans directly. The pa
 | `GET /api/v1/integrations`, `PUT/DELETE /api/v1/integrations/:provider`, `POST …/test` | Integrations |
 | `GET/PUT /api/v1/compliance`, `PUT /api/v1/compliance/calling` | Compliance settings |
 | `GET/POST /api/v1/compliance/suppressions`, `DELETE …/:id` | Block list |
-| `GET /api/v1/billing`, `POST /api/v1/billing/plan` | Billing overview, plan change without payment |
+| `GET /api/v1/billing`, `POST /api/v1/billing/plan` | Billing overview, plan change without payment (development only) |
+| `POST /api/v1/billing/checkout`, `POST …/checkout/confirm`, `POST …/upi/verify` | Start a card or UPI payment, apply a returning Stripe Checkout, verify a UPI payment |
+| `POST /api/v1/billing/portal`, `POST/DELETE /api/v1/billing/cancel` | Stripe customer portal, schedule or undo a move to Free |
+| `POST /api/v1/workspace/logo`, `DELETE /api/v1/workspace/logo` | Upload (multipart field `file`) or remove the brand logo |
+| `POST /api/webhooks/stripe`, `POST /api/webhooks/razorpay` | Signed payment webhooks |
 | `GET /api/v1/system/health` | System health |
 | `POST /api/public/contact` | Public contact form |

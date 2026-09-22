@@ -1,6 +1,6 @@
 # Automation
 
-Workflows react to what happens in ReachAI (a reply, a call outcome, a booked meeting) and do the follow-up work: update the lead, create tasks, notify the team, enrol the lead in a campaign, prepare a call, or hand off to n8n and other systems. Code: `packages/core/src/workflows`, jobs in `packages/core/src/jobs/workflows.ts`, n8n client in `packages/integrations/src/automation/n8n.ts`, UI in `apps/web/components/workflows`.
+Workflows react to what happens in Reachly (a reply, a call outcome, a booked meeting) and do the follow-up work: update the lead, create tasks, notify the team, enrol the lead in a campaign, prepare a call, or hand off to n8n and other systems. Code: `packages/core/src/workflows`, jobs in `packages/core/src/jobs/workflows.ts`, n8n client in `packages/integrations/src/automation/n8n.ts`, UI in `apps/web/components/workflows`.
 
 The app owns the data, rules and permissions. n8n is an optional integration layer, not where business logic lives.
 
@@ -84,7 +84,7 @@ Run history (*Workflows → Runs* and the builder's *Runs* panel) shows every ex
 
 Both directions are supported. None of them is required: without n8n, workflows run entirely in the app.
 
-**ReachAI → n8n** (*Run n8n workflow* step)
+**Reachly → n8n** (*Run n8n workflow* step)
 - POSTs `{ workflow, execution, event, lead, trigger, callback }` to `<n8n>/webhook/<path>`.
 - Signed as `x-reachai-signature: t=<unix>,v1=<hex HMAC-SHA256("t.body")>` with `N8N_WEBHOOK_SECRET` (or the workspace's n8n integration secret).
 - With *Wait for n8n* on, the run pauses until n8n POSTs to `callback.url`:
@@ -97,7 +97,7 @@ Both directions are supported. None of them is required: without n8n, workflows 
 - `data` becomes `{{steps.<id>.callback.*}}` for later steps. `"status": "error"` fails the run.
 - If n8n doesn't answer within the step's timeout (1–72 h, default 24), the run fails instead of hanging.
 
-**n8n → ReachAI**
+**n8n → Reachly**
 - Workflows with a *webhook* trigger show a signed URL: `POST /api/hooks/workflows/<token>`. The token is the credential. Rotating the signing secret invalidates all hook URLs.
 - The body is free JSON. `leadId` attaches a lead, and `idempotencyKey` makes retries safe.
 - The URL answers `202` with the run id. Requests are rate-limited to 120/min per workflow, and bodies are limited to 64 KB.
@@ -116,11 +116,11 @@ Both directions are supported. None of them is required: without n8n, workflows 
 |---|---|
 | `reachai-meeting-booked.json` | Webhook → verify signature → Google Sheets row → respond |
 | `reachai-enrich-callback.json` | Webhook → do work → POST the result to the callback URL (for steps that wait) |
-| `reachai-daily-digest.json` | Schedule → ReachAI API → Slack |
+| `reachai-daily-digest.json` | Schedule → Reachly API → Slack |
 
 The template Code nodes verify the signature, so n8n needs `NODE_FUNCTION_ALLOW_BUILTIN=crypto` and `REACHAI_WEBHOOK_SECRET` set to the same value as `N8N_WEBHOOK_SECRET`. The compose file sets both.
 
-**Known limitation**: n8n re-serialises the parsed body before it's hashed, so a payload whose JSON serialises differently (e.g. unusual number formats) would fail verification. ReachAI's payloads are plain JSON and verify as expected. The templates haven't been tested against every n8n version.
+**Known limitation**: n8n re-serialises the parsed body before it's hashed, so a payload whose JSON serialises differently (e.g. unusual number formats) would fail verification. Reachly's payloads are plain JSON and verify as expected. The templates haven't been tested against every n8n version.
 
 ## Outbound webhooks
 

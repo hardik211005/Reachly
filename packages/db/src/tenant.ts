@@ -21,6 +21,7 @@ import { Prisma, type PrismaClient } from "./generated/prisma/client";
 export const TENANT_MODELS: ReadonlySet<Prisma.ModelName> = new Set<Prisma.ModelName>([
   "Membership",
   "Invitation",
+  "OrganizationLogo",
   "ApiKey",
   "AuditLog",
   "Subscription",
@@ -127,9 +128,13 @@ export function tenantExtension(organizationId: string) {
     query: {
       $allModels: {
         async $allOperations({ model, operation, args, query }) {
-          if (!TENANT_MODELS.has(model as Prisma.ModelName)) return query(args);
+          // Called through a plain function type: the union of every model's argument types is
+          // too large for the compiler to check here.
+          const run = query as unknown as (value: unknown) => Promise<unknown>;
+          const input: unknown = args;
+          if (!TENANT_MODELS.has(model as Prisma.ModelName)) return run(input);
 
-          const scoped: ArgsRecord = isRecord(args) ? { ...args } : {};
+          const scoped: ArgsRecord = isRecord(input) ? { ...input } : {};
 
           if (WHERE_OPERATIONS.has(operation)) {
             scopeWhere(scoped, organizationId);
@@ -142,7 +147,7 @@ export function tenantExtension(organizationId: string) {
             scoped.create = stampData(scoped.create, organizationId);
           }
 
-          return query(scoped as typeof args);
+          return run(scoped);
         },
       },
     },

@@ -1,6 +1,6 @@
 # Architecture
 
-ReachAI is a **modular monolith plus background workers**. One Next.js application serves the UI and the REST API; one worker process runs queued jobs. Domain logic lives in workspace packages with clear boundaries, so any module can later be extracted into its own service without rewriting callers.
+Reachly is a **modular monolith plus background workers**. One Next.js application serves the UI and the REST API; one worker process runs queued jobs. Domain logic lives in workspace packages with clear boundaries, so any module can later be extracted into its own service without rewriting callers.
 
 ```
                 ┌──────────────────────────── apps/web (Next.js 16) ─────────────────────────────┐
@@ -46,7 +46,9 @@ Internal packages ship as TypeScript source (`exports` → `src/*.ts`); Next.js 
 - **Tenancy = Organization** (labelled *Workspace* in the UI, like Linear). Every tenant-owned table carries `organizationId`. Services only use `ctx.db`, a Prisma client extended to inject `organizationId` into every query and create, and to throw `TenantViolationError` on explicit cross-tenant filters. Integration tests prove isolation.
 - **Lead doubles as the CRM company.** A prospect business is one `Lead` row (with `Contact`s); CRM views (companies, pipeline) are projections over leads plus `Deal`/`Task`/`Note`. One source of truth per business avoids lead→account sync drift.
 - **Event log is the analytics source of truth.** `Event` is append-only. Timelines, funnels, KPIs, channel/campaign performance and AI insights are all SQL over events (plus current deal/lead snapshots). No dashboard card is computed independently of stored data.
-- **Provider abstraction everywhere.** Resolution order per capability: organisation-connected integration → platform env credentials → mock (only when `DEMO_MODE=true`) → "Connect provider". The current mode for each category is visible in Integrations and the demo badge.
+- **Provider abstraction everywhere.** Resolution order per capability: organisation-connected integration → platform env credentials → mock (only when `DEMO_MODE=true`) → "Connect provider". The current mode for each category is visible in Integrations and the demo badge. Lead data is the exception that always works: without a Google Places key it uses OpenStreetMap (Nominatim for a fast first pass, Overpass mirrors for depth, within a time budget), and `LEAD_PROVIDER=mock` is only for tests and the seed.
+- **Payments are optional and verified server-side.** Stripe (card subscriptions) and Razorpay (UPI, prepaid months) switch on with their keys; every payment is re-read from the provider and webhooks are signature-checked and recorded once. See [billing.md](billing.md).
+- **Two dev servers, two modes.** `npm run dev` (:3000) uses real providers from `.env`; the Playwright suite starts its own server on :3100 in demo mode with a separate build folder (`NEXT_DIST_DIR=.next-e2e`).
 - **Nothing pretends to work.** Mock providers are labelled; simulated inbound events are flagged `simulated`; missing credentials surface as `PROVIDER_NOT_CONFIGURED` (HTTP 424) with a "Connect provider" state.
 - **Queues for anything slow or external.** Discovery, enrichment, scoring, sends, webhooks, analytics and workflows run as jobs with retries, exponential backoff and dead-lettering. `QUEUE_DRIVER=inline` runs the same processors in-process for Redis-less local development.
 - **n8n is an integration layer, not the core.** The app owns data, auth, billing and business rules; workflows can call n8n and n8n can call back (signed) or use the REST API with an API key.

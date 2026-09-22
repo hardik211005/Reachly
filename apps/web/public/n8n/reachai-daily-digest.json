@@ -1,5 +1,5 @@
 {
-  "name": "ReachAI — Daily digest to Slack",
+  "name": "Reachly — Daily digest to Slack",
   "nodes": [
     {
       "parameters": { "rule": { "interval": [{ "field": "days", "triggerAtHour": 9 }] } },
@@ -21,11 +21,11 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [240, 0],
-      "notes": "Create an API key in ReachAI (Settings → API keys) and set REACHAI_API_KEY in n8n's environment."
+      "notes": "Create an API key in Reachly (Settings → API keys) and set REACHAI_API_KEY in n8n's environment."
     },
     {
       "parameters": {
-        "jsCode": "const kpis = $input.first().json.data?.kpis ?? [];\nconst lines = kpis.slice(0, 6).map((kpi) => `• ${kpi.label}: ${kpi.value}`);\nreturn [{ json: { text: `*ReachAI — yesterday*\\n${lines.join('\\n')}` } }];"
+        "jsCode": "const kpis = $input.first().json.data?.kpis ?? [];\nconst lines = kpis.slice(0, 6).map((kpi) => `• ${kpi.label}: ${kpi.value}`);\nreturn [{ json: { text: `*Reachly — yesterday*\\n${lines.join('\\n')}` } }];"
       },
       "id": "a41d5e22-7b9c-4f0e-9d33-3c9f4d0e2c03",
       "name": "Format",

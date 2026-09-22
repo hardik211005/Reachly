@@ -39,7 +39,8 @@ function platformProvider(category: IntegrationCategory): string | null {
       if (env.AI_DEFAULT_PROVIDER === "google" && env.GOOGLE_AI_API_KEY) return "google";
       return null;
     case "LEAD_DATA":
-      return env.LEAD_PROVIDER === "google_places" && env.GOOGLE_PLACES_API_KEY ? "google_places" : null;
+      if (env.GOOGLE_PLACES_API_KEY && env.LEAD_PROVIDER !== "mock") return "google_places";
+      return env.LEAD_PROVIDER === "openstreetmap" ? "openstreetmap" : null;
     case "EMAIL":
       if (env.EMAIL_PROVIDER === "resend" && env.RESEND_API_KEY) return "resend";
       if (env.EMAIL_PROVIDER === "sendgrid" && env.SENDGRID_API_KEY) return "sendgrid";
@@ -52,7 +53,7 @@ function platformProvider(category: IntegrationCategory): string | null {
       if (env.VOICE_PROVIDER === "vapi" && env.VAPI_API_KEY) return "vapi";
       return null;
     case "PAYMENTS":
-      return env.STRIPE_SECRET_KEY ? "stripe" : null;
+      return [env.STRIPE_SECRET_KEY ? "stripe" : null, env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET ? "razorpay (UPI)" : null].filter(Boolean).join(" + ") || null;
     case "NOTIFICATION":
       return env.SLACK_WEBHOOK_URL ? "slack" : null;
     case "AUTOMATION":
@@ -81,6 +82,8 @@ export async function getProviderStatuses(ctx: TenantContext): Promise<ProviderS
     const platform = platformProvider(category);
     if (platform) return { category, label, mode: "platform", provider: platform };
     if (env.DEMO_MODE && MOCKABLE.has(category)) return { category, label, mode: "mock", provider: "mock" };
+    // Without an AI key, agents run on deterministic built-in rules (templates and scoring rules).
+    if (category === "AI" && env.AI_DEFAULT_PROVIDER === "mock") return { category, label, mode: "platform", provider: "built-in rules" };
     return { category, label, mode: "not_configured", provider: null };
   });
 }

@@ -5,6 +5,7 @@ import fontkit from "@pdf-lib/fontkit";
 import { brand } from "@repo/config";
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { logger } from "../logger";
+import { readWorkspaceLogo } from "../organizations/logo";
 import { formatMoney } from "./pricing";
 import type { QuoteView } from "./service";
 
@@ -182,6 +183,20 @@ const COLUMNS = (() => {
   return { item: col(item), qty: col(qty), rate: col(rate), discount: col(discount), tax: col(tax), amount: col(amount) };
 })();
 
+/** Loads the workspace logo referenced by the quote, if it's a format pdf-lib can embed. */
+async function embedLogo(doc: PDFDocument, logoUrl: string | null | undefined) {
+  const organizationId = logoUrl?.match(/\/api\/public\/logos\/([0-9a-f-]{36})/i)?.[1];
+  if (!organizationId) return null;
+  try {
+    const logo = await readWorkspaceLogo(organizationId);
+    if (logo.mimeType === "image/png") return await doc.embedPng(logo.data);
+    if (logo.mimeType === "image/jpeg") return await doc.embedJpg(logo.data);
+  } catch (error) {
+    logger.warn({ err: error, organizationId }, "quote logo could not be embedded");
+  }
+  return null;
+}
+
 export async function renderQuotePdf(view: QuoteView): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   doc.setTitle(`Quote ${view.number}${view.title ? ` — ${view.title}` : ""}`);
@@ -200,8 +215,19 @@ export async function renderQuotePdf(view: QuoteView): Promise<Uint8Array> {
 
   // ---- Header: seller (left), quote meta (right)
   const top = w.y;
-  w.draw(view.seller.name, left, top - 18, { size: 18, bold: true });
-  let sellerY = top - 36;
+  // Workspace logo above the seller name (PNG/JPEG; pdf-lib can't embed WebP).
+  let nameTop = top;
+  const logo = await embedLogo(doc, view.seller.logoUrl);
+  if (logo) {
+    const maxHeight = 36;
+    const maxWidth = 150;
+    const scale = Math.min(maxHeight / logo.height, maxWidth / logo.width);
+    const height = logo.height * scale;
+    w.page.drawImage(logo, { x: left, y: top - height, width: logo.width * scale, height });
+    nameTop = top - height - 10;
+  }
+  w.draw(view.seller.name, left, nameTop - 18, { size: 18, bold: true });
+  let sellerY = nameTop - 36;
   const sellerLines = [
     view.seller.legalName && view.seller.legalName !== view.seller.name ? view.seller.legalName : null,
     view.seller.address,

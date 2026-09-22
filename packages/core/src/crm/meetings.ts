@@ -98,7 +98,7 @@ export async function meetingIcs(ctx: TenantContext, id: string): Promise<{ file
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//ReachAI//CRM//EN",
+    "PRODID:-//Reachly//CRM//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",

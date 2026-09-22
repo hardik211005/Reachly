@@ -471,7 +471,18 @@ function CriteriaSummary({ run, interpretation }: { run: Run; interpretation: st
       ))}
       {criteria.criteria ? <Badge tone="outline">{criteria.criteria}</Badge> : null}
       {criteria.offer ? <Badge tone="outline">Offer: {criteria.offer}</Badge> : null}
-      <span className="ml-auto text-[11px] text-foreground-subtle">Source: {run.providers.map((p) => (p === "mock" ? "demo data (simulated)" : p)).join(", ")}</span>
+      <span className="ml-auto text-[11px] text-foreground-subtle">
+        Source: {run.providers.map((p) => (p === "mock" ? "demo data (simulated)" : p === "openstreetmap" ? "OpenStreetMap" : p === "google_places" ? "Google Places" : p)).join(", ")}
+        {run.providers.includes("openstreetmap") ? (
+          <>
+            {" · "}
+            {/* Required attribution for OpenStreetMap data (ODbL). */}
+            <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="underline-offset-2 hover:text-foreground hover:underline">
+              © OpenStreetMap contributors
+            </a>
+          </>
+        ) : null}
+      </span>
     </motion.div>
   );
 }

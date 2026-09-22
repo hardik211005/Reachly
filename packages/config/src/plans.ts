@@ -60,6 +60,8 @@ export const planDefinitionSchema = z.object({
   features: planFeaturesSchema,
   /** Env var holding the Stripe price id for this plan, if it is purchasable. */
   stripePriceEnv: z.string().optional(),
+  /** Monthly price in paise for UPI payments (Razorpay charges in INR). Unset = not sold over UPI. */
+  priceMonthlyInr: z.number().int().positive().optional(),
 });
 export type PlanDefinition = z.infer<typeof planDefinitionSchema>;
 
@@ -115,6 +117,7 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
     description: "AI qualification, email + WhatsApp sequences, workflows and the full CRM.",
     priceMonthly: 7900,
     currency: "USD",
+    priceMonthlyInr: 649900,
     highlighted: true,
     sortOrder: 1,
     stripePriceEnv: "STRIPE_PRICE_PRO_MONTHLY",
@@ -159,6 +162,7 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
     description: "Voice agents, advanced workflows, API access and team collaboration at volume.",
     priceMonthly: 29900,
     currency: "USD",
+    priceMonthlyInr: 2499900,
     highlighted: false,
     sortOrder: 2,
     stripePriceEnv: "STRIPE_PRICE_SCALE_MONTHLY",

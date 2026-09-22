@@ -9,6 +9,16 @@ import { loadRootEnv } from "@repo/config/env";
 
 loadRootEnv();
 process.env.QUEUE_DRIVER = "inline";
+// The demo workspace is a fixture: repeatable, offline, and never sends anything real —
+// whatever providers and keys the .env has for everyday use.
+process.env.DEMO_MODE = "true";
+process.env.DEMO_SIMULATE_EVENTS = "true";
+process.env.LEAD_PROVIDER = "mock";
+process.env.ENRICHMENT_WEBSITE_FETCH_ENABLED = "false";
+process.env.AI_DEFAULT_PROVIDER = "mock";
+process.env.EMAIL_PROVIDER = "mock";
+process.env.WHATSAPP_PROVIDER = "mock";
+process.env.VOICE_PROVIDER = "mock";
 process.env.LOG_LEVEL ??= "warn";
 
 const { disconnectPrisma } = await import("@repo/db");

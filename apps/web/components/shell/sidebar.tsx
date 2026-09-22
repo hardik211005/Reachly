@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Check, ChevronsUpDown, LogOut, Moon, PanelLeftClose, PanelLeftOpen, Plus, Sun, UserRound } from "lucide-react";
+import { Check, ChevronsUpDown, LogOut, Moon, PanelLeftClose, Plus, Sun, UserRound } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
@@ -51,14 +51,16 @@ function NavLink({ item, collapsed, onNavigate, count = 0 }: { item: NavItem; co
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group relative flex h-8 items-center gap-2.5 rounded-md px-2 text-[13px] font-medium transition-colors",
+        "group relative flex h-9 items-center gap-2.5 rounded-md px-2.5 text-[14px] font-semibold transition-colors",
         active ? "text-foreground" : "text-foreground-secondary hover:bg-surface-muted/70 hover:text-foreground",
         collapsed && "justify-center px-0",
       )}
     >
       {active ? (
         // One indicator glides between items instead of each item lighting up on its own.
-        <motion.span layoutId="nav-active" aria-hidden className="absolute inset-0 -z-0 rounded-md bg-surface-muted shadow-xs ring-1 ring-border" transition={{ type: "spring", stiffness: 500, damping: 38 }} />
+        <motion.span layoutId="nav-active" aria-hidden className="absolute inset-0 -z-0 rounded-md bg-surface-muted shadow-xs ring-1 ring-border" transition={{ type: "spring", stiffness: 500, damping: 38 }}>
+          <span className="absolute top-1.5 bottom-1.5 left-0 w-[3px] rounded-full bg-accent" />
+        </motion.span>
       ) : null}
       <span className="relative">
         <item.icon className={cn("size-4 shrink-0", active ? "text-foreground" : "text-foreground-muted group-hover:text-foreground-secondary")} />
@@ -101,18 +103,21 @@ function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
         <button
           type="button"
           className={cn(
-            "flex h-10 w-full items-center gap-2 rounded-md px-1.5 text-left transition-colors hover:bg-surface-muted",
+            "flex h-12 w-full items-center gap-2.5 rounded-lg border border-border bg-background/60 px-2 text-left transition-colors hover:bg-surface-muted",
             collapsed && "justify-center",
           )}
         >
-          <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-foreground text-[11px] font-semibold text-background">
-            {workspace.name.slice(0, 1).toUpperCase()}
-          </span>
+          {workspace.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- small uploaded logos served by our own API
+            <img src={workspace.logoUrl} alt="" className="size-8 shrink-0 rounded-lg border border-border bg-surface object-contain" />
+          ) : (
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-[13px] font-semibold text-accent-soft-foreground">{workspace.name.slice(0, 1).toUpperCase()}</span>
+          )}
           {collapsed ? null : (
             <>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[13px] font-semibold">{workspace.name}</span>
-                <span className="block truncate text-[11px] text-foreground-muted">{plan.name} plan</span>
+                <span className="block truncate text-[13.5px] font-bold">{workspace.name}</span>
+                <span className="block truncate text-[11.5px] font-medium text-foreground-muted">{plan.name} plan</span>
               </span>
               <ChevronsUpDown className="size-3.5 shrink-0 text-foreground-muted" />
             </>
@@ -153,7 +158,7 @@ function UserMenu({ collapsed }: { collapsed: boolean }) {
           <Avatar name={user.name} src={user.image} size="sm" />
           {collapsed ? null : (
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-[13px] font-medium">{user.name}</span>
+              <span className="block truncate text-[13.5px] font-semibold">{user.name}</span>
               <span className="block truncate text-[11px] text-foreground-muted">{user.email}</span>
             </span>
           )}
@@ -185,15 +190,16 @@ export function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; 
   const canManage = useCanManage();
   const counts = useNavCounts();
   return (
-    <div className="flex h-full flex-col">
-      <div className="px-2 pt-2">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="px-3 pt-3">
         <WorkspaceSwitcher collapsed={collapsed} />
       </div>
-      <nav aria-label="Main" className="flex-1 overflow-y-auto px-2 pt-3 pb-2">
-        {NAV_GROUPS.map((group, index) => (
-          <div key={group.label ?? index} className={cn(index > 0 && "mt-4")}>
+      {/* Everything scrolls together (thin scrollbar on hover); only the profile stays pinned. */}
+      <nav aria-label="Main" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pt-4 pb-3 [scrollbar-color:var(--border-strong)_transparent] [scrollbar-width:none] hover:[scrollbar-width:thin]">
+        {[...NAV_GROUPS, { label: "Workspace", items: NAV_FOOTER.filter((item) => !item.adminOnly || canManage) }].map((group, index) => (
+          <div key={group.label ?? index} className={cn(index > 0 && "mt-5")}>
             {group.label && !collapsed ? (
-              <p className="mb-1 px-2 text-[11px] font-medium text-foreground-subtle">{group.label}</p>
+              <p className="mb-1.5 px-2.5 text-[11px] font-bold tracking-[0.08em] text-foreground-muted uppercase">{group.label}</p>
             ) : null}
             {group.label && collapsed ? <div className="mx-2 mb-2 h-px bg-border" /> : null}
             <div className="grid gap-0.5">
@@ -204,12 +210,7 @@ export function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; 
           </div>
         ))}
       </nav>
-      <div className="grid gap-0.5 border-t border-border px-2 py-2">
-        {NAV_FOOTER.filter((item) => !item.adminOnly || canManage).map((item) => (
-          <NavLink key={item.href} item={item} collapsed={collapsed} onNavigate={onNavigate} />
-        ))}
-      </div>
-      <div className="border-t border-border px-2 py-2">
+      <div className="border-t border-border px-3 py-3">
         <UserMenu collapsed={collapsed} />
       </div>
     </div>
@@ -257,23 +258,24 @@ export function Sidebar() {
     <aside
       className={cn(
         "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-border bg-surface transition-[width] duration-200 md:flex",
-        collapsed ? "w-[56px]" : "w-[232px]",
+        collapsed ? "w-[64px]" : "w-[248px]",
       )}
     >
-      <div className={cn("flex h-11 items-center border-b border-border px-3", collapsed ? "justify-center" : "justify-between")}>
-        {collapsed ? null : (
-          <Link href="/app" aria-label="Home">
-            <Logo />
-          </Link>
+      <div className={cn("flex h-[72px] items-center border-b border-border px-3.5", collapsed ? "justify-center" : "justify-between")}>
+        {collapsed ? (
+          <button type="button" onClick={toggle} aria-label="Expand sidebar" className="rounded-lg transition-transform hover:scale-105">
+            <Logo showName={false} size="lg" />
+          </button>
+        ) : (
+          <>
+            <Link href="/app" aria-label="Home">
+              <Logo size="xl" />
+            </Link>
+            <button type="button" onClick={toggle} aria-label="Collapse sidebar" className="rounded-md p-1.5 text-foreground-muted hover:bg-surface-muted hover:text-foreground">
+              <PanelLeftClose className="size-4" />
+            </button>
+          </>
         )}
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="rounded-sm p-1 text-foreground-muted hover:bg-surface-muted hover:text-foreground"
-        >
-          {collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
-        </button>
       </div>
       <SidebarContent collapsed={collapsed} />
     </aside>

@@ -38,7 +38,7 @@ function ThemeSwitcher() {
 const COLUMNS = [
   { title: "Product", links: [{ href: "/product", label: "Platform overview" }, ...PRODUCTS.map((product) => ({ href: `/product/${product.slug}`, label: product.name })), { href: "/pricing", label: "Pricing" }] },
   { title: "Use cases", links: USE_CASES.map((item) => ({ href: `/use-cases/${item.slug}`, label: item.name })) },
-  { title: "Company", links: [...COMPANY_LINKS.map((link) => ({ href: link.href, label: link.label })), { href: "/login", label: "Live demo" }] },
+  { title: "Company", links: [...COMPANY_LINKS.map((link) => ({ href: link.href, label: link.label })), { href: "/login", label: "Sign in" }] },
 ];
 
 export function Footer() {

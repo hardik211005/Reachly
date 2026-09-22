@@ -74,7 +74,7 @@ const CATEGORIES = [
 
 const PLATFORM_ONLY = [
   { key: "AUTOMATION", label: "n8n", icon: Workflow, href: "/app/workflows", description: "Run steps in your n8n instance and let it resume workflows." },
-  { key: "PAYMENTS", label: "Stripe billing", icon: CreditCard, href: "/app/billing", description: "Subscriptions and invoices for this workspace." },
+  { key: "PAYMENTS", label: "Payments", icon: CreditCard, href: "/app/billing", description: "Card subscriptions (Stripe) and UPI (Razorpay) for your plan." },
   { key: "STORAGE", label: "File storage", icon: HardDrive, href: null, description: "Where quote PDFs and attachments are kept." },
 ];
 

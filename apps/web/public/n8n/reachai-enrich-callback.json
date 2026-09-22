@@ -1,5 +1,5 @@
 {
-  "name": "ReachAI — Enrich and call back",
+  "name": "Reachly — Enrich and call back",
   "nodes": [
     {
       "parameters": {
@@ -9,7 +9,7 @@
         "options": {}
       },
       "id": "8c2e7d10-2d3b-4d7e-8f21-2b8e3c9d1b01",
-      "name": "ReachAI webhook",
+      "name": "Reachly webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [0, 0],
@@ -17,7 +17,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Replace with your own enrichment: an HTTP Request to a data provider, a database lookup, etc.\n// Whatever this returns is sent back to ReachAI and becomes available to later workflow steps.\nconst { lead } = $input.first().json.body;\nreturn [{ json: { enriched: true, leadName: lead?.name ?? null, notes: 'Replace this Code node with a real enrichment step.' } }];"
+        "jsCode": "// Replace with your own enrichment: an HTTP Request to a data provider, a database lookup, etc.\n// Whatever this returns is sent back to Reachly and becomes available to later workflow steps.\nconst { lead } = $input.first().json.body;\nreturn [{ json: { enriched: true, leadName: lead?.name ?? null, notes: 'Replace this Code node with a real enrichment step.' } }];"
       },
       "id": "8c2e7d10-2d3b-4d7e-8f21-2b8e3c9d1b02",
       "name": "Do the work",
@@ -28,23 +28,23 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('ReachAI webhook').item.json.body.callback.url }}",
+        "url": "={{ $('Reachly webhook').item.json.body.callback.url }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ token: $('ReachAI webhook').item.json.body.callback.token, status: 'success', data: $json }) }}",
+        "jsonBody": "={{ JSON.stringify({ token: $('Reachly webhook').item.json.body.callback.token, status: 'success', data: $json }) }}",
         "options": {}
       },
       "id": "8c2e7d10-2d3b-4d7e-8f21-2b8e3c9d1b03",
-      "name": "Call ReachAI back",
+      "name": "Call Reachly back",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [480, 0],
-      "notes": "Only needed when the ReachAI step has “Wait for n8n to call back” on."
+      "notes": "Only needed when the Reachly step has “Wait for n8n to call back” on."
     }
   ],
   "connections": {
-    "ReachAI webhook": { "main": [[{ "node": "Do the work", "type": "main", "index": 0 }]] },
-    "Do the work": { "main": [[{ "node": "Call ReachAI back", "type": "main", "index": 0 }]] }
+    "Reachly webhook": { "main": [[{ "node": "Do the work", "type": "main", "index": 0 }]] },
+    "Do the work": { "main": [[{ "node": "Call Reachly back", "type": "main", "index": 0 }]] }
   },
   "settings": { "executionOrder": "v1" },
   "active": false,

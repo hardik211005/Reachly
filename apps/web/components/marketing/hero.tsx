@@ -173,7 +173,11 @@ export function Hero() {
       <div className="mx-auto grid max-w-6xl items-center gap-16 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
         <motion.div initial="hidden" animate="show" variants={{ hidden: {}, show: { transition: { staggerChildren: 0.08 } } }}>
           <motion.a variants={word} href="/product" className="border-gradient inline-flex items-center gap-2 rounded-full bg-surface/70 px-3 py-1 text-xs font-medium text-foreground-secondary backdrop-blur">
-            <Sparkles className="size-3.5 text-brand-2" /> Discovery → outreach → AI calls → CRM<span className="hidden sm:inline">, in one place</span> <ArrowRight className="size-3" />
+            <Sparkles className="size-3.5 text-brand-2" />
+            <span>
+              Discovery → outreach → AI calls → CRM<span className="hidden sm:inline">, in one place</span>
+            </span>
+            <ArrowRight className="size-3" />
           </motion.a>
           <h1 className="mt-6 text-[44px] leading-[1.02] font-semibold tracking-[-0.04em] text-balance sm:text-[60px]">
             <motion.span variants={word} className="block">
@@ -194,7 +198,7 @@ export function Hero() {
               </Link>
             </Button>
             <Button asChild variant="secondary" size="lg" className="px-5">
-              <Link href="/login">See the live demo</Link>
+              <Link href="/product">See how it works</Link>
             </Button>
           </motion.div>
           <motion.ul variants={word} className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-[12.5px] text-foreground-muted">

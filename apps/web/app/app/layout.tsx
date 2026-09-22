@@ -22,6 +22,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       slug: membership.organization.slug,
       currency: membership.organization.currency,
       timezone: membership.organization.timezone,
+      logoUrl: membership.organization.logoUrl,
     },
     workspaces: memberships.map((m) => ({ id: m.organization.id, name: m.organization.name, slug: m.organization.slug })),
     role: membership.role,

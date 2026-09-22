@@ -67,7 +67,7 @@ services:
       N8N_PERSONALIZATION_ENABLED: "false"
       # Lets workflows reach the app running on the host machine.
       REACHAI_APP_URL: http://host.docker.internal:3000
-      # The template Code nodes verify ReachAI's HMAC signature.
+      # The template Code nodes verify Reachly's HMAC signature.
       NODE_FUNCTION_ALLOW_BUILTIN: crypto
       REACHAI_WEBHOOK_SECRET: ${N8N_WEBHOOK_SECRET:-}
     extra_hosts:

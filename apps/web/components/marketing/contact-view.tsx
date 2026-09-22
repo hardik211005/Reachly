@@ -47,8 +47,8 @@ function Success({ name, email, onReset }: { name: string; email: string; onRese
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-2">
         <Button asChild variant="primary">
-          <Link href="/login">
-            Explore the live demo <ArrowRight />
+          <Link href="/product">
+            See how it works <ArrowRight />
           </Link>
         </Button>
         <Button variant="secondary" onClick={onReset}>
@@ -227,10 +227,10 @@ export function ContactPageView({ initialTopic }: { initialTopic: Topic }) {
                 {brand.supportEmail}
               </a>
             </SideCard>
-            <SideCard icon={PlayCircle} title="See it working first">
-              The live demo is a fully seeded workspace.{" "}
-              <Link href="/login" className="font-medium text-foreground underline-offset-2 hover:underline">
-                Open the demo
+            <SideCard icon={PlayCircle} title="See how it works">
+              Every part of the product, step by step.{" "}
+              <Link href="/product" className="font-medium text-foreground underline-offset-2 hover:underline">
+                Take the tour
               </Link>
             </SideCard>
             <SideCard icon={BookOpen} title="Compare plans">

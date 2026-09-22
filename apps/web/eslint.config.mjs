@@ -7,5 +7,5 @@ export default defineConfig([
   ...nextVitals,
   ...nextTs,
   { rules: sharedRules },
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "playwright-report/**", "test-results/**"]),
+  globalIgnores([".next/**", ".next-*/**", "out/**", "build/**", "next-env.d.ts", "playwright-report/**", "test-results/**"]),
 ]);

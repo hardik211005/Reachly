@@ -135,7 +135,7 @@ function CompareTable({ plans }: { plans: PlanDefinition[] }) {
   );
 }
 
-export function PricingPageView({ plans }: { plans: PlanDefinition[] }) {
+export function PricingPageView({ plans, upi = false }: { plans: PlanDefinition[]; upi?: boolean }) {
   return (
     <>
       <PageIntro
@@ -148,7 +148,7 @@ export function PricingPageView({ plans }: { plans: PlanDefinition[] }) {
         center
       />
       <div className="-mt-8">
-        <Pricing plans={plans} heading={false} compareLink={false} />
+        <Pricing plans={plans} heading={false} compareLink={false} upi={upi} />
       </div>
       <CompareTable plans={plans} />
       <section className="px-4 sm:px-6">

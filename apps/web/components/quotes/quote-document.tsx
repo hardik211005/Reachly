@@ -36,7 +36,7 @@ export interface QuoteDoc {
   terms: string | null;
   lead: { name: string; city: string | null; address: string | null; email: string | null };
   contact: { name: string | null; title: string | null; email: string | null } | null;
-  seller: { name: string; legalName: string | null; address: string | null; taxId: string | null; email: string | null; phone: string | null; website: string | null; footer: string | null };
+  seller: { name: string; legalName: string | null; address: string | null; taxId: string | null; email: string | null; phone: string | null; website: string | null; footer: string | null; logoUrl?: string | null };
   lines: QuoteDocLine[];
 }
 
@@ -68,6 +68,10 @@ export function QuoteDocument({ quote, className, compact = false }: { quote: Qu
     <article className={`rounded-lg bg-white text-[#16161a] shadow-[0_1px_2px_rgba(0,0,0,0.06),0_8px_24px_-8px_rgba(0,0,0,0.12)] ring-1 ring-black/5 ${compact ? "p-5 sm:p-7" : "p-6 sm:p-10"} ${className ?? ""}`} aria-label={`Quote ${quote.number}`}>
       <header className="flex flex-col gap-6 border-b border-[#e3e4e8] pb-6 sm:flex-row sm:justify-between">
         <div className="min-w-0">
+          {quote.seller.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- the workspace logo, served by our own API
+            <img src={quote.seller.logoUrl} alt="" className="mb-3 h-12 w-auto max-w-[180px] object-contain" />
+          ) : null}
           <p className="text-xl font-semibold tracking-[-0.01em]">{quote.seller.name}</p>
           <div className="mt-1.5 grid gap-0.5 text-xs text-[#6b7280]">
             {sellerLines.map((line) => (

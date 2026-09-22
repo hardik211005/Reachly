@@ -18,7 +18,7 @@ export default defineConfig({
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : [["list"]],
   outputDir: "test-results",
   use: {
-    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3000",
+    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3100",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     viewport: { width: 1440, height: 900 },
@@ -42,7 +42,28 @@ export default defineConfig({
       testMatch: /signup\.spec\.ts/,
     },
   ],
+  // Tests run against their own dev server with simulated providers (demo mode), separate from
+  // the real-provider server on :3000 you use by hand.
   webServer: process.env.E2E_BASE_URL
     ? undefined
-    : { command: "npm run dev", url: "http://localhost:3000/login", reuseExistingServer: true, timeout: 120_000 },
+    : {
+        command: "npx next dev --port 3100",
+        url: "http://localhost:3100/login",
+        reuseExistingServer: true,
+        timeout: 180_000,
+        env: {
+          NEXT_DIST_DIR: ".next-e2e",
+          APP_URL: "http://localhost:3100",
+          BETTER_AUTH_URL: "http://localhost:3100",
+          DEMO_MODE: "true",
+          DEMO_SIMULATE_EVENTS: "true",
+          LEAD_PROVIDER: "mock",
+          ENRICHMENT_WEBSITE_FETCH_ENABLED: "false",
+          AI_DEFAULT_PROVIDER: "mock",
+          EMAIL_PROVIDER: "mock",
+          WHATSAPP_PROVIDER: "mock",
+          VOICE_PROVIDER: "mock",
+          QUEUE_DRIVER: "inline",
+        },
+      },
 });

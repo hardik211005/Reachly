@@ -89,6 +89,7 @@ export function ContactIndicators({ email, phone }: { email: string | null | und
 const SOURCE_LABELS: Record<string, string> = {
   mock: "Demo data",
   google_places: "Google Places",
+  openstreetmap: "OpenStreetMap",
   csv: "CSV import",
   manual: "Manual",
   api: "API",
@@ -101,6 +102,13 @@ export function SourceLabel({ provider }: { provider: string }) {
         <span className="inline-flex items-center gap-1 text-xs whitespace-nowrap text-warning-text">
           <FlaskConical className="size-3" /> Demo data
         </span>
+      </Tooltip>
+    );
+  }
+  if (provider === "openstreetmap") {
+    return (
+      <Tooltip content="Map data © OpenStreetMap contributors (ODbL)">
+        <span className="text-xs whitespace-nowrap text-foreground-secondary">OpenStreetMap</span>
       </Tooltip>
     );
   }

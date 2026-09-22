@@ -49,12 +49,13 @@ const envSchema = z
     ANTHROPIC_API_KEY: optionalString,
     GOOGLE_AI_API_KEY: optionalString,
 
-    LEAD_PROVIDER: z.enum(["mock", "google_places"]).default("mock"),
+    /** openstreetmap: real businesses from open map data, no key needed. google_places needs GOOGLE_PLACES_API_KEY. mock: generated demo businesses. */
+    LEAD_PROVIDER: z.enum(["openstreetmap", "google_places", "mock"]).default("openstreetmap"),
     GOOGLE_PLACES_API_KEY: optionalString,
-    ENRICHMENT_WEBSITE_FETCH_ENABLED: bool(false),
+    ENRICHMENT_WEBSITE_FETCH_ENABLED: bool(true),
 
     EMAIL_PROVIDER: z.enum(["mock", "resend", "sendgrid", "smtp"]).default("mock"),
-    EMAIL_FROM: z.string().default("ReachAI <outreach@example.com>"),
+    EMAIL_FROM: z.string().default("Reachly <outreach@example.com>"),
     RESEND_API_KEY: optionalString,
     RESEND_WEBHOOK_SECRET: optionalString,
     SENDGRID_API_KEY: optionalString,
@@ -85,6 +86,10 @@ const envSchema = z
     STRIPE_WEBHOOK_SECRET: optionalString,
     STRIPE_PRICE_PRO_MONTHLY: optionalString,
     STRIPE_PRICE_SCALE_MONTHLY: optionalString,
+
+    RAZORPAY_KEY_ID: optionalString,
+    RAZORPAY_KEY_SECRET: optionalString,
+    RAZORPAY_WEBHOOK_SECRET: optionalString,
 
     N8N_URL: optionalString,
     N8N_API_KEY: optionalString,

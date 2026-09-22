@@ -8,14 +8,14 @@ test.describe("Public website", () => {
 
   test("navigates from the menu to a product page and on to pricing", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("navigation", { name: "Main" }).getByRole("button", { name: "Product" }).click();
+    await page.getByRole("navigation", { name: "Main" }).getByRole("button", { name: "Services" }).click();
     await page.getByRole("link", { name: /AI calling/ }).first().click();
     await expect(page).toHaveURL(/\/product\/ai-calling$/);
     await expect(page.getByRole("heading", { level: 1 })).toContainText("meeting on the calendar");
     await expect(page.getByRole("navigation", { name: "Breadcrumb" })).toContainText("AI calling");
     if (shots) await page.screenshot({ path: "e2e/screenshots/product-page.png" });
 
-    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Pricing" }).click();
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Plans" }).click();
     await expect(page).toHaveURL(/\/pricing$/);
     await expect(page.getByRole("columnheader", { name: /Pro/ })).toBeVisible();
     await expect(page.getByRole("rowheader", { name: /Lead credits/ })).toBeVisible();

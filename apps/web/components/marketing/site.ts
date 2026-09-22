@@ -82,7 +82,7 @@ export const PRODUCTS: Product[] = [
     ],
     faqs: [
       { q: "Where does lead data come from?", a: "From discovery providers such as Google Places, the business's own public website and profiles, and your CSV imports. Every field shows its source." },
-      { q: "Can I run discovery without an API key?", a: "Yes. Without provider keys the workspace uses clearly labelled demo data so you can try the whole flow." },
+      { q: "Can I run discovery without an API key?", a: "Yes. Without a Google key, discovery finds real businesses from OpenStreetMap's open map data. Add a Google Places key for ratings and review counts." },
       { q: "How many leads can I find?", a: "It depends on your plan's monthly lead credits and the results allowed per search. See Pricing for the numbers." },
     ],
     keywords: ["leads", "prospecting", "search", "google places", "enrichment", "scoring", "icp", "find", "import", "csv"],
@@ -392,14 +392,15 @@ export const GENERAL_FAQS = [
   { q: "Is it compliant with email, WhatsApp and calling rules?", a: "Unsubscribe links and one-click unsubscribe are added to email, opt-outs are enforced across channels, WhatsApp uses approved templates and the 24-hour window, and AI calls require consent attestation, DND checks and calling hours." },
   { q: "Can I use my own email domain and WhatsApp number?", a: "Yes — connect Resend, SendGrid or SMTP for email, the official WhatsApp Cloud API for WhatsApp, and Twilio or Vapi for voice. Keys are encrypted." },
   { q: "Will the AI make up prices or facts?", a: "No. Prices only come from your catalog or a price you type. Agents are grounded in each lead’s real data, and AI insights can’t add numbers the analysis didn’t produce." },
-  { q: "What's the live demo?", a: "A fully seeded workspace — leads, campaigns, calls, deals and analytics — running on demo providers, so you can try everything without connecting anything." },
+  { q: "What do I need to connect?", a: "Nothing to start finding leads: real businesses come from OpenStreetMap, or Google Places if you add a key. To send email or WhatsApp and place calls, you connect your own accounts, and AI features use your AI key." },
 ];
 
 export const PRICING_FAQS = [
   { q: "Is there a free plan?", a: "Yes. The free plan includes the lead engine, email outreach, the CRM pipeline and core analytics, with monthly limits. No card needed." },
   { q: "What counts as a lead credit?", a: "Each new lead added by discovery or import uses one credit. Re-running a search doesn't charge for leads you already have." },
   { q: "What are AI credits?", a: "Qualification, message writing, call analysis and other AI actions use credits. Cached results are free." },
-  { q: "Can I change plans later?", a: "Yes. Upgrading or downgrading changes your limits straight away." },
+  { q: "How can I pay?", a: "By card through Stripe — billed monthly, cancel anytime — or by UPI through Razorpay in rupees, one month at a time with no auto-debit. Card and UPI details go straight to the payment provider." },
+  { q: "Can I change plans later?", a: "Yes. Upgrades apply as soon as the payment goes through. Moving to Free keeps your paid plan until the end of the month you paid for." },
   { q: "What happens when I hit a limit?", a: "The action that needs more is blocked with a message naming the limit. Nothing you already have is removed, and limits reset each billing period." },
 ];
 
@@ -424,7 +425,7 @@ export function buildSearchIndex(): SearchEntry[] {
     { id: "privacy", group: "Pages", title: "Privacy policy", description: "What we collect and why", href: "/privacy", keywords: "privacy gdpr data personal" },
     { id: "terms", group: "Pages", title: "Terms of service", description: "The rules for using the product", href: "/terms", keywords: "terms legal agreement" },
     { id: "signup", group: "Pages", title: "Create an account", description: "Start on the free plan", href: "/signup", keywords: "signup register start free trial" },
-    { id: "login", group: "Pages", title: "Sign in", description: "Open your workspace or the live demo", href: "/login", keywords: "login sign in demo" },
+    { id: "login", group: "Pages", title: "Sign in", description: "Open your workspace", href: "/login", keywords: "login sign in demo" },
   ];
   const features = PRODUCTS.flatMap((product) => [
     { id: product.slug, group: "Features" as const, title: product.name, description: product.summary, href: `/product/${product.slug}`, keywords: product.keywords.join(" ") },

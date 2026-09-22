@@ -12,33 +12,33 @@
 :root {
   color-scheme: light;
 
-  /* Surfaces */
-  --background: #f9f9f7; /* page plane */
-  --surface: #fcfcfb; /* cards, charts, tables */
-  --surface-raised: #ffffff; /* popovers, dialogs */
-  --surface-muted: #f3f3f0; /* hover wash, table header, inputs */
-  --surface-sunken: #efeeea;
+  /* Surfaces — warm linen and cream */
+  --background: #f3eee4; /* page plane */
+  --surface: #faf7f1; /* cards, charts, tables */
+  --surface-raised: #fffdf9; /* popovers, dialogs */
+  --surface-muted: #eee7db; /* hover wash, table header, inputs */
+  --surface-sunken: #e7dfd1;
 
-  /* Ink */
-  --foreground: #0b0b0b;
-  --foreground-secondary: #52514e;
-  --foreground-muted: #7a7873;
-  --foreground-subtle: #a3a19b;
+  /* Ink — espresso rather than pure black */
+  --foreground: #1f1a14;
+  --foreground-secondary: #594e42;
+  --foreground-muted: #847868;
+  --foreground-subtle: #afa391;
 
   /* Lines */
-  --border: rgba(11, 11, 11, 0.1);
-  --border-strong: rgba(11, 11, 11, 0.18);
-  --gridline: #e1e0d9;
-  --baseline: #c3c2b7;
-  --ring: #2a78d6;
+  --border: rgba(62, 44, 22, 0.13);
+  --border-strong: rgba(62, 44, 22, 0.23);
+  --gridline: #e2d8c7;
+  --baseline: #c8bba5;
+  --ring: #b4532a;
 
   /* Brand / interactive */
-  --primary: #0b0b0b; /* primary buttons are ink, Linear/Vercel-style */
-  --primary-foreground: #fcfcfb;
-  --accent: #2a78d6; /* links, focus, selection */
+  --primary: #1f1a14; /* primary buttons are ink */
+  --primary-foreground: #faf7f1;
+  --accent: #b4532a; /* terracotta: links, focus, selection */
   --accent-foreground: #ffffff;
-  --accent-soft: #e8f1fc;
-  --accent-soft-foreground: #184f95;
+  --accent-soft: #f4e2d5;
+  --accent-soft-foreground: #7a3417;
 
   /* Status (fixed across themes; always paired with an icon/label) */
   --status-good: #0ca30c;
@@ -75,19 +75,19 @@
   /* Shape & motion */
   --radius: 6px;
   --radius-lg: 8px;
-  --shadow-sm: 0 1px 2px rgba(11, 11, 11, 0.04);
-  --shadow-md: 0 4px 16px -4px rgba(11, 11, 11, 0.1), 0 1px 3px rgba(11, 11, 11, 0.05);
-  --shadow-lg: 0 16px 48px -12px rgba(11, 11, 11, 0.22), 0 2px 6px rgba(11, 11, 11, 0.06);
+  --shadow-sm: 0 1px 2px rgba(62, 44, 22, 0.05);
+  --shadow-md: 0 4px 16px -4px rgba(62, 44, 22, 0.12), 0 1px 3px rgba(62, 44, 22, 0.06);
+  --shadow-lg: 0 16px 48px -12px rgba(62, 44, 22, 0.24), 0 2px 6px rgba(62, 44, 22, 0.07);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* Brand aurora: the signature accent for hero, AI and celebration moments (never data) */
-  --brand-1: #5b5bf6;
-  --brand-2: #a855f7;
-  --brand-3: #1fb8e0;
-  --brand-gradient: linear-gradient(120deg, var(--brand-1) 0%, var(--brand-2) 50%, var(--brand-3) 100%);
-  --brand-glow: 0 0 0 1px rgba(91, 91, 246, 0.14), 0 12px 40px -12px rgba(91, 91, 246, 0.35);
-  --spotlight: rgba(91, 91, 246, 0.08);
+  /* Brand accents: terracotta, ochre and sage — for hero and celebration moments (never data) */
+  --brand-1: #b4532a;
+  --brand-2: #c7843b;
+  --brand-3: #7d8c5c;
+  --brand-gradient: linear-gradient(120deg, var(--brand-1) 0%, var(--brand-2) 100%);
+  --brand-glow: 0 0 0 1px rgba(180, 83, 42, 0.16), 0 12px 32px -14px rgba(120, 66, 26, 0.38);
+  --spotlight: rgba(180, 83, 42, 0.07);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -99,29 +99,30 @@
 .dark {
   color-scheme: dark;
 
-  --background: #0d0d0d;
-  --surface: #1a1a19;
-  --surface-raised: #212120;
-  --surface-muted: #242423;
-  --surface-sunken: #121211;
+  /* Warm charcoal and copper */
+  --background: #14110d;
+  --surface: #1d1914;
+  --surface-raised: #25201a;
+  --surface-muted: #2a241d;
+  --surface-sunken: #100d0a;
 
-  --foreground: #f5f5f3;
-  --foreground-secondary: #c3c2b7;
-  --foreground-muted: #8f8d87;
-  --foreground-subtle: #62615d;
+  --foreground: #f2ebdf;
+  --foreground-secondary: #cabdab;
+  --foreground-muted: #968977;
+  --foreground-subtle: #675d50;
 
-  --border: rgba(255, 255, 255, 0.1);
-  --border-strong: rgba(255, 255, 255, 0.18);
-  --gridline: #2c2c2a;
-  --baseline: #383835;
-  --ring: #3987e5;
+  --border: rgba(242, 235, 223, 0.1);
+  --border-strong: rgba(242, 235, 223, 0.18);
+  --gridline: #2d2720;
+  --baseline: #3d352b;
+  --ring: #df8a5c;
 
-  --primary: #f5f5f3;
-  --primary-foreground: #0d0d0d;
-  --accent: #3987e5;
-  --accent-foreground: #ffffff;
-  --accent-soft: #16263b;
-  --accent-soft-foreground: #9ec5f4;
+  --primary: #f2ebdf;
+  --primary-foreground: #14110d;
+  --accent: #df8a5c;
+  --accent-foreground: #14110d;
+  --accent-soft: #3a2519;
+  --accent-soft-foreground: #f1b591;
 
   --success-text: #2fbf2f;
   --warning-text: #f5c04a;
@@ -153,11 +154,11 @@
   --shadow-md: 0 4px 16px -4px rgba(0, 0, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 16px 48px -12px rgba(0, 0, 0, 0.75), 0 2px 6px rgba(0, 0, 0, 0.4);
 
-  --brand-1: #8080ff;
-  --brand-2: #c084fc;
-  --brand-3: #3dd3f5;
-  --brand-glow: 0 0 0 1px rgba(128, 128, 255, 0.2), 0 12px 40px -12px rgba(128, 128, 255, 0.45);
-  --spotlight: rgba(128, 128, 255, 0.1);
+  --brand-1: #df8a5c;
+  --brand-2: #e0b266;
+  --brand-3: #a6b683;
+  --brand-glow: 0 0 0 1px rgba(223, 138, 92, 0.22), 0 12px 36px -14px rgba(223, 138, 92, 0.4);
+  --spotlight: rgba(223, 138, 92, 0.08);
 }
 
 @theme inline {
@@ -198,8 +199,9 @@
   --color-series-7: var(--series-7);
   --color-series-8: var(--series-8);
 
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: var(--font-sans-face), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: var(--font-mono-face), ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-display: var(--font-display-face), var(--font-sans-face), ui-sans-serif, system-ui, sans-serif;
 
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
@@ -289,12 +291,13 @@
 
 /* ----------------------------------------------------------------------------- Brand utilities */
 
+/*
+ * Highlighted words: the heading face in the accent colour, instead of a rainbow gradient.
+ * Kept under the old name so every highlight in the product picks it up.
+ */
 @utility text-gradient {
-  background-image: var(--brand-gradient);
-  background-size: 200% 200%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  font-family: var(--font-display);
+  color: var(--brand-1);
 }
 
 @utility bg-brand-gradient {
@@ -369,7 +372,11 @@
     font-family: var(--font-sans);
     font-size: 14px;
     line-height: 1.5;
-    font-feature-settings: "cv11", "ss01";
+  }
+  h1,
+  h2 {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
   }
   ::selection {
     background: var(--accent-soft);

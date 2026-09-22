@@ -48,6 +48,25 @@ test.describe("Settings, integrations, billing and health", () => {
     await page.keyboard.press("Escape");
   });
 
+  test("billing explains missing payment keys and confirms plan changes", async ({ page }) => {
+    // The e2e server runs without Stripe or Razorpay keys, in development.
+    await page.goto("/app/billing?checkout=cancelled");
+    await expect(page.getByText("Checkout cancelled — nothing was charged")).toBeVisible();
+    await expect(page).toHaveURL(/\/app\/billing$/);
+    await expect(page.getByText("Payments aren't connected.")).toBeVisible();
+
+    await page.getByRole("button", { name: "Upgrade to Scale" }).click();
+    await expect(page.getByRole("dialog", { name: "Switch to Scale?" })).toContainText("no payment is collected");
+    await page.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
+
+    await page.getByRole("button", { name: "Switch to Free" }).click();
+    const downgrade = page.getByRole("dialog", { name: "Move to Free?" });
+    await expect(downgrade).toBeVisible();
+    await downgrade.getByRole("button", { name: /^Keep / }).click();
+    await expect(downgrade).toBeHidden();
+    if (shots) await page.screenshot({ path: "e2e/screenshots/billing.png", fullPage: true });
+  });
+
   test("discover offers ideas from the ideal customer profile", async ({ page }) => {
     await page.goto("/app/discover");
     await expect(page.getByText("Ideas from your ideal customer profile")).toBeVisible();

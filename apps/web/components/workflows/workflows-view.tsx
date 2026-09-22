@@ -337,7 +337,7 @@ function N8nTab() {
           ) : null}
           {data.mode !== "mock" && data.mode !== "not_configured" && !data.signed ? (
             <Callout tone="warning" icon={CircleAlert} className="mt-3">
-              Calls to n8n aren’t signed. Set a webhook secret so your n8n workflows can verify requests really come from ReachAI.
+              Calls to n8n aren’t signed. Set a webhook secret so your n8n workflows can verify requests really come from Reachly.
             </Callout>
           ) : null}
         </section>
@@ -345,7 +345,7 @@ function N8nTab() {
         <section className="rounded-lg border border-border bg-surface shadow-xs">
           <header className="px-4 pt-3.5 pb-2">
             <h3 className="text-[13px] font-semibold">Templates for n8n</h3>
-            <p className="text-xs text-foreground-muted">Import into n8n (Workflows → Import from file). Each verifies ReachAI’s signature before doing anything.</p>
+            <p className="text-xs text-foreground-muted">Import into n8n (Workflows → Import from file). Each verifies Reachly’s signature before doing anything.</p>
           </header>
           <ul className="divide-y divide-border border-t border-border">
             {data.templates.map((template) => (
@@ -392,13 +392,13 @@ function N8nTab() {
 
       <aside className="grid content-start gap-4">
         <section className="rounded-lg border border-border bg-surface p-4 shadow-xs">
-          <h3 className="text-[13px] font-semibold">How ReachAI and n8n talk</h3>
+          <h3 className="text-[13px] font-semibold">How Reachly and n8n talk</h3>
           <ol className="mt-3 grid gap-3 text-xs leading-relaxed text-foreground-secondary">
             <li>
-              <span className="font-medium text-foreground">ReachAI → n8n.</span> A “Run n8n workflow” step POSTs the lead, event and workflow to <code className="font-mono">/webhook/&lt;path&gt;</code>, signed with <code className="font-mono">x-reachai-signature</code>.
+              <span className="font-medium text-foreground">Reachly → n8n.</span> A “Run n8n workflow” step POSTs the lead, event and workflow to <code className="font-mono">/webhook/&lt;path&gt;</code>, signed with <code className="font-mono">x-reachai-signature</code>.
             </li>
             <li>
-              <span className="font-medium text-foreground">n8n → ReachAI (callback).</span> If the step waits, n8n POSTs <code className="font-mono">{"{ token, status, data }"}</code> to:
+              <span className="font-medium text-foreground">n8n → Reachly (callback).</span> If the step waits, n8n POSTs <code className="font-mono">{"{ token, status, data }"}</code> to:
               <span className="mt-1 flex items-center gap-1">
                 <code className="min-w-0 flex-1 truncate rounded bg-surface-muted px-1.5 py-1 font-mono text-[10.5px]">{data.callbackUrl}</code>
                 <Button size="icon-xs" variant="ghost" aria-label="Copy callback URL" onClick={() => void navigator.clipboard.writeText(data.callbackUrl).then(() => toast.success("Copied"))}>
@@ -407,7 +407,7 @@ function N8nTab() {
               </span>
             </li>
             <li>
-              <span className="font-medium text-foreground">n8n → ReachAI (start).</span> Give a workflow a <em>Webhook</em> trigger and n8n can start it with its URL, or use the REST API with an API key.
+              <span className="font-medium text-foreground">n8n → Reachly (start).</span> Give a workflow a <em>Webhook</em> trigger and n8n can start it with its URL, or use the REST API with an API key.
             </li>
           </ol>
         </section>

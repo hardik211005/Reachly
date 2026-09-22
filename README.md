@@ -1,23 +1,24 @@
-# ReachAI
+# Reachly
 
-**AI-powered B2B lead discovery, qualification and outreach.** Describe what you sell; ReachAI finds businesses likely to buy it, enriches and scores them with transparent reasoning, drafts personalised email/WhatsApp/call pitches, runs approval-based or automated sequences, tracks every conversation in a built-in CRM, and reports on what actually converts.
+**AI-powered B2B lead discovery, qualification and outreach.** Describe what you sell; Reachly finds businesses likely to buy it, enriches and scores them with transparent reasoning, drafts personalised email/WhatsApp/call pitches, runs approval-based or automated sequences, tracks every conversation in a built-in CRM, and reports on what actually converts.
 
-> "ReachAI" is a working name. All branding comes from [`packages/config/src/brand.ts`](packages/config/src/brand.ts) — renaming is a one-file change.
+> All branding (name, support email, website) comes from [`packages/config/src/brand.ts`](packages/config/src/brand.ts) and can be overridden per deployment with `NEXT_PUBLIC_BRAND_*` variables. Set `NEXT_PUBLIC_BRAND_SUPPORT_EMAIL` and `NEXT_PUBLIC_BRAND_WEBSITE` to your real domain.
 
 ## Status
 
-Built in phases (see [Roadmap](#roadmap)). Phases 1–7 are complete:
+Built in phases (see [Roadmap](#roadmap)). Phases 1–8 are complete:
 
 - **Foundation** — auth, workspaces, RBAC, design system, onboarding with AI business analysis, event-backed overview, copilot.
-- **Lead engine** — natural-language discovery, provider abstraction (Google Places + demo data), compliant enrichment, dedupe, transparent AI-assisted scoring, lead table and workspace, CSV import/export.
+- **Lead engine** — natural-language discovery over real business data (OpenStreetMap out of the box, Google Places with a key; labelled demo data only for tests/seed), compliant website enrichment with an SSRF guard, dedupe, transparent AI-assisted scoring, lead table and workspace, CSV import/export.
 - **Campaigns & outreach** — 5-step campaign builder with live audience and message previews, launch estimate (volume, reachability, AI credits, cost) with explicit confirmation, sequence engine (steps, delays, stop-on-reply), Manual / Assisted / Automated modes with a human review queue, email (Resend/SendGrid/SMTP) with unsubscribe + List-Unsubscribe, official WhatsApp Cloud API with templates, opt-in and the 24-hour window, signed provider webhooks, unified inbox with AI reply classification and suggested replies, per-lead pitch packs, email/WhatsApp channel dashboards, and copilot tools over campaigns, inbox and leads. See [docs/outreach.md](docs/outreach.md).
 - **AI calling** — voice provider abstraction (Vapi hosted agent, Twilio with a turn-by-turn AI conversation over TwiML, labelled demo simulator), AI call briefs, explicit start confirmation, consent attestation / DND / suppression / calling-hours policy, live transcripts, post-call analysis (outcome, interest, objections, next step), meetings booked at the time the prospect said, voice-minute metering, campaign voice steps and a Calls workspace. See [docs/calling.md](docs/calling.md).
 - **Automation** — workflow engine (event, schedule, webhook and manual triggers; 12 step types incl. waits, email, call prep, signed webhooks and n8n) with persisted per-step progress, exactly-once triggering, retries from the failed step and full run history; a visual builder with inline validation, variables and dry-run tests on real leads; ready-made templates; two-way n8n (signed calls out, callbacks that resume a waiting run, signed inbound trigger URLs, importable n8n templates); outbound webhook endpoints with signed, retried deliveries. See [docs/automation.md](docs/automation.md).
 - **CRM & quotes** — drag-and-drop pipeline (New → Won/Lost) kept in step with lead statuses automatically, deal side panel (value, probability, owner, next steps, meetings with calendar invites, notes, activity), tasks and meetings views, contacts directory, and a quotation system: catalog + pricing rules (volume tiers, discounts, minimum orders, setup-fee waivers, GST) as the only source of prices, AI quote drafts from the conversation that never invent prices, live-priced editor, PDF, email / WhatsApp / share-link sending, and a public page where prospects accept or decline — which wins the deal. See [docs/crm.md](docs/crm.md).
 - **Analytics & AI insights** — an analytics page with 20 defined metrics (rates per contacted lead, previous-period comparison, numerator and denominator on every rate), URL-shareable filters (period, campaign, channel, city, business type, source, score), funnel, trends, channel and segment breakdowns, reply heatmap, sequence-step performance, weekly contact cohorts, loss reasons, estimated costs (AI, channels, voice, prorated plan) with cost per lead / meeting and ROI, and CSV export. AI insights are computed in code with sample sizes and two-proportion significance tests, show their evidence, and may only be reworded by AI with the same numbers. See [docs/analytics.md](docs/analytics.md).
 - **Public website** — a multi-page marketing site: home, platform overview, six product pages with live animated demos, four use-case pages, pricing with a full comparison table from the plan configuration, about, security, contact (a working form with spam controls), privacy and terms, a branded 404, sitemap and robots. Dropdown navigation, site-wide search (⌘K) and a theme switcher. Content describes the product only — no invented customers, logos or statistics.
-- **Workspace administration** — settings for the workspace, your profile (password, sessions, theme), business & services (profile, catalog, pricing rules, AI ideal customer profile), team (email invitations with roles and seat limits), compliance (sending window, opt-outs, calling consent, block list) and API keys; an Integrations page to connect your own AI, lead data, email, WhatsApp, voice and Slack accounts with encrypted credentials; Billing with usage meters; and a System health page for admins. See [docs/workspace-admin.md](docs/workspace-admin.md).
-- **Product UI** — scroll reveals, page transitions, count-up metrics, a gliding nav indicator, aurora page headers and spotlight cards throughout, a redesigned Discover page with search ideas from your profile and live progress, and an animated sign-in showcase. All motion respects `prefers-reduced-motion`.
+- **Workspace administration** — settings for the workspace, your profile (password, sessions, theme), business & services (profile, catalog, pricing rules, AI ideal customer profile), team (email invitations with roles and seat limits), compliance (sending window, opt-outs, calling consent, block list) and API keys; an Integrations page to connect your own AI, lead data, email, WhatsApp, voice and Slack accounts with encrypted credentials; a brand logo upload (sidebar, quotes and quote PDFs); Billing with usage meters; and a System health page for admins. See [docs/workspace-admin.md](docs/workspace-admin.md).
+- **Billing & payments** — card subscriptions through Stripe (Checkout, prorated plan switches, customer portal, cancel/resume, signed webhooks for subscriptions and invoices) and UPI through Razorpay (INR, one prepaid month per payment, server-side signature and amount verification, signed webhooks). Both are switched on by their keys and are idempotent; lapsed prepaid months fall back to Free. See [docs/billing.md](docs/billing.md).
+- **Product UI** — a warm beige light theme and a charcoal dark theme (toggle in the top bar and profile), Bricolage Grotesque headings with Plus Jakarta Sans body text, scroll reveals, page transitions, count-up metrics, a gliding nav indicator, aurora page headers and spotlight cards throughout, a redesigned Discover page with search ideas from your profile and live progress, and an animated sign-in showcase. All motion respects `prefers-reduced-motion`.
 
 ## Tech stack
 
@@ -29,7 +30,7 @@ Built in phases (see [Roadmap](#roadmap)). Phases 1–7 are complete:
 | Data | PostgreSQL + Prisma 7 (driver adapter) with a tenant-scoping client extension |
 | Jobs | BullMQ on Redis (`apps/worker`), or an inline driver for Redis-less local dev |
 | AI | Provider-agnostic layer: Anthropic (official SDK), OpenAI, Google Gemini, deterministic Mock |
-| Integrations | Resend / SendGrid / SMTP · Meta WhatsApp Cloud API · Twilio / Vapi · Stripe · n8n · S3-compatible storage |
+| Integrations | OpenStreetMap / Google Places · Resend / SendGrid / SMTP · Meta WhatsApp Cloud API · Twilio / Vapi · Stripe · Razorpay (UPI) · n8n · S3-compatible storage |
 | Monorepo | Turborepo + npm workspaces |
 | Tests | Vitest (unit + Postgres-backed integration), Playwright (e2e) |
 
@@ -79,7 +80,7 @@ Without Redis, set `QUEUE_DRIVER=inline` in `.env` so background jobs run inside
 ### Migrate, seed, run
 ```bash
 npm run db:deploy           # apply migrations (db:migrate for development changes)
-npm run db:seed             # demo workspace — prints the demo login
+npm run db:seed             # optional: demo workspace for exploring — prints the demo login
 npm run dev                 # web on http://localhost:3000 (+ worker when QUEUE_DRIVER=bullmq)
 ```
 
@@ -87,9 +88,19 @@ Demo login (seeded): `demo@reachai.dev` / `demo-password-2026`.
 
 The seed builds **Demo Growth Agency** through the same services the app uses: ~100 leads discovered with the demo provider, three campaigns (*Delhi Cafés* — assisted email + WhatsApp, *Gurgaon Startups* — automated email, *Noida D2C Brands* — completed) with six weeks of backdated sends, deliveries, opens, AI-classified replies, opt-outs and a booked meeting, AI drafts waiting in the review queue, a dozen analysed AI calls (with transcripts, outcomes and booked meetings) plus calls waiting to be started, three live workflows whose run history comes from the real engine replaying those events (plus two drafts), a pipeline of deals from those replies and calls with quotes in every state (sent, viewed, accepted, declined, expired and an AI draft), next steps and upcoming meetings, a fresh *Restaurants in Gurgaon* segment to build a new campaign from, and AI insights computed from all of it. Every chart reads these stored records.
 
-### Demo mode
+### Real providers (default) and demo mode
 
-`DEMO_MODE=true` lets the whole product run without paid APIs: missing providers fall back to clearly-labelled mock adapters (AI, lead data, email, WhatsApp, voice), and a persistent **Demo mode** badge lists which categories are simulated. Mock outreach is never sent anywhere. `DEMO_MODE` must be `false` in production (enforced at boot).
+`.env` runs everything for real: sign up with your own account and every feature uses real data and real providers.
+
+| What | Works with no key | Add for more |
+|---|---|---|
+| Lead discovery | OpenStreetMap (free, rate-limited public servers) | `GOOGLE_PLACES_API_KEY` or connect Google Places in **Integrations** |
+| Website enrichment | Public websites, robots.txt respected | — |
+| AI (qualification, drafts, copilot) | Built-in rules (`AI_DEFAULT_PROVIDER=mock`) | A free Google Gemini key: `AI_DEFAULT_PROVIDER=google` + `GOOGLE_AI_API_KEY`, or Anthropic/OpenAI |
+| Email / WhatsApp / calls | Labelled simulators (nothing is sent) | SMTP or Resend, WhatsApp Cloud API, Twilio or Vapi — in `.env` or per workspace in **Integrations** |
+| Payments | Plans switch without payment (development only) | `STRIPE_SECRET_KEY` (cards), `RAZORPAY_KEY_ID` + `RAZORPAY_KEY_SECRET` (UPI) |
+
+`DEMO_MODE=true` is only for the seeded demo workspace and the e2e suite: missing providers fall back to clearly-labelled mocks and a **Demo mode** badge lists them. `DEMO_MODE` must be `false` in production (enforced at boot).
 
 ## Environment variables
 
@@ -103,7 +114,7 @@ Documented inline in [`.env.example`](.env.example). Required: `DATABASE_URL`, `
 | `npm run build` | Production builds (Next.js + worker bundle) |
 | `npm run typecheck` / `lint` / `test` | Across all workspaces (Turborepo) |
 | `npm run test:integration` | Postgres-backed integration tests (uses `TEST_DATABASE_URL`) |
-| `npm run test:e2e` | Playwright end-to-end tests against a running app (uses installed Chrome locally) |
+| `npm run test:e2e` | Playwright end-to-end tests. Starts its own demo-mode server on :3100 (build output in `.next-e2e`), so your dev server on :3000 keeps real providers |
 | `npm run db:migrate` / `db:deploy` / `db:seed` / `db:studio` | Database lifecycle |
 | `npm run infra:up` / `infra:down` | Docker services |
 
@@ -122,5 +133,5 @@ See [docs/architecture.md](docs/architecture.md). In short: a modular monolith (
 | 5. Automation | Workflow engine & builder, n8n integration, execution visibility | ✅ |
 | 6. CRM | Pipeline, deals, tasks, notes, quotes + PDF | ✅ |
 | 7. Analytics | Funnels, cohorts, heatmaps, costs & ROI, AI insights | ✅ |
-| 8. Billing | Stripe checkout/portal/webhooks, plan limits | ⏳ |
+| 8. Billing | Stripe checkout/portal/webhooks, Razorpay UPI, plan limits | ✅ |
 | 9. Hardening | Security, observability/system health, e2e, Docker images, docs | ⏳ |

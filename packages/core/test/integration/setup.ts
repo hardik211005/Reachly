@@ -12,6 +12,11 @@ process.env.DEMO_SIMULATE_EVENTS = "false";
 // External services are never called from tests; n8n steps use the demo client.
 process.env.N8N_URL = "";
 process.env.AI_DEFAULT_PROVIDER = "mock";
+// Deterministic generated leads; real map data is never fetched from tests.
+process.env.LEAD_PROVIDER = "mock";
+process.env.ENRICHMENT_WEBSITE_FETCH_ENABLED = "false";
+// No real payment provider is ever called; payments.test.ts sets test keys and stubs the HTTP layer.
+for (const key of ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "RAZORPAY_WEBHOOK_SECRET"]) process.env[key] = "";
 process.env.LOG_LEVEL = "fatal";
 
 afterAll(async () => {

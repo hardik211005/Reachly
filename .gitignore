@@ -5,6 +5,7 @@ node_modules/
 
 # builds
 .next/
+.next-e2e/
 out/
 dist/
 build/

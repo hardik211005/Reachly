@@ -123,15 +123,15 @@ export function Aurora({ className, intensity = 1 }: { className?: string; inten
     <div aria-hidden className={cn("pointer-events-none absolute inset-0 overflow-hidden", className)}>
       <div
         className="absolute -top-1/3 -left-1/4 h-[70%] w-[60%] rounded-full blur-3xl"
-        style={{ background: "radial-gradient(closest-side, var(--brand-1), transparent)", opacity: 0.28 * intensity, animation: "aurora-a 18s ease-in-out infinite" }}
+        style={{ background: "radial-gradient(closest-side, var(--brand-1), transparent)", opacity: 0.2 * intensity, animation: "aurora-a 18s ease-in-out infinite" }}
       />
       <div
         className="absolute -top-1/4 right-[-15%] h-[65%] w-[55%] rounded-full blur-3xl"
-        style={{ background: "radial-gradient(closest-side, var(--brand-2), transparent)", opacity: 0.22 * intensity, animation: "aurora-b 22s ease-in-out infinite" }}
+        style={{ background: "radial-gradient(closest-side, var(--brand-2), transparent)", opacity: 0.14 * intensity, animation: "aurora-b 22s ease-in-out infinite" }}
       />
       <div
         className="absolute bottom-[-35%] left-[20%] h-[60%] w-[50%] rounded-full blur-3xl"
-        style={{ background: "radial-gradient(closest-side, var(--brand-3), transparent)", opacity: 0.18 * intensity, animation: "aurora-a 26s ease-in-out infinite reverse" }}
+        style={{ background: "radial-gradient(closest-side, var(--brand-3), transparent)", opacity: 0.12 * intensity, animation: "aurora-a 26s ease-in-out infinite reverse" }}
       />
     </div>
   );

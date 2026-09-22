@@ -8,20 +8,24 @@ import { AnimatePresence, motion } from "motion/react";
 import { brand } from "@repo/config";
 import { Button, EASE_OUT, cn } from "@repo/ui";
 import { Logo } from "../brand/logo";
+import { ThemeToggle } from "../theme-toggle";
 import { SearchButton } from "./site-search";
 import { COMPANY_LINKS, PRODUCTS, USE_CASES } from "./site";
 
 type MenuKey = "product" | "use-cases" | "company";
 
 const TOP: Array<{ key: MenuKey; label: string; match: string } | { href: string; label: string; match: string }> = [
-  { key: "product", label: "Product", match: "/product" },
+  { href: "/", label: "Home", match: "=/" },
+  { key: "product", label: "Services", match: "=/product|/product/ai-outreach|/product/ai-calling|/product/workflows|/product/crm-quotes|/product/analytics" },
+  { href: "/product/lead-discovery", label: "Find leads", match: "=/product/lead-discovery" },
+  { href: "/pricing", label: "Plans", match: "/pricing" },
   { key: "use-cases", label: "Use cases", match: "/use-cases" },
-  { href: "/pricing", label: "Pricing", match: "/pricing" },
   { key: "company", label: "Company", match: "/about|/security|/contact" },
 ];
 
+/** "=path" matches exactly; other entries match the path and anything under it. */
 function isActive(pathname: string, match: string) {
-  return match.split("|").some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  return match.split("|").some((prefix) => (prefix.startsWith("=") ? pathname === prefix.slice(1) : pathname === prefix || pathname.startsWith(`${prefix}/`)));
 }
 
 function MenuLink({ href, icon: Icon, title, description, onNavigate }: { href: string; icon: React.ComponentType<{ className?: string }>; title: string; description: string; onNavigate: () => void }) {
@@ -59,10 +63,10 @@ function ProductMenu({ onNavigate }: { onNavigate: () => void }) {
             Explore <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
           </span>
         </Link>
-        <Link href="/login" onClick={onNavigate} className="group rounded-xl border border-border p-4 transition-colors hover:bg-surface-muted">
+        <Link href="/pricing" onClick={onNavigate} className="group rounded-xl border border-border p-4 transition-colors hover:bg-surface-muted">
           <PlayCircle className="size-4 text-foreground-secondary" />
-          <p className="mt-3 text-[13.5px] font-semibold">Try the live demo</p>
-          <p className="mt-1 text-[12px] leading-snug text-foreground-muted">A seeded workspace — nothing to connect.</p>
+          <p className="mt-3 text-[13.5px] font-semibold">Start free</p>
+          <p className="mt-1 text-[12px] leading-snug text-foreground-muted">Find real leads today. See what each plan includes.</p>
         </Link>
       </div>
     </div>
@@ -141,11 +145,11 @@ export function MarketingNav() {
 
   return (
     <header className={cn("fixed inset-x-0 top-0 z-50 transition-[background,border-color,box-shadow] duration-300", scrolled || mobileOpen || menu ? "border-b border-border bg-background/80 shadow-[0_1px_0_rgba(0,0,0,0.02)] backdrop-blur-xl" : "border-b border-transparent")}>
-      <nav className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6" aria-label="Main">
+      <nav className="mx-auto flex h-[72px] max-w-7xl items-center gap-4 px-4 sm:px-6" aria-label="Main">
         <Link href="/" className="shrink-0" aria-label={`${brand.name} home`} onClick={close}>
-          <Logo />
+          <Logo size="lg" />
         </Link>
-        <ul className="ml-4 hidden items-center lg:flex" onMouseLeave={() => { setHovered(null); scheduleClose(); }}>
+        <ul className="ml-6 hidden items-center lg:flex" onMouseLeave={() => { setHovered(null); scheduleClose(); }}>
           {TOP.map((item) => {
             const active = isActive(pathname, item.match);
             const id = "key" in item ? item.key : item.href;
@@ -172,7 +176,9 @@ export function MarketingNav() {
           })}
         </ul>
         <div className="ml-auto hidden items-center gap-2 lg:flex">
-          <SearchButton />
+          <SearchButton compact className="xl:hidden" />
+          <SearchButton className="hidden w-40 xl:inline-flex" />
+          <ThemeToggle />
           <Button asChild variant="ghost" size="sm">
             <Link href="/login">Sign in</Link>
           </Button>
@@ -183,8 +189,9 @@ export function MarketingNav() {
             </Link>
           </Button>
         </div>
-        <div className="ml-auto flex items-center gap-1 lg:hidden">
+        <div className="ml-auto flex items-center gap-1.5 lg:hidden">
           <SearchButton compact />
+          <ThemeToggle />
           <button type="button" className="rounded-md p-2 text-foreground-secondary" aria-label={mobileOpen ? "Close menu" : "Open menu"} aria-expanded={mobileOpen} onClick={() => setMobileOpen(!mobileOpen)}>
             {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
@@ -202,7 +209,7 @@ export function MarketingNav() {
             transition={{ duration: 0.2, ease: EASE_OUT }}
             onMouseEnter={() => window.clearTimeout(closeTimer.current)}
             onMouseLeave={scheduleClose}
-            className="absolute top-[60px] left-1/2 hidden -translate-x-1/2 lg:block"
+            className="absolute top-[66px] left-1/2 hidden -translate-x-1/2 lg:block"
           >
             <div className="overflow-hidden rounded-2xl border border-border bg-surface-raised shadow-lg">
               <AnimatePresence mode="wait" initial={false}>
@@ -218,7 +225,7 @@ export function MarketingNav() {
       {/* Mobile menu */}
       <AnimatePresence>
         {mobileOpen ? (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "calc(100dvh - 64px)" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3, ease: EASE_OUT }} className="overflow-y-auto border-t border-border bg-background lg:hidden">
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "calc(100dvh - 72px)" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3, ease: EASE_OUT }} className="overflow-y-auto border-t border-border bg-background lg:hidden">
             <MobileMenu onNavigate={close} pathname={pathname} />
           </motion.div>
         ) : null}
@@ -255,7 +262,13 @@ function MobileMenu({ onNavigate, pathname }: { onNavigate: () => void; pathname
   );
   return (
     <div className="flex min-h-full flex-col px-4 pt-2 pb-6">
-      <MobileSection title="Product" defaultOpen={pathname.startsWith("/product")}>
+      <Link href="/" onClick={onNavigate} className="border-b border-border py-3.5 text-[15px] font-semibold">
+        Home
+      </Link>
+      <Link href="/product/lead-discovery" onClick={onNavigate} className="border-b border-border py-3.5 text-[15px] font-semibold">
+        Find leads
+      </Link>
+      <MobileSection title="Services" defaultOpen={pathname.startsWith("/product")}>
         {item("/product", "Platform overview", Sparkles)}
         {PRODUCTS.map((product) => item(`/product/${product.slug}`, product.name, product.icon))}
       </MobileSection>
@@ -263,7 +276,7 @@ function MobileMenu({ onNavigate, pathname }: { onNavigate: () => void; pathname
         {USE_CASES.map((useCase) => item(`/use-cases/${useCase.slug}`, useCase.name, useCase.icon))}
       </MobileSection>
       <Link href="/pricing" onClick={onNavigate} className="border-b border-border py-3.5 text-[15px] font-semibold">
-        Pricing
+        Plans
       </Link>
       <MobileSection title="Company">{COMPANY_LINKS.map((link) => item(link.href, link.label, link.icon))}</MobileSection>
       <div className="mt-auto grid grid-cols-2 gap-2 pt-6">

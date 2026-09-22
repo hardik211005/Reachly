@@ -2,7 +2,7 @@ import { IntegrationError, providerFetch } from "../lib/errors";
 import { signHmacSha256 } from "../lib/signatures";
 
 /**
- * n8n is an integration layer, not the core: ReachAI owns data and rules and hands work
+ * n8n is an integration layer, not the core: Reachly owns data and rules and hands work
  * to n8n through signed webhook calls; n8n calls back (signed) or uses the REST API.
  */
 

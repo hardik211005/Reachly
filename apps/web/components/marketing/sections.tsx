@@ -370,7 +370,8 @@ const PLAN_POINTS = (plan: PlanDefinition): string[] => {
   ];
 };
 
-export function Pricing({ plans, heading = true, compareLink = true }: { plans: PlanDefinition[]; heading?: boolean; compareLink?: boolean }) {
+/** `upi`: show the rupee price when UPI payments (Razorpay) are switched on for this deployment. */
+export function Pricing({ plans, heading = true, compareLink = true, upi = false }: { plans: PlanDefinition[]; heading?: boolean; compareLink?: boolean; upi?: boolean }) {
   return (
     <section id="pricing" className={cn("scroll-mt-20", heading ? "py-24 sm:py-32" : "pb-8")}>
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -388,6 +389,7 @@ export function Pricing({ plans, heading = true, compareLink = true }: { plans: 
                     <span className="text-[40px] leading-none font-semibold tracking-[-0.04em]">${Math.round(plan.priceMonthly / 100)}</span>
                     <span className="text-[13px] text-foreground-muted">/ month</span>
                   </p>
+                  {upi && plan.priceMonthlyInr ? <p className="mt-1.5 text-[12.5px] font-medium text-foreground-muted">or ₹{(plan.priceMonthlyInr / 100).toLocaleString("en-IN")} / month via UPI</p> : null}
                   <Button asChild variant={featured ? "primary" : "secondary"} className="mt-6 w-full">
                     <Link href={`/signup?plan=${plan.key}`}>{plan.priceMonthly === 0 ? "Start free" : `Choose ${plan.name}`}</Link>
                   </Button>

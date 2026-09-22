@@ -6,13 +6,13 @@ import {
   Home,
   Inbox,
   KanbanSquare,
+  Lightbulb,
   Mail,
   Megaphone,
   MessageCircle,
   Phone,
   Plug,
   Settings,
-  Sparkles,
   Telescope,
   Users,
   Workflow,
@@ -33,19 +33,23 @@ export interface NavGroup {
   items: NavItem[];
 }
 
+/** Grouped by the job: find buyers, reach them, close and automate, then learn what worked. */
 export const NAV_GROUPS: NavGroup[] = [
   {
     label: null,
+    items: [{ label: "Home", href: "/app", icon: Home, shortcut: "o" }],
+  },
+  {
+    label: "Find",
     items: [
-      { label: "Overview", href: "/app", icon: Home, shortcut: "o" },
-      { label: "Discover", href: "/app/discover", icon: Telescope, shortcut: "d" },
+      { label: "Find leads", href: "/app/discover", icon: Telescope, shortcut: "d" },
       { label: "Leads", href: "/app/leads", icon: Users, shortcut: "l" },
-      { label: "Campaigns", href: "/app/campaigns", icon: Megaphone, shortcut: "c" },
     ],
   },
   {
-    label: "Engage",
+    label: "Reach out",
     items: [
+      { label: "Campaigns", href: "/app/campaigns", icon: Megaphone, shortcut: "c" },
       { label: "Inbox", href: "/app/conversations", icon: Inbox, shortcut: "i" },
       { label: "Calls", href: "/app/calls", icon: Phone },
       { label: "Email", href: "/app/email", icon: Mail },
@@ -53,9 +57,9 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "Pipeline",
+    label: "Close & automate",
     items: [
-      { label: "CRM", href: "/app/crm", icon: KanbanSquare, shortcut: "p" },
+      { label: "CRM & quotes", href: "/app/crm", icon: KanbanSquare, shortcut: "p" },
       { label: "Workflows", href: "/app/workflows", icon: Workflow, shortcut: "w" },
     ],
   },
@@ -63,7 +67,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Insights",
     items: [
       { label: "Analytics", href: "/app/analytics", icon: BarChart3, shortcut: "a" },
-      { label: "AI insights", href: "/app/ai-insights", icon: Sparkles },
+      { label: "Insights", href: "/app/ai-insights", icon: Lightbulb },
     ],
   },
 ];

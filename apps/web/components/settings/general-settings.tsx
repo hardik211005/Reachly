@@ -9,6 +9,7 @@ import { Button, Command, CommandEmpty, CommandInput, CommandItem, CommandList, 
 import { api, errorMessage } from "@/lib/api-client";
 import { useCanManage, useShell } from "../shell/shell-context";
 import { ReadOnlyNotice, Row, SaveBar, Section } from "./kit";
+import { LogoSection } from "./logo-section";
 
 interface Workspace {
   id: string;
@@ -140,6 +141,7 @@ export function GeneralSettings() {
   return (
     <>
       <WorkspaceForm key={workspace.data.id} workspace={workspace.data} />
+      <LogoSection />
       <Section title="Details" description="For reference and support requests." icon={Info}>
         <dl className="grid gap-4 text-[13px] sm:grid-cols-2">
           <div>

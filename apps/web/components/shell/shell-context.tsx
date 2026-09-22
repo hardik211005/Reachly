@@ -4,7 +4,7 @@ import * as React from "react";
 
 export interface ShellData {
   user: { id: string; name: string; email: string; image: string | null };
-  workspace: { id: string; name: string; slug: string; currency: string; timezone: string };
+  workspace: { id: string; name: string; slug: string; currency: string; timezone: string; logoUrl: string | null };
   workspaces: Array<{ id: string; name: string; slug: string }>;
   role: "OWNER" | "ADMIN" | "MEMBER" | "VIEWER";
   plan: { key: string; name: string };

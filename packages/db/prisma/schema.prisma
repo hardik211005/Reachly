@@ -1,5 +1,5 @@
 // =============================================================================
-// ReachAI — PostgreSQL schema
+// Reachly — PostgreSQL schema
 //
 // Conventions
 //  - UUID primary keys everywhere.
@@ -575,6 +575,7 @@ model Organization {
 
   memberships        Membership[]
   invitations        Invitation[]
+  logo               OrganizationLogo?
   apiKeys            ApiKey[]
   auditLogs          AuditLog[]
   subscription       Subscription?
@@ -2131,4 +2132,19 @@ model ContactRequest {
   @@index([status, createdAt(sort: Desc)])
   @@index([email])
   @@map("contact_requests")
+}
+
+/// A workspace's brand logo (PNG, JPEG or WebP, max 1 MB). Kept in the database so it works
+/// on any deployment; served at /api/public/logos/:organizationId.
+model OrganizationLogo {
+  organizationId String   @id @db.Uuid
+  mimeType       String
+  data           Bytes
+  sha256         String
+  size           Int
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("organization_logos")
 }

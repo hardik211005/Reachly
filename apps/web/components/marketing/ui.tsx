@@ -113,7 +113,7 @@ export function PageIntro({
   );
 }
 
-export function PrimaryActions({ secondary = { href: "/login", label: "See the live demo" } }: { secondary?: { href: string; label: string } | null }) {
+export function PrimaryActions({ secondary = { href: "/product", label: "See how it works" } }: { secondary?: { href: string; label: string } | null }) {
   return (
     <>
       <Button asChild variant="primary" size="lg" className="relative overflow-hidden px-5 shadow-[var(--brand-glow)]">

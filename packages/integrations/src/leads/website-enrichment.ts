@@ -1,3 +1,5 @@
+import { lookup } from "node:dns/promises";
+import { isIP } from "node:net";
 import { emptyEnrichment, type EnrichmentInput, type EnrichmentProvider, type EnrichmentResult } from "./types";
 
 /**
@@ -9,15 +11,55 @@ import { emptyEnrichment, type EnrichmentInput, type EnrichmentProvider, type En
  * No crawling, no login walls, no personal data beyond what the business lists publicly.
  */
 
-const USER_AGENT = "ReachAIBot/1.0 (+https://reachai.dev/bot)";
+const USER_AGENT = "ReachlyBot/1.0 (+https://reachly.dev/bot)";
 const MAX_BYTES = 1_000_000;
 const TIMEOUT_MS = 8_000;
+
+const MAX_REDIRECTS = 3;
+
+/** True for loopback, private, link-local, CGNAT and multicast addresses (IPv4 and IPv6). */
+export function isPrivateAddress(address: string): boolean {
+  const value = address.toLowerCase();
+  if (isIP(value) === 4) {
+    const [a = 0, b = 0] = value.split(".").map(Number);
+    return a === 0 || a === 10 || a === 127 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) || a >= 224;
+  }
+  if (value.startsWith("::ffff:")) return isPrivateAddress(value.slice(7));
+  return value === "::1" || value === "::" || value.startsWith("fc") || value.startsWith("fd") || value.startsWith("fe80") || value.startsWith("ff");
+}
+
+/**
+ * Lead websites come from third-party data, so only public http(s) hosts are fetched —
+ * never internal services (SSRF). Every redirect hop is checked the same way.
+ */
+export async function isPublicHttpUrl(url: URL): Promise<boolean> {
+  if (url.protocol !== "http:" && url.protocol !== "https:") return false;
+  if (url.username || url.password) return false;
+  const host = url.hostname.replace(/^\[|\]$/g, "").toLowerCase();
+  if (!host || host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") || host.endsWith(".internal")) return false;
+  try {
+    const addresses = isIP(host) ? [host] : (await lookup(host, { all: true })).map((entry) => entry.address);
+    return addresses.length > 0 && addresses.every((address) => !isPrivateAddress(address));
+  } catch {
+    return false;
+  }
+}
 
 async function fetchText(url: string): Promise<{ status: number; text: string; finalUrl: string } | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const response = await fetch(url, { headers: { "user-agent": USER_AGENT, accept: "text/html,text/plain" }, redirect: "follow", signal: controller.signal });
+    let current = new URL(url);
+    let response: Response | null = null;
+    for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
+      if (!(await isPublicHttpUrl(current))) return null;
+      response = await fetch(current, { headers: { "user-agent": USER_AGENT, accept: "text/html,text/plain" }, redirect: "manual", signal: controller.signal });
+      const location = response.status >= 300 && response.status < 400 ? response.headers.get("location") : null;
+      if (!location) break;
+      current = new URL(location, current);
+      response = null;
+    }
+    if (!response) return null;
     const reader = response.body?.getReader();
     if (!reader) return { status: response.status, text: "", finalUrl: response.url };
     const chunks: Uint8Array[] = [];
@@ -41,7 +83,7 @@ async function fetchText(url: string): Promise<{ status: number; text: string; f
 }
 
 /** Minimal robots.txt evaluation for the homepage path. */
-export function robotsAllowsHomepage(robots: string, agent = "reachaibot"): boolean {
+export function robotsAllowsHomepage(robots: string, agent = "reachlybot"): boolean {
   let applies = false;
   let appliesToUs = false;
   let disallowAll = false;
