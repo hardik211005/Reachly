@@ -37,12 +37,14 @@ This document covers the public site, the in-app settings, integrations, billing
 
 | Section | What it does | Who can change it |
 |---|---|---|
-| General | Workspace name, time zone (searchable), currency, country, brand logo | Admins |
-| Your profile | Name, password (with strength meter), active sessions with sign-out, theme | You |
+| General | Workspace name, time zone (searchable), currency, country, brand logo; **export all data**; **delete workspace** | Admins (delete: owner only) |
+| Your profile | Name, password (with strength meter), active sessions with sign-out, theme; **delete account** | You |
 | Business & services | Business profile, the catalog of services and products with pricing rules and quote settings, and the AI-drafted ideal customer profile (edit or re-analyse) | Admins |
 | Team | Invite by email, change roles, remove members, withdraw or resend invitations, leave the workspace | Admins (owners for owner changes) |
 | Compliance | Sending window and days, approval of first messages, WhatsApp opt-in, postal address and email footer, opt-out phrases, AI calling consent and rules, block list | Admins |
+| Lead scoring | Factor weights, thresholds, custom rules, AI qualification, re-score all, and the learned conversion model (see [scoring.md](scoring.md)) | Admins |
 | API keys | Create keys with scopes and expiry (shown once), revoke, quick-start example | Admins, on plans with API access |
+| Audit log | Every recorded change (settings, billing, team, integrations, scoring, exports, deletions) with who did it, filters by area and actor, and the details of each entry | Admins (`audit:read`) |
 
 ### Brand logo
 
@@ -101,6 +103,25 @@ This document covers the public site, the in-app settings, integrations, billing
 - invoices.
 
 Owners pay by card (Stripe) or UPI (Razorpay) from a payment-method dialog; see [billing.md](billing.md). Without payment keys the page says so, and in development owners can switch plans directly (labelled "no payment collected" and audited). In production that path is refused.
+
+## Export, deletion and recovery
+
+- **Export** (`GET /api/v1/workspace/export`, admins): one JSON file with the workspace's leads, contacts, scores, campaigns, conversations, messages, calls, deals, tasks, notes, meetings, quotes and line items, workflows and recent runs, suppressions, settings, invoices, payments, the most recent 50,000 events and 10,000 audit entries. Integration credentials, webhook secrets and API key hashes are never included. Each export is audited.
+- **Delete workspace** (`DELETE /api/v1/workspace`, owner only): the owner must type the workspace name. It is refused while a Stripe subscription is still renewing (cancel in Billing first). The workspace is soft-deleted: members lose access at once, API keys are revoked and pending invitations removed. After **30 days** the daily maintenance job purges it and all its data for good. Until then a platform admin can restore it.
+- **Delete account** (`DELETE /api/v1/me`): the user must type their email. Workspaces where they are the only member are deleted with them. Owning a shared workspace with no other owner blocks deletion until ownership is handed over. In shared workspaces their records stay, with the author cleared. The response signs the browser out, which clears the cached session cookie too. `GET /api/v1/me/deletion` previews exactly what will happen.
+
+Code: `packages/core/src/organizations/lifecycle.ts`.
+
+## Platform admin
+
+`/admin` is a view across **every** workspace on the deployment, for whoever runs it. It is not part of any workspace.
+
+- **Access**: only signed-in users whose email is listed in `PLATFORM_ADMIN_EMAILS` (comma-separated). When `AUTH_REQUIRE_EMAIL_VERIFICATION=true`, the address must also be verified. Everyone else gets a 404, and the page is disallowed in robots.txt. Listed admins also get a **Platform admin** link in the sidebar and command menu.
+- **Shows**: users, with new sign-ups this week and month; workspaces, with active and deleted counts; paying workspaces, with monthly revenue per currency (Stripe at the plan price, UPI at the INR price); stored leads and 7-day activity; and plan distribution.
+- **Workspaces table**: owner, plan and billing state, members, leads, last activity, created, onboarding/deleted badges, and **Restore** for workspaces deleted within the last 30 days.
+- **Users table**: workspaces and roles, verification, last seen, joined.
+
+Code: `packages/core/src/platform/admin.ts`, `apps/web/app/admin`.
 
 ## System health
 

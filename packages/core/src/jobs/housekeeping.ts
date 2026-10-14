@@ -4,6 +4,7 @@ import { prisma } from "@repo/db";
 import { systemContext } from "../context";
 import { getConnectedIntegration } from "../integrations/credentials";
 import { logger } from "../logger";
+import { purgeDeletedWorkspaces } from "../organizations/lifecycle";
 import { registerProcessor } from "./registry";
 
 /** Delivers a notification to external channels (Slack incoming webhook) when configured. */
@@ -37,6 +38,8 @@ registerProcessor("maintenance.cleanup", async () => {
     }),
     prisma.verification.deleteMany({ where: { expiresAt: { lt: now } } }),
   ]);
-  logger.info({ cache: cache.count, webhooks: webhooks.count, verifications: verifications.count }, "maintenance cleanup");
-  return { cache: cache.count, webhooks: webhooks.count, verifications: verifications.count };
+  // Workspaces deleted more than WORKSPACE_PURGE_DAYS ago are removed for good.
+  const { purged } = await purgeDeletedWorkspaces(now);
+  logger.info({ cache: cache.count, webhooks: webhooks.count, verifications: verifications.count, workspacesPurged: purged }, "maintenance cleanup");
+  return { cache: cache.count, webhooks: webhooks.count, verifications: verifications.count, workspacesPurged: purged };
 });

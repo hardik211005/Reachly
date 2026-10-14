@@ -18,7 +18,7 @@ import {
 } from "@repo/ui";
 import { api } from "@/lib/api-client";
 import { ALL_NAV_ITEMS } from "./nav";
-import { useCanManage } from "./shell-context";
+import { useCanManage, useShell } from "./shell-context";
 
 interface SearchResult {
   type: "lead" | "contact" | "campaign" | "conversation" | "deal";
@@ -57,6 +57,7 @@ export function CommandMenu({ open, onOpenChange }: { open: boolean; onOpenChang
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
   const canManage = useCanManage();
+  const { platformAdmin } = useShell();
   const [query, setQuery] = React.useState("");
   const debounced = useDebounced(query.trim(), 200);
 
@@ -130,7 +131,7 @@ export function CommandMenu({ open, onOpenChange }: { open: boolean; onOpenChang
             </CommandGroup>
             <CommandSeparator />
             <CommandGroup heading="Go to">
-              {ALL_NAV_ITEMS.filter((item) => !item.adminOnly || canManage).map((item) => (
+              {ALL_NAV_ITEMS.filter((item) => (!item.adminOnly || canManage) && (!item.platformOnly || platformAdmin)).map((item) => (
                 <CommandItem key={item.href} value={`go ${item.label}`} onSelect={() => go(item.href)}>
                   <item.icon />
                   {item.label}

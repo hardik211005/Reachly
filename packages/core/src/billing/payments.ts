@@ -147,7 +147,7 @@ async function ensureStripeCustomer(ctx: TenantContext, client: Stripe, subscrip
   return customer.id;
 }
 
-function hasLiveStripeSubscription(subscription: Subscription): subscription is Subscription & { providerSubscriptionId: string } {
+export function hasLiveStripeSubscription(subscription: Subscription): subscription is Subscription & { providerSubscriptionId: string } {
   return subscription.billingProvider === "stripe" && Boolean(subscription.providerSubscriptionId) && subscription.status !== "CANCELED" && subscription.status !== "INCOMPLETE";
 }
 

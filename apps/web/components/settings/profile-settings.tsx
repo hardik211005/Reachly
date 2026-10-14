@@ -9,6 +9,7 @@ import { motion } from "motion/react";
 import { Badge, Button, Checkbox, ErrorState, Input, Label, Skeleton, Spinner, cn, toast } from "@repo/ui";
 import { authClient } from "@/lib/auth-client";
 import { useShell } from "../shell/shell-context";
+import { DeleteAccountSection } from "./danger-zone";
 import { Row, SaveBar, Section } from "./kit";
 
 function initials(name: string) {
@@ -268,6 +269,7 @@ export function ProfileSettings() {
       <PasswordSection />
       <SessionsSection />
       <AppearanceSection />
+      <DeleteAccountSection />
     </>
   );
 }

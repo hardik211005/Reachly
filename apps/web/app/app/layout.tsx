@@ -2,6 +2,7 @@ import { getEnv } from "@repo/config/env";
 import { resolvePlan } from "@repo/core/billing/plans";
 import { getProviderStatuses } from "@repo/core/integrations/status";
 import { listMemberships } from "@repo/core/organizations/service";
+import { isPlatformAdmin } from "@repo/core/platform/admin";
 import { AppShell } from "@/components/shell/app-shell";
 import type { ShellData } from "@/components/shell/shell-context";
 import { requireWorkspace } from "@/lib/session";
@@ -29,6 +30,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     plan: { key: plan.key, name: plan.name },
     demoMode: getEnv().DEMO_MODE,
     mockProviders: statuses.filter((status) => status.mode === "mock").map((status) => status.label),
+    platformAdmin: isPlatformAdmin(session.user.email, session.user.emailVerified),
   };
 
   return <AppShell data={data}>{children}</AppShell>;

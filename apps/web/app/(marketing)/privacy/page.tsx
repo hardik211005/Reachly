@@ -60,7 +60,7 @@ const SECTIONS: LegalSection[] = [
   {
     id: "retention",
     title: "Retention and deletion",
-    paragraphs: [`We keep workspace data while your account is active. You can export records as CSV and delete records at any time. To delete your account and its data, email ${brand.supportEmail}.`],
+    paragraphs: [`We keep workspace data while your account is active. You can export records as CSV, download a full export of your workspace, and delete records at any time. Owners can delete a workspace from Settings → General (it is kept for 30 days in case of mistakes, then deleted for good), and anyone can delete their account from Settings → Your profile. Questions: ${brand.supportEmail}.`],
   },
   {
     id: "security",

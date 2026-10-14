@@ -13,6 +13,7 @@ import {
   Phone,
   Plug,
   Settings,
+  ShieldHalf,
   Telescope,
   Users,
   Workflow,
@@ -26,6 +27,8 @@ export interface NavItem {
   shortcut?: string;
   /** Minimum role permission to show the item. */
   adminOnly?: boolean;
+  /** Only for platform admins (PLATFORM_ADMIN_EMAILS). */
+  platformOnly?: boolean;
 }
 
 export interface NavGroup {
@@ -77,6 +80,7 @@ export const NAV_FOOTER: NavItem[] = [
   { label: "Billing", href: "/app/billing", icon: CreditCard },
   { label: "Settings", href: "/app/settings", icon: Settings, shortcut: "s" },
   { label: "System health", href: "/app/system", icon: Activity, adminOnly: true },
+  { label: "Platform admin", href: "/admin", icon: ShieldHalf, platformOnly: true },
 ];
 
 export const ALL_NAV_ITEMS: NavItem[] = [...NAV_GROUPS.flatMap((group) => group.items), ...NAV_FOOTER];

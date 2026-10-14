@@ -9,6 +9,7 @@ import { Button, Command, CommandEmpty, CommandInput, CommandItem, CommandList, 
 import { api, errorMessage } from "@/lib/api-client";
 import { useCanManage, useShell } from "../shell/shell-context";
 import { ReadOnlyNotice, Row, SaveBar, Section } from "./kit";
+import { DeleteWorkspaceSection, ExportDataSection } from "./danger-zone";
 import { LogoSection } from "./logo-section";
 
 interface Workspace {
@@ -175,6 +176,8 @@ export function GeneralSettings() {
           </Link>
         </p>
       </Section>
+      <ExportDataSection />
+      <DeleteWorkspaceSection />
     </>
   );
 }

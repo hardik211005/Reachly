@@ -60,7 +60,14 @@ export class ApiResponse {
     public readonly body: unknown,
     public readonly status = 200,
     public readonly headers: Record<string, string> = {},
+    /** Set-Cookie values to append (a plain header map can only hold one). */
+    public readonly cookies: string[] = [],
   ) {}
+}
+
+function withCookies(response: NextResponse, cookies: string[]) {
+  for (const cookie of cookies) response.headers.append("set-cookie", cookie);
+  return response;
 }
 
 export function ok<T>(data: T, meta?: Record<string, unknown>) {
@@ -220,7 +227,7 @@ export function route<P = Record<string, string>, B extends z.ZodType | undefine
       const params = await context.params;
       const result = await handler({ req, ctx: actor.ctx, body, query, params, requestId });
       logger.debug({ requestId, method: req.method, path: req.nextUrl.pathname, status: result.status, ms: Date.now() - started }, "api");
-      return json(result.body, result.status, requestId, result.headers);
+      return withCookies(json(result.body, result.status, requestId, result.headers), result.cookies);
     } catch (error) {
       return errorResponse(error, requestId);
     }
@@ -243,7 +250,7 @@ export function userRoute<P = Record<string, string>, B extends z.ZodType | unde
       const { body, query } = await parseInput(req, config);
       const params = await context.params;
       const result = await handler({ req, userId: actor.userId, ctx: actor.ctx, body, query, params, requestId });
-      return json(result.body, result.status, requestId, result.headers);
+      return withCookies(json(result.body, result.status, requestId, result.headers), result.cookies);
     } catch (error) {
       return errorResponse(error, requestId);
     }

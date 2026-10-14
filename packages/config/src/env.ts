@@ -37,6 +37,8 @@ const envSchema = z
     ENCRYPTION_KEY: z.string().min(32),
     SIGNING_SECRET: z.string().min(16),
     AUTH_REQUIRE_EMAIL_VERIFICATION: bool(false),
+    /** Comma-separated emails allowed into /admin (platform-wide view of every workspace). */
+    PLATFORM_ADMIN_EMAILS: optionalString,
     GOOGLE_CLIENT_ID: optionalString,
     GOOGLE_CLIENT_SECRET: optionalString,
 

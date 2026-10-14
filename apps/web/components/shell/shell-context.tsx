@@ -11,6 +11,8 @@ export interface ShellData {
   demoMode: boolean;
   /** Provider categories currently served by mock adapters. */
   mockProviders: string[];
+  /** Listed in PLATFORM_ADMIN_EMAILS: sees /admin across every workspace. */
+  platformAdmin: boolean;
 }
 
 const ShellContext = React.createContext<ShellData | null>(null);

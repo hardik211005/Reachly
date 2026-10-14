@@ -8,7 +8,7 @@ import { getSessionCookie } from "better-auth/cookies";
  * (Signed-in users visiting /login are redirected by the page itself after validating
  * the session, so a stale cookie can never cause a redirect loop.)
  */
-const PROTECTED_PREFIXES = ["/app", "/onboarding"];
+const PROTECTED_PREFIXES = ["/app", "/onboarding", "/admin"];
 
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
