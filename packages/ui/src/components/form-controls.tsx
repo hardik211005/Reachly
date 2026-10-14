@@ -152,7 +152,8 @@ export function SegmentedControl<T extends string>({
   size?: "sm" | "md";
 }) {
   return (
-    <div role="radiogroup" className={cn("inline-flex items-center rounded-md border border-border bg-surface-muted p-0.5", className)}>
+    // On narrow screens the options scroll inside the control instead of widening the page.
+    <div role="radiogroup" className={cn("inline-flex max-w-full items-center overflow-x-auto rounded-md border border-border bg-surface-muted p-0.5 [scrollbar-width:none]", className)}>
       {options.map((option) => (
         <button
           key={option.value}
@@ -161,7 +162,7 @@ export function SegmentedControl<T extends string>({
           aria-checked={value === option.value}
           onClick={() => onValueChange(option.value)}
           className={cn(
-            "rounded-[5px] px-2.5 font-medium text-foreground-muted transition-colors hover:text-foreground",
+            "shrink-0 rounded-[5px] px-2.5 font-medium whitespace-nowrap text-foreground-muted transition-colors hover:text-foreground",
             size === "sm" ? "h-6 text-xs" : "h-7 text-[13px]",
             value === option.value && "bg-surface text-foreground shadow-xs",
           )}

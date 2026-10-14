@@ -1027,9 +1027,9 @@ export function WorkflowBuilder({ initial, options }: { initial: BuilderWorkflow
           onChange={(event) => update({ name: event.target.value })}
           readOnly={!canWrite}
           aria-label="Workflow name"
-          className="min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-1.5 py-1 text-[15px] font-semibold tracking-[-0.01em] outline-none hover:border-border focus:border-border-strong"
+          className="min-w-0 flex-1 basis-[calc(100%-2rem)] rounded-md border border-transparent bg-transparent px-1.5 py-1 text-[15px] font-semibold tracking-[-0.01em] outline-none hover:border-border focus:border-border-strong sm:basis-auto"
         />
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {workflow.status === "ACTIVE" ? (
             <Badge tone="success">
               <span className="size-1.5 rounded-full bg-good" /> Live

@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Throwaway values for CI only — never real secrets.
+env:
+  NODE_ENV: test
+  APP_ENV: test
+  APP_URL: http://localhost:3000
+  DATABASE_URL: postgresql://reachai:reachai@localhost:5432/reachai?schema=public
+  DIRECT_URL: postgresql://reachai:reachai@localhost:5432/reachai?schema=public
+  TEST_DATABASE_URL: postgresql://reachai:reachai@localhost:5432/reachai_test?schema=public
+  REDIS_URL: redis://localhost:6379
+  QUEUE_DRIVER: inline
+  BETTER_AUTH_SECRET: ci-only-better-auth-secret-0123456789abcdef
+  ENCRYPTION_KEY: Y2ktb25seS1lbmNyeXB0aW9uLWtleS0zMi1ieXRlcyE=
+  SIGNING_SECRET: ci-only-signing-secret-0123456789
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  checks:
+    name: Typecheck, lint, unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22.12, cache: npm }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+
+  integration:
+    name: Integration tests (Postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env: { POSTGRES_USER: reachai, POSTGRES_PASSWORD: reachai, POSTGRES_DB: reachai }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U reachai" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22.12, cache: npm }
+      - run: npm ci
+      - name: Create the test database
+        run: PGPASSWORD=reachai psql -h localhost -U reachai -c "CREATE DATABASE reachai_test;"
+      - run: npm run test:integration
+
+  e2e:
+    name: End-to-end (Playwright, demo mode)
+    runs-on: ubuntu-latest
+    needs: checks
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env: { POSTGRES_USER: reachai, POSTGRES_PASSWORD: reachai, POSTGRES_DB: reachai }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U reachai" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22.12, cache: npm }
+      - run: npm ci
+      - run: npm run db:deploy
+      - run: npm run db:seed
+      - run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+      - run: npm run test:e2e
+        env: { CI: "true" }
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 7
+
+  docker:
+    name: Docker images build
+    runs-on: ubuntu-latest
+    needs: checks
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build web, worker and migrate targets
+        run: |
+          for target in web worker migrate; do
+            docker buildx build --target "$target" --cache-from type=gha --cache-to type=gha,mode=max -t "reachly-$target:ci" --load .
+          done

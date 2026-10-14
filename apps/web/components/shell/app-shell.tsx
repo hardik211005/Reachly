@@ -87,7 +87,7 @@ export function AppShell({ data, children }: { data: ShellData; children: React.
   return (
     <ShellProvider value={data}>
       <div className="flex min-h-dvh">
-        <Sidebar />
+        <Sidebar onOpenDrawer={() => setMobileNavOpen(true)} />
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-30 flex h-[72px] items-center gap-2 border-b border-border bg-background/85 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:px-5">
             <Button variant="ghost" size="icon-sm" className="md:hidden" aria-label="Open navigation" onClick={() => setMobileNavOpen(true)}>

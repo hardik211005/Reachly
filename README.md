@@ -6,18 +6,21 @@
 
 ## Status
 
-Built in phases (see [Roadmap](#roadmap)). Phases 1–8 are complete:
+Built in phases (see [Roadmap](#roadmap)). All nine phases are complete:
 
 - **Foundation** — auth, workspaces, RBAC, design system, onboarding with AI business analysis, event-backed overview, copilot.
 - **Lead engine** — natural-language discovery over real business data (OpenStreetMap out of the box, Google Places with a key; labelled demo data only for tests/seed), compliant website enrichment with an SSRF guard, dedupe, transparent AI-assisted scoring, lead table and workspace, CSV import/export.
+- **Onboarding autopilot** — the moment a business finishes signing up, Reachly starts its first lead search from the AI profile (opening the live search page), switches on the standard follow-up automations (Pro+), scores chains down for businesses that sell to weak online presence, tells the operator's n8n (signed "business registered" event, with an importable welcome/log template) and notifies the owner. See [docs/automation.md](docs/automation.md#onboarding-autopilot).
+- **Lead scoring & machine learning** — Settings → Lead scoring to tune factor weights, thresholds, custom point rules and AI qualification, and re-score every lead. A learned conversion model (regularised logistic regression, cross-validated AUC) trains on each workspace's real outcomes, shows which factors actually predict conversion, suggests weights you can apply with one click, and gives every lead a calibrated predicted-conversion percentage with its drivers. It retrains weekly and never changes scores on its own. See [docs/scoring.md](docs/scoring.md).
 - **Campaigns & outreach** — 5-step campaign builder with live audience and message previews, launch estimate (volume, reachability, AI credits, cost) with explicit confirmation, sequence engine (steps, delays, stop-on-reply), Manual / Assisted / Automated modes with a human review queue, email (Resend/SendGrid/SMTP) with unsubscribe + List-Unsubscribe, official WhatsApp Cloud API with templates, opt-in and the 24-hour window, signed provider webhooks, unified inbox with AI reply classification and suggested replies, per-lead pitch packs, email/WhatsApp channel dashboards, and copilot tools over campaigns, inbox and leads. See [docs/outreach.md](docs/outreach.md).
 - **AI calling** — voice provider abstraction (Vapi hosted agent, Twilio with a turn-by-turn AI conversation over TwiML, labelled demo simulator), AI call briefs, explicit start confirmation, consent attestation / DND / suppression / calling-hours policy, live transcripts, post-call analysis (outcome, interest, objections, next step), meetings booked at the time the prospect said, voice-minute metering, campaign voice steps and a Calls workspace. See [docs/calling.md](docs/calling.md).
 - **Automation** — workflow engine (event, schedule, webhook and manual triggers; 12 step types incl. waits, email, call prep, signed webhooks and n8n) with persisted per-step progress, exactly-once triggering, retries from the failed step and full run history; a visual builder with inline validation, variables and dry-run tests on real leads; ready-made templates; two-way n8n (signed calls out, callbacks that resume a waiting run, signed inbound trigger URLs, importable n8n templates); outbound webhook endpoints with signed, retried deliveries. See [docs/automation.md](docs/automation.md).
 - **CRM & quotes** — drag-and-drop pipeline (New → Won/Lost) kept in step with lead statuses automatically, deal side panel (value, probability, owner, next steps, meetings with calendar invites, notes, activity), tasks and meetings views, contacts directory, and a quotation system: catalog + pricing rules (volume tiers, discounts, minimum orders, setup-fee waivers, GST) as the only source of prices, AI quote drafts from the conversation that never invent prices, live-priced editor, PDF, email / WhatsApp / share-link sending, and a public page where prospects accept or decline — which wins the deal. See [docs/crm.md](docs/crm.md).
 - **Analytics & AI insights** — an analytics page with 20 defined metrics (rates per contacted lead, previous-period comparison, numerator and denominator on every rate), URL-shareable filters (period, campaign, channel, city, business type, source, score), funnel, trends, channel and segment breakdowns, reply heatmap, sequence-step performance, weekly contact cohorts, loss reasons, estimated costs (AI, channels, voice, prorated plan) with cost per lead / meeting and ROI, and CSV export. AI insights are computed in code with sample sizes and two-proportion significance tests, show their evidence, and may only be reworded by AI with the same numbers. See [docs/analytics.md](docs/analytics.md).
 - **Public website** — a multi-page marketing site: home, platform overview, six product pages with live animated demos, four use-case pages, pricing with a full comparison table from the plan configuration, about, security, contact (a working form with spam controls), privacy and terms, a branded 404, sitemap and robots. Dropdown navigation, site-wide search (⌘K) and a theme switcher. Content describes the product only — no invented customers, logos or statistics.
-- **Workspace administration** — settings for the workspace, your profile (password, sessions, theme), business & services (profile, catalog, pricing rules, AI ideal customer profile), team (email invitations with roles and seat limits), compliance (sending window, opt-outs, calling consent, block list) and API keys; an Integrations page to connect your own AI, lead data, email, WhatsApp, voice and Slack accounts with encrypted credentials; a brand logo upload (sidebar, quotes and quote PDFs); Billing with usage meters; and a System health page for admins. See [docs/workspace-admin.md](docs/workspace-admin.md).
+- **Workspace administration** — settings for the workspace, your profile (password, sessions, theme, account deletion), business & services (profile, catalog, pricing rules, AI ideal customer profile), team (email invitations with roles and seat limits), compliance (sending window, opt-outs, calling consent, block list) and API keys; an Integrations page to connect your own AI, lead data, email, WhatsApp, voice and Slack accounts with encrypted credentials; a brand logo upload (sidebar, quotes and quote PDFs); Billing with usage meters; a System health page and an audit log viewer for admins; a full JSON export of the workspace; owner-only workspace deletion with a 30-day recovery window; and a platform admin view at `/admin` (every workspace and user, revenue, restore) for the emails in `PLATFORM_ADMIN_EMAILS`. See [docs/workspace-admin.md](docs/workspace-admin.md).
 - **Billing & payments** — card subscriptions through Stripe (Checkout, prorated plan switches, customer portal, cancel/resume, signed webhooks for subscriptions and invoices) and UPI through Razorpay (INR, one prepaid month per payment, server-side signature and amount verification, signed webhooks). Both are switched on by their keys and are idempotent; lapsed prepaid months fall back to Free. See [docs/billing.md](docs/billing.md).
+- **Production hardening** — multi-target Dockerfile (non-root web/worker images, one-shot migrate), a production Docker Compose stack, an unauthenticated `/api/health` probe for load balancers, GitHub Actions CI (typecheck, lint, unit, Postgres integration, Playwright e2e, image builds) and a deployment guide with a production checklist. See [docs/deployment.md](docs/deployment.md).
 - **Product UI** — a warm beige light theme and a charcoal dark theme (toggle in the top bar and profile), Bricolage Grotesque headings with Plus Jakarta Sans body text, scroll reveals, page transitions, count-up metrics, a gliding nav indicator, aurora page headers and spotlight cards throughout, a redesigned Discover page with search ideas from your profile and live progress, and an animated sign-in showcase. All motion respects `prefers-reduced-motion`.
 
 ## Tech stack
@@ -50,9 +53,11 @@ packages/
   ui/             design system
   tsconfig/       shared TS configs
 infra/
-  docker/         docker-compose (Postgres, Redis, n8n, Mailpit, MinIO)
+  docker/         docker-compose (local: Postgres, Redis, n8n, Mailpit, MinIO) and docker-compose.prod.yml
   scripts/        dev helpers (e.g. Docker-free Postgres)
-docs/             architecture, automation, calling, crm, outreach, analytics, workspace admin & public site
+docs/             architecture, deployment, scoring, automation, calling, crm, outreach, analytics, billing, workspace admin
+Dockerfile        production images (targets: web, worker, migrate)
+.github/          CI workflow
 ```
 
 ## Local setup
@@ -118,6 +123,10 @@ Documented inline in [`.env.example`](.env.example). Required: `DATABASE_URL`, `
 | `npm run db:migrate` / `db:deploy` / `db:seed` / `db:studio` | Database lifecycle |
 | `npm run infra:up` / `infra:down` | Docker services |
 
+## Deployment
+
+Build the images from the root `Dockerfile` (`--target web|worker|migrate`) or run the whole stack with `infra/docker/docker-compose.prod.yml`. Health probe: `GET /api/health`. Full guide and production checklist: [docs/deployment.md](docs/deployment.md).
+
 ## Architecture
 
 See [docs/architecture.md](docs/architecture.md). In short: a modular monolith (Next.js app + domain packages) with a BullMQ worker; every query is tenant-scoped by a Prisma extension; the immutable event log powers timelines and analytics; every external capability sits behind a provider interface with a labelled mock.
@@ -134,4 +143,4 @@ See [docs/architecture.md](docs/architecture.md). In short: a modular monolith (
 | 6. CRM | Pipeline, deals, tasks, notes, quotes + PDF | ✅ |
 | 7. Analytics | Funnels, cohorts, heatmaps, costs & ROI, AI insights | ✅ |
 | 8. Billing | Stripe checkout/portal/webhooks, Razorpay UPI, plan limits | ✅ |
-| 9. Hardening | Security, observability/system health, e2e, Docker images, docs | ⏳ |
+| 9. Hardening | Scoring settings + learned conversion model, health probe, Docker images, CI, e2e, deployment docs | ✅ |

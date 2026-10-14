@@ -94,7 +94,9 @@ export function AnimatedNumber({ value, format = (n) => String(Math.round(n)), d
     return () => controls.stop();
   }, [value, inView, reduce, duration]);
   return (
-    <span ref={ref} className={cn("tabular", className)}>
+    // The number animates client-side anyway, and cached client data can be fresher than the
+    // server HTML (e.g. a count the sidebar already fetched), so a differing first value is expected.
+    <span ref={ref} className={cn("tabular", className)} suppressHydrationWarning>
       {format(value)}
     </span>
   );

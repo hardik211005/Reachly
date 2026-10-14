@@ -1,0 +1,80 @@
+# Production-style stack: Postgres, Redis, a one-shot migration, the web app and the worker.
+#   cp .env.example .env.production   # fill in secrets, APP_URL, providers
+#   docker compose -f infra/docker/docker-compose.prod.yml --env-file .env.production up -d --build
+# For real deployments prefer managed Postgres/Redis and point DATABASE_URL / REDIS_URL at them.
+# See docs/deployment.md.
+name: reachly
+
+x-app-env: &app-env
+  env_file: ../../.env.production
+  environment:
+    NODE_ENV: production
+    APP_ENV: ${APP_ENV:-production}
+    DEMO_MODE: "false"
+    QUEUE_DRIVER: bullmq
+    DATABASE_URL: postgresql://${POSTGRES_USER:-reachly}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-reachly}?schema=public
+    DIRECT_URL: postgresql://${POSTGRES_USER:-reachly}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-reachly}?schema=public
+    REDIS_URL: redis://redis:6379
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-reachly}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-reachly}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-reachly}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # BullMQ requires noeviction so queued jobs are never dropped under memory pressure.
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    <<: *app-env
+    build: { context: ../.., dockerfile: Dockerfile, target: migrate }
+    restart: "no"
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  web:
+    <<: *app-env
+    build: { context: ../.., dockerfile: Dockerfile, target: web }
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    volumes:
+      - storage:/app/apps/web/.storage
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+
+  worker:
+    <<: *app-env
+    build: { context: ../.., dockerfile: Dockerfile, target: worker }
+    restart: unless-stopped
+    volumes:
+      - storage:/app/.storage
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+
+volumes:
+  postgres-data:
+  redis-data:
+  storage:

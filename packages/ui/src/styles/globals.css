@@ -361,6 +361,14 @@
   * {
     border-color: var(--border);
   }
+  /*
+   * A grid with no explicit columns sizes its one column to its widest child's min-content, so a
+   * long name or a chart can push a page wider than a phone. Default to a shrinkable column; any
+   * grid-cols-* utility (a higher layer) still wins wherever a page sets its own columns.
+   */
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

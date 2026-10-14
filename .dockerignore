@@ -1,0 +1,20 @@
+# Keep the build context small and free of secrets.
+**/node_modules
+**/.next
+**/.next-*
+**/dist
+**/.turbo
+**/coverage
+**/test-results
+**/playwright-report
+**/e2e/.auth
+**/e2e/screenshots
+packages/db/src/generated
+.git
+.env
+.env.*
+!.env.example
+.local
+.storage
+.claude
+*.log

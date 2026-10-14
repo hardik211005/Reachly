@@ -188,6 +188,7 @@ function UserMenu({ collapsed }: { collapsed: boolean }) {
 
 export function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
   const canManage = useCanManage();
+  const { platformAdmin } = useShell();
   const counts = useNavCounts();
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -196,7 +197,7 @@ export function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; 
       </div>
       {/* Everything scrolls together (thin scrollbar on hover); only the profile stays pinned. */}
       <nav aria-label="Main" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pt-4 pb-3 [scrollbar-color:var(--border-strong)_transparent] [scrollbar-width:none] hover:[scrollbar-width:thin]">
-        {[...NAV_GROUPS, { label: "Workspace", items: NAV_FOOTER.filter((item) => !item.adminOnly || canManage) }].map((group, index) => (
+        {[...NAV_GROUPS, { label: "Workspace", items: NAV_FOOTER.filter((item) => (!item.adminOnly || canManage) && (!item.platformOnly || platformAdmin)) }].map((group, index) => (
           <div key={group.label ?? index} className={cn(index > 0 && "mt-5")}>
             {group.label && !collapsed ? (
               <p className="mb-1.5 px-2.5 text-[11px] font-bold tracking-[0.08em] text-foreground-muted uppercase">{group.label}</p>
@@ -251,8 +252,21 @@ function useCollapsed(): [boolean, () => void] {
   return [collapsed, toggle];
 }
 
-export function Sidebar() {
-  const [collapsed, toggle] = useCollapsed();
+/** Tablets (md up to lg) always get the icon rail: the full sidebar would leave pages too narrow. */
+const TABLET_QUERY = "(max-width: 1023.98px)";
+function subscribeTablet(listener: () => void) {
+  const query = window.matchMedia(TABLET_QUERY);
+  query.addEventListener("change", listener);
+  return () => query.removeEventListener("change", listener);
+}
+function useTabletRail(): boolean {
+  return React.useSyncExternalStore(subscribeTablet, () => window.matchMedia(TABLET_QUERY).matches, () => false);
+}
+
+export function Sidebar({ onOpenDrawer }: { onOpenDrawer?: () => void }) {
+  const [preferCollapsed, toggle] = useCollapsed();
+  const rail = useTabletRail();
+  const collapsed = preferCollapsed || rail;
 
   return (
     <aside
@@ -263,7 +277,7 @@ export function Sidebar() {
     >
       <div className={cn("flex h-[72px] items-center border-b border-border px-3.5", collapsed ? "justify-center" : "justify-between")}>
         {collapsed ? (
-          <button type="button" onClick={toggle} aria-label="Expand sidebar" className="rounded-lg transition-transform hover:scale-105">
+          <button type="button" onClick={rail && onOpenDrawer ? onOpenDrawer : toggle} aria-label={rail ? "Open navigation" : "Expand sidebar"} className="rounded-lg transition-transform hover:scale-105">
             <Logo showName={false} size="lg" />
           </button>
         ) : (
