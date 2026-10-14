@@ -4,6 +4,8 @@ import { businessProfileInputSchema, offeringInputSchema } from "../business/sch
 import { createCampaign } from "../campaigns/service";
 import { campaignInputSchema } from "../campaigns/schemas";
 import { createTenantContext, type TenantContext } from "../context";
+import { prisma } from "@repo/db";
+import { runOnboardingAutopilot } from "./autopilot";
 import { createOrganization, resolveMembership } from "../organizations/service";
 
 export const onboardingBusinessSchema = z.object({
@@ -49,10 +51,15 @@ export const onboardingCompleteSchema = z.object({
   campaign: campaignInputSchema.nullable(),
 });
 
-/** Final step: optionally creates the first (draft) campaign and marks onboarding done. */
+/**
+ * Final step: optionally creates the first (draft) campaign, marks onboarding done, then starts the
+ * autopilot (first lead search, standard automations, n8n hand-off) — only the first time.
+ */
 export async function finishOnboarding(ctx: TenantContext, input: z.input<typeof onboardingCompleteSchema>) {
   const data = onboardingCompleteSchema.parse(input);
+  const organization = await prisma.organization.findUniqueOrThrow({ where: { id: ctx.organizationId }, select: { onboardingCompleted: true } });
   const campaign = data.campaign ? await createCampaign(ctx, data.campaign) : null;
   await completeOnboarding(ctx);
-  return { campaignId: campaign?.id ?? null };
+  const autopilot = organization.onboardingCompleted ? null : await runOnboardingAutopilot(ctx, { campaignId: campaign?.id ?? null });
+  return { campaignId: campaign?.id ?? null, discoveryRunId: autopilot?.discovery.runId ?? null, autopilot };
 }

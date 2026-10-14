@@ -117,10 +117,21 @@ Both directions are supported. None of them is required: without n8n, workflows 
 | `reachai-meeting-booked.json` | Webhook → verify signature → Google Sheets row → respond |
 | `reachai-enrich-callback.json` | Webhook → do work → POST the result to the callback URL (for steps that wait) |
 | `reachai-daily-digest.json` | Schedule → Reachly API → Slack |
+| `reachai-business-registered.json` | Webhook (path `reachly-business-registered`) → verify signature → log the signup to Google Sheets + send a welcome email → respond. For the operator; fired by the onboarding autopilot. |
 
 The template Code nodes verify the signature, so n8n needs `NODE_FUNCTION_ALLOW_BUILTIN=crypto` and `REACHAI_WEBHOOK_SECRET` set to the same value as `N8N_WEBHOOK_SECRET`. The compose file sets both.
 
 **Known limitation**: n8n re-serialises the parsed body before it's hashed, so a payload whose JSON serialises differently (e.g. unusual number formats) would fail verification. Reachly's payloads are plain JSON and verify as expected. The templates haven't been tested against every n8n version.
+
+## Onboarding autopilot
+
+When a business finishes onboarding, Reachly starts working for it with no further clicks (`packages/core/src/onboarding/autopilot.ts`, called from `finishOnboarding`). It runs **once per workspace**. Each step is independent: a step that can't run is skipped with a reason and never blocks onboarding.
+
+1. **Chain default.** If the AI profile's buying signals are "need" signals (no website, weak website, no social presence, few reviews, no online ordering), the chain policy starts on *Avoid*. These sellers rarely win chain outlets, which buy centrally. Otherwise it stays *Neutral*. This runs before the search, so results are scored with it. Change it in Settings → Lead scoring.
+2. **First lead search.** Uses the onboarding campaign's audience if one was created, else the AI profile: up to 3 target categories, the first recommended location (or the business city), a 25 km radius, contactable businesses only, and the buying signals and first offering as context. The wizard then opens `/app/discover?run=<id>`, so the owner watches it fill in live.
+3. **Standard automations** (Pro and above): *Positive reply → follow up fast*, *High-fit lead → call queue*, *Call back requested → schedule it* and *Opt-out → alert the owner* are created and switched on. Any that can't validate (for example a provider isn't connected) is saved as a draft. None of them sends a message. On Free this step is skipped with "available on Pro and above".
+4. **Operator hand-off to n8n.** When the platform `N8N_URL` is set, the `platform.business-registered` job POSTs a signed payload to `<N8N_URL>/webhook/reachly-business-registered`. The payload has the workspace, plan, owner name and email, business profile, offerings, active automations and links. Import `reachai-business-registered.json` to log signups and send a welcome email. If no workflow listens on that path (HTTP 404), the job logs a warning instead of retrying.
+5. **Notification.** The owner gets "Reachly is already working for you", with what is running and a link to the search. Everything is recorded in the audit log as `onboarding.autopilot`.
 
 ## Outbound webhooks
 

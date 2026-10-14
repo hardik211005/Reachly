@@ -10,6 +10,7 @@ import "./calls";
 import "./workflows";
 import "./crm";
 import "./analytics";
+import "./onboarding";
 
 export { processJob, registeredJobNames, hasProcessor, registerProcessor, NonRetryableJobError } from "./registry";
 export { recordDeadLetter, recentDeadLetters } from "./dead-letter";

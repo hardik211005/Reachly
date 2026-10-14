@@ -23,6 +23,12 @@ export const N8N_TEMPLATES = [
     description: "Every morning, reads yesterday's numbers from the Reachly API with an API key and posts them to Slack.",
     webhookPath: null,
   },
+  {
+    file: "reachai-business-registered.json",
+    name: "Business registered → welcome & log",
+    description: "For whoever runs Reachly: fires automatically when a new business finishes signing up (platform N8N_URL). Verifies the signature, then logs the signup to Google Sheets and sends a welcome email (enable each node once credentials are set).",
+    webhookPath: "reachly-business-registered",
+  },
 ] as const;
 
 export async function n8nStatus(ctx: TenantContext) {

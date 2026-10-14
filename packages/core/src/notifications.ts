@@ -13,6 +13,7 @@ export type NotificationType =
   | "credits.low"
   | "payment.failed"
   | "discovery.completed"
+  | "onboarding.autopilot"
   | "import.completed"
   | "quote.viewed"
   | "quote.accepted"

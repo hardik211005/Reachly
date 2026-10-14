@@ -120,7 +120,7 @@ const STEP_COPY = [
   { eyebrow: "Step 3 · First campaign", title: "Define your first campaign", highlight: "first campaign", description: "A campaign groups a target audience with an offer and an outreach sequence." },
   { eyebrow: "Step 4 · Channels", title: "How should we reach them?", highlight: "reach them", description: "Only channels on your plan can be selected. Providers are connected in Integrations." },
   { eyebrow: "Step 5 · Automation", title: "Choose how much runs on its own", highlight: "on its own", description: "You can change this per campaign any time. Automated outreach always respects your limits and provider policies." },
-  { eyebrow: "Step 6 · Review", title: "You're ready to find leads", highlight: "find leads", description: "Nothing is sent yet. Next, you'll discover leads for this campaign and review them before any outreach." },
+  { eyebrow: "Step 6 · Review", title: "You're ready to find leads", highlight: "find leads", description: "When you finish, Reachly starts finding leads straight away and switches on your follow-up automations. Nothing is sent to anyone until you approve it." },
 ];
 
 // ----------------------------------------------------------------------------- Business step
@@ -693,7 +693,7 @@ export function OnboardingWizard({ initial }: { initial: OnboardingInitial }) {
 
   const finish = useMutation({
     mutationFn: async (withCampaign: boolean) =>
-      api<{ campaignId: string | null }>("/api/v1/onboarding/complete", {
+      api<{ campaignId: string | null; discoveryRunId: string | null }>("/api/v1/onboarding/complete", {
         method: "POST",
         json: {
           campaign: withCampaign
@@ -723,7 +723,11 @@ export function OnboardingWizard({ initial }: { initial: OnboardingInitial }) {
     onSuccess: (data) => {
       setCelebrating(true);
       window.setTimeout(() => {
-        router.push(data.campaignId ? `/app/discover?campaignId=${data.campaignId}` : "/app");
+        // The autopilot has already started the first lead search: land on it, live.
+        const params = new URLSearchParams();
+        if (data.campaignId) params.set("campaignId", data.campaignId);
+        if (data.discoveryRunId) params.set("run", data.discoveryRunId);
+        router.push(params.size ? `/app/discover?${params}` : "/app");
         router.refresh();
       }, 1500);
     },

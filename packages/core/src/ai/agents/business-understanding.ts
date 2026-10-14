@@ -132,14 +132,34 @@ function unique<T>(values: T[]): T[] {
   return [...new Set(values)];
 }
 
+/** "Gym equipment", "pharmacy software": the business named in the industry is the customer, not the seller. */
+const SELLS_TO_INDUSTRY = /\b(equipment|supplies|supplier|suppliers|software|machinery|machines|solutions|services for|maintenance|amc|furniture|uniforms|consumables)\b/i;
+/** Words after which a description usually names who the business sells to. */
+const CUSTOMER_CUE = /\b(?:for|to|supply|supplies|supplying|supplier to|serve|serves|serving|clients?|customers?|work with|works with|partner with|sell to|sells to|selling to|including|like|such as)\b([^.;!?]+)/gi;
+
+/**
+ * Customers named in the free-text description ("we supply cafés and offices", "for schools and
+ * hospitals"), minus the seller's own kind of business — a bakery isn't its own customer.
+ */
+export function customersFromDescription(input: Pick<BusinessUnderstandingInput, "industry" | "description">) {
+  const own = SELLS_TO_INDUSTRY.test(input.industry) ? new Set<string>() : new Set(matchCategories(input.industry).slice(0, 2).map((category) => category.key));
+  const fromIndustry = SELLS_TO_INDUSTRY.test(input.industry) ? matchCategories(input.industry.replace(SELLS_TO_INDUSTRY, " ")).slice(0, 2) : [];
+  const phrases = [...input.description.matchAll(CUSTOMER_CUE)].map((match) => match[1] ?? "");
+  // Each phrase may list several customers ("offices, schools and hospitals"), so match each part.
+  const fromPhrases = phrases.flatMap((phrase) => phrase.split(/,|\band\b|\bor\b|\//i).flatMap((part) => matchCategories(part).slice(0, 1)));
+  return unique([...fromIndustry, ...fromPhrases]).filter((category) => !own.has(category.key));
+}
+
 export function mockBusinessUnderstanding(input: BusinessUnderstandingInput): Icp {
   const offeringText = input.offerings.map((o) => `${o.name} ${o.description ?? ""}`).join(" ");
   const archetype = detectArchetype(`${input.industry} ${input.description} ${offeringText}`);
   const defaults = ARCHETYPE_DEFAULTS[archetype];
 
-  const statedCategories = unique(
-    [...input.targetCustomerTypes, ...input.targetIndustries].flatMap((text) => matchCategories(text).slice(0, 2)),
-  );
+  // Who they sell to: what they told us explicitly first, then customers named in the description.
+  const statedCategories = unique([
+    ...[...input.targetCustomerTypes, ...input.targetIndustries].flatMap((text) => matchCategories(text).slice(0, 2)),
+    ...customersFromDescription(input),
+  ]);
   const categories = (statedCategories.length ? statedCategories : defaults.categories.map((key) => getCategory(key)))
     .filter((category): category is NonNullable<typeof category> => Boolean(category))
     .slice(0, 6);

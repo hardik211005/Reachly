@@ -41,6 +41,8 @@ export const JOBS = {
     schema: org.extend({ leadId: uuid, runId: uuid.optional(), campaignId: uuid.optional() }),
   },
   "leads.import": { queue: "enrichment", schema: org.extend({ importJobId: uuid }) },
+  "scoring.train": { queue: "scoring", schema: org },
+  "scoring.train-all": { queue: "scoring", schema: z.object({}) },
 
   // Campaigns & outreach
   "campaigns.launch": { queue: "outreach", schema: org.extend({ campaignId: uuid }) },
@@ -64,6 +66,9 @@ export const JOBS = {
   "analytics.insights": { queue: "analytics", schema: org },
   "analytics.insights-all": { queue: "analytics", schema: z.object({}) },
   "analytics.daily-summary": { queue: "analytics", schema: org },
+
+  // Platform: tells the operator's n8n a business registered (onboarding autopilot).
+  "platform.business-registered": { queue: "webhooks", schema: org.extend({ discoveryRunId: uuid.optional() }) },
 
   // Notifications
   "notifications.deliver": { queue: "notifications", schema: z.object({ notificationId: uuid }) },
@@ -114,6 +119,8 @@ export const SCHEDULES: Array<{
     pattern: "0 6 * * *",
     inlineEveryMs: 6 * 60 * 60_000,
   },
+  // Weekly retrain of each workspace's learned conversion model (Mondays 05:00).
+  { id: "scoring-train-weekly", job: "scoring.train-all", pattern: "0 5 * * 1", inlineEveryMs: 7 * 24 * 60 * 60_000 },
   { id: "quotes-expire", job: "quotes.expire", pattern: "5 * * * *", inlineEveryMs: 60 * 60_000 },
   {
     id: "maintenance-daily",
