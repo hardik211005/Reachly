@@ -4,7 +4,7 @@ import { created, ok, route } from "@/lib/api";
 
 export const GET = route({ query: leadListQuerySchema, permission: "leads:read" }, async ({ ctx, query }) => {
   const result = await listLeads(ctx, query);
-  return ok(result.items, { total: result.total, page: result.page, pageSize: result.pageSize, facets: result.facets });
+  return ok(result.items, { total: result.total, page: result.page, pageSize: result.pageSize, facets: result.facets, chains: result.chains, hiddenChains: result.hiddenChains });
 });
 
 export const POST = route({ body: leadCreateSchema, permission: "leads:write" }, async ({ ctx, body }) => created(await createLead(ctx, body)));

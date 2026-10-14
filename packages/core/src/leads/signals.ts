@@ -18,6 +18,7 @@ export const SIGNAL_CATALOG = {
   premium_positioning: { label: "Premium positioning", description: "Higher price level / premium brand positioning." },
   no_online_ordering: { label: "No online ordering", description: "No direct online ordering or booking found." },
   growing: { label: "Growing", description: "Signals of expansion: new outlets, funding, team growth." },
+  chain_or_franchise: { label: "Chain or franchise", description: "Outlet of a recognised brand chain or franchise — usually has central marketing and procurement." },
 } as const;
 
 export type SignalKey = keyof typeof SIGNAL_CATALOG;

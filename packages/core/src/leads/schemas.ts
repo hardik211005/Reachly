@@ -29,6 +29,8 @@ export const leadListQuerySchema = z.object({
   hasEmail: booleanParam,
   hasPhone: booleanParam,
   includeDnc: booleanParam,
+  /** Chain/franchise outlets: hide, show (default) or only. Defaults to hide when the workspace excludes chains. */
+  chains: z.enum(["hide", "show", "only"]).optional(),
   discoveryRunId: z.uuid().optional(),
   ids: csvArray(z.uuid()),
   sort: z.enum(LEAD_SORT_FIELDS).default("score"),

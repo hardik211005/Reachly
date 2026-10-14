@@ -3,7 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, CreditCard, KeyRound, Plug, ShieldCheck, SlidersHorizontal, Store, UserRound, Users } from "lucide-react";
+import { Building2, CreditCard, Gauge, KeyRound, Plug, ScrollText, ShieldCheck, SlidersHorizontal, Store, UserRound, Users } from "lucide-react";
+import { useCanManage } from "../shell/shell-context";
 import { AnimatePresence, motion } from "motion/react";
 import { Button, EASE_OUT, Reveal, Spinner, cn } from "@repo/ui";
 
@@ -11,9 +12,11 @@ export const SETTINGS_NAV = [
   { href: "/app/settings", label: "General", description: "Workspace name, time zone and currency", icon: SlidersHorizontal },
   { href: "/app/settings/profile", label: "Your profile", description: "Name, password and sessions", icon: UserRound },
   { href: "/app/settings/business", label: "Business & services", description: "What you sell and who to", icon: Store },
+  { href: "/app/settings/scoring", label: "Lead scoring", description: "Weights, rules and the learned model", icon: Gauge },
   { href: "/app/settings/team", label: "Team", description: "Members, roles and invitations", icon: Users },
   { href: "/app/settings/compliance", label: "Compliance", description: "Sending rules, calling and opt-outs", icon: ShieldCheck },
   { href: "/app/settings/api-keys", label: "API keys", description: "Programmatic access", icon: KeyRound },
+  { href: "/app/settings/audit", label: "Audit log", description: "Who changed what, and when", icon: ScrollText, adminOnly: true },
 ];
 
 const ELSEWHERE = [
@@ -23,13 +26,15 @@ const ELSEWHERE = [
 
 export function SettingsNav() {
   const pathname = usePathname();
+  const canManage = useCanManage();
+  const items = SETTINGS_NAV.filter((item) => !("adminOnly" in item) || canManage);
   const active = SETTINGS_NAV.slice()
     .sort((a, b) => b.href.length - a.href.length)
     .find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))?.href;
   return (
     <nav aria-label="Settings" className="min-w-0 lg:sticky lg:top-20">
       <ul className="flex gap-1 overflow-x-auto pb-1 [scrollbar-width:none] lg:grid lg:overflow-visible">
-        {SETTINGS_NAV.map((item) => {
+        {items.map((item) => {
           const isActive = active === item.href;
           return (
             <li key={item.href} className="shrink-0">

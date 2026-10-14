@@ -45,6 +45,11 @@ export interface RawBusiness {
   openingHours: string[] | null;
   businessStatus: BusinessStatus | null;
   sourceUrl: string | null;
+  /**
+   * Brand the outlet belongs to, when the source says so (OpenStreetMap brand / brand:wikidata
+   * tags). A Wikidata id means a recognised chain or franchise. Absent when unknown.
+   */
+  brand?: { name: string | null; wikidata: string | null } | null;
   /** Untouched provider payload, stored for provenance. */
   raw: Record<string, unknown>;
 }

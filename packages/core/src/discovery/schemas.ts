@@ -22,6 +22,8 @@ export interface DiscoveryStats {
   new: number;
   duplicates: number;
   skippedClosed: number;
+  /** Chain/franchise outlets left out because the workspace excludes them (absent on older runs). */
+  skippedChains?: number;
   enriched: number;
   scored: number;
   highFit: number;
@@ -31,5 +33,5 @@ export interface DiscoveryStats {
 }
 
 export function emptyStats(): DiscoveryStats {
-  return { found: 0, new: 0, duplicates: 0, skippedClosed: 0, enriched: 0, scored: 0, highFit: 0, qualified: 0, contactable: 0, creditsExhausted: false };
+  return { found: 0, new: 0, duplicates: 0, skippedClosed: 0, skippedChains: 0, enriched: 0, scored: 0, highFit: 0, qualified: 0, contactable: 0, creditsExhausted: false };
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  BrainCircuit,
   Activity,
   ArrowLeft,
   Ban,
@@ -27,6 +28,7 @@ import {
   RefreshCw,
   Sparkles,
   Star,
+  Store,
   Trash2,
   UserRound,
   Users,
@@ -34,7 +36,9 @@ import {
 import { EVENT_LABELS, LEAD_STATUS_LABELS, LEAD_STATUSES, eventTone, type LeadStatus } from "@repo/config";
 import {
   Avatar,
+  AnimatedNumber,
   Badge,
+  GrowBar,
   Button,
   Callout,
   CompanyMark,
@@ -155,6 +159,7 @@ export interface LeadDetail {
   contacts: Contact[];
   sources: Array<{ id: string; provider: string; sourceType: string; externalId: string | null; url: string | null; rawData: unknown; fetchedAt: string }>;
   scores: LeadScoreRow[];
+  conversion: LeadConversion | null;
   campaignLeads: Array<{ id: string; status: string; addedAt: string; campaign: { id: string; name: string; status: string } }>;
   tasks: Array<{ id: string; title: string; type: string; priority: string; dueAt: string | null; status: string; assignee: { name: string } | null }>;
   deals: Array<{ id: string; title: string; stage: string; value: string; currency: string }>;
@@ -200,6 +205,55 @@ function eventDescription(event: TimelineEvent): string | undefined {
     default:
       return undefined;
   }
+}
+
+// ----------------------------------------------------------------------------- Predicted conversion
+
+interface LeadConversion {
+  probability: number;
+  drivers: Array<{ factor: string; label: string; effect: number }>;
+  samples: number;
+  auc: number | null;
+  reliable: boolean;
+  trainedAt: string;
+}
+
+/** The learned model's view of this lead: chance of converting once contacted, and why. */
+function ConversionCard({ conversion }: { conversion: LeadConversion }) {
+  const pct = Math.round(conversion.probability * 100);
+  return (
+    <section className="rounded-lg border border-border bg-surface p-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h3 className="flex items-center gap-1.5 text-[13px] font-semibold">
+          <BrainCircuit className="size-3.5 text-brand-1" /> Predicted conversion
+        </h3>
+        {conversion.reliable ? null : <Badge tone="warning">Weak signal</Badge>}
+      </div>
+      <p className="font-heading text-3xl font-semibold tabular-nums">
+        <AnimatedNumber value={pct} format={(value) => `${Math.round(value)}%`} />
+      </p>
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-muted">
+        <GrowBar value={100} className="h-full rounded-full" style={{ width: `${Math.max(2, pct)}%` }} barClassName="rounded-full bg-brand-1" />
+      </div>
+      {conversion.drivers.length ? (
+        <ul className="mt-3 grid gap-1 text-xs">
+          {conversion.drivers.map((driver) => (
+            <li key={driver.factor} className="flex items-center justify-between gap-2">
+              <span className="text-foreground-secondary">{driver.label}</span>
+              <span className={cn("font-medium", driver.effect > 0 ? "text-success-text" : "text-danger-text")}>{driver.effect > 0 ? "raises" : "lowers"} chance</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <p className="mt-3 text-[11px] text-foreground-subtle">
+        Chance of becoming interested once contacted, learned from {conversion.samples} of your past leads
+        {conversion.auc !== null ? ` (AUC ${conversion.auc.toFixed(2)})` : ""}.{" "}
+        <Link href="/app/settings/scoring" className="underline underline-offset-2 hover:text-foreground">
+          How it works
+        </Link>
+      </p>
+    </section>
+  );
 }
 
 // ----------------------------------------------------------------------------- Score breakdown
@@ -492,6 +546,15 @@ export function LeadWorkspace({
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
+  const chainSignal = lead.signals.find((signal) => signal.key === "chain_or_franchise");
+  const markChain = useMutation({
+    mutationFn: (isChain: boolean) => api<{ outlets: number; isChain: boolean }>(`/api/v1/leads/${lead.id}/chain`, { method: "POST", json: { isChain } }),
+    onSuccess: (result) => {
+      toast.success(result.isChain ? `Marked as a chain` : `Marked as independent`, { description: `Applies to ${result.outlets === 1 ? "this outlet" : `all ${result.outlets} outlets`} named “${lead.name}” and to future searches.` });
+      router.refresh();
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  });
   const enrich = useMutation({
     mutationFn: () => api(`/api/v1/leads/${lead.id}/enrich`, { method: "POST" }),
     onSuccess: () => {
@@ -544,6 +607,11 @@ export function LeadWorkspace({
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 <LeadStatusBadge status={lead.status} />
                 <FitBadge tier={lead.fitTier} />
+                {chainSignal ? (
+                  <Badge tone="warning" title={chainSignal.evidence}>
+                    <Store className="size-3" /> Chain or franchise
+                  </Badge>
+                ) : null}
                 {lead.tags.map((tag) => (
                   <Badge key={tag} tone="outline">
                     {tag}
@@ -581,6 +649,9 @@ export function LeadWorkspace({
                   </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => enrich.mutate()}>
                     <Database /> Re-enrich
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => markChain.mutate(!chainSignal)}>
+                    <Store /> {chainSignal ? "Not a chain — independent" : "Mark as chain or franchise"}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   {!lead.doNotContact ? (
@@ -734,6 +805,7 @@ export function LeadWorkspace({
             </div>
             <ScoreBreakdown score={latestScore} />
           </section>
+          {lead.conversion ? <ConversionCard conversion={lead.conversion} /> : null}
           <section className="rounded-lg border border-border bg-surface p-4">
             <h3 className="mb-3 text-[13px] font-semibold">Details</h3>
             <DescriptionList

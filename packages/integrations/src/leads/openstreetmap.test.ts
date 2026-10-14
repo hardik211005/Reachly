@@ -39,6 +39,15 @@ describe("OpenStreetMap provider", () => {
       sourceUrl: "https://www.openstreetmap.org/node/42",
     });
     expect(toRawBusiness({ type: "node", id: 1, lat: 1, lon: 1, tags: { amenity: "cafe" } }, null)).toBeNull();
+    expect(business?.brand).toBeNull();
+  });
+
+  it("carries brand tags so chains and franchises can be recognised", () => {
+    const chain = toRawBusiness({ type: "node", id: 7, lat: 28.6, lon: 77.2, tags: { name: "Cafe Coffee Day", amenity: "cafe", brand: "Cafe Coffee Day", "brand:wikidata": "Q5017235" } }, null);
+    expect(chain?.brand).toEqual({ name: "Cafe Coffee Day", wikidata: "Q5017235" });
+    // An operating company alone is not a chain — single restaurants have one too.
+    const independent = toRawBusiness({ type: "node", id: 8, lat: 28.6, lon: 77.2, tags: { name: "Bheemeshwara", amenity: "restaurant", operator: "Ashlyn Restaurant LLP" } }, null);
+    expect(independent?.brand).toBeNull();
   });
 
   it("reshapes Nominatim results into the same tags", () => {

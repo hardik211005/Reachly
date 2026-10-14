@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNowStrict } from "date-fns";
-import { Ban, Columns3, Download, Eye, RefreshCw, Tag, Trash2, UserRound, Users, X } from "lucide-react";
+import { Ban, Columns3, Download, Eye, RefreshCw, Store, Tag, Trash2, UserRound, Users, X } from "lucide-react";
 import { LEAD_STATUS_LABELS, LEAD_STATUSES, type LeadStatus } from "@repo/config";
 import {
   Badge,
@@ -69,6 +69,9 @@ interface ListMeta {
   page: number;
   pageSize: number;
   facets: { status: Partial<Record<LeadStatus, number>> };
+  /** How chain/franchise outlets are being shown, and how many are hidden. */
+  chains?: "hide" | "show" | "only";
+  hiddenChains?: number;
 }
 
 interface FilterOptions {
@@ -461,6 +464,22 @@ export function LeadsTable() {
             <X />
           </Button>
         </div>
+      ) : null}
+
+      {meta?.chains === "hide" && (meta.hiddenChains ?? 0) > 0 ? (
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-foreground-muted">
+          <Store className="size-3.5" /> {meta.hiddenChains} chain or franchise {meta.hiddenChains === 1 ? "outlet is" : "outlets are"} hidden — your workspace excludes chains.
+          <button type="button" className="font-medium text-foreground underline-offset-2 hover:underline" onClick={() => setParams({ chains: "show" })}>
+            Show them
+          </button>
+        </p>
+      ) : params.get("chains") ? (
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-foreground-muted">
+          <Store className="size-3.5" /> {params.get("chains") === "only" ? "Showing only chains and franchises." : "Chains and franchises are shown."}
+          <button type="button" className="font-medium text-foreground underline-offset-2 hover:underline" onClick={() => setParams({ chains: null })}>
+            Back to default
+          </button>
+        </p>
       ) : null}
 
       <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-xs">

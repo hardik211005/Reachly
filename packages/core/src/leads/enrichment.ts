@@ -5,9 +5,10 @@ import { recordEvent } from "../events";
 import { logger } from "../logger";
 import { normalizeEmail, normalizePhone } from "./normalize";
 import { resolveEnrichmentProvider } from "./providers";
+import { chainNameKey, readChainOverrides } from "./chains";
 import { SIGNAL_CATALOG, isSignalKey, type LeadSignal } from "./signals";
 
-function mergeSignals(existing: LeadSignal[], incoming: LeadSignal[]): LeadSignal[] {
+export function mergeSignals(existing: LeadSignal[], incoming: LeadSignal[]): LeadSignal[] {
   const byKey = new Map(existing.map((signal) => [signal.key, signal]));
   for (const signal of incoming) {
     const current = byKey.get(signal.key);
@@ -99,7 +100,10 @@ export async function enrichLead(ctx: TenantContext, leadId: string) {
     else if (lead.reviewCount !== null && lead.reviewCount < 25) incoming.push({ key: "few_reviews", label: SIGNAL_CATALOG.few_reviews.label, weight: 0.6, evidence: `${lead.reviewCount} reviews`, source: lead.sourceProvider });
     if ((lead.priceLevel ?? 0) >= 3) incoming.push({ key: "premium_positioning", label: SIGNAL_CATALOG.premium_positioning.label, weight: 0.5, evidence: "Higher price level", source: lead.sourceProvider });
 
-    const signals = mergeSignals((Array.isArray(lead.signals) ? lead.signals : []) as unknown as LeadSignal[], incoming);
+    // The team marked this name independent: website text must not flag it as a chain again.
+    const independent = readChainOverrides((await ctx.db.scoringProfile.findFirst({ select: { chainOverrides: true } }))?.chainOverrides).independents.includes(chainNameKey(lead.name));
+    const accepted = independent ? incoming.filter((signal) => signal.key !== "chain_or_franchise") : incoming;
+    const signals = mergeSignals((Array.isArray(lead.signals) ? lead.signals : []) as unknown as LeadSignal[], accepted);
     const socialProfiles = { ...((lead.socialProfiles ?? {}) as Record<string, string>), ...result.socialProfiles };
 
     await ctx.db.$transaction([

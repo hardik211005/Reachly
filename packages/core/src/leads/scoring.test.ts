@@ -104,3 +104,52 @@ describe("lead scoring", () => {
     expect(contactHeavy.total).toBeLessThan(20);
   });
 });
+
+describe("chains and franchises", () => {
+  const chainSignalEntry = { key: "chain_or_franchise", label: "Chain or franchise", weight: 1, evidence: "Recognised brand (Wikidata Q1)", source: "discovery" };
+  const chainLead: ScorableLead = { ...strongLead, signals: [...strongLead.signals, chainSignalEntry] };
+
+  it("scores chains normally under the neutral policy", () => {
+    expect(scoreLead(chainLead, context).total).toBe(scoreLead(strongLead, context).total);
+  });
+
+  it("scores chains down and never qualifies them when the workspace avoids them", () => {
+    const result = scoreLead(chainLead, { ...context, chainPolicy: "avoid" });
+    expect(result.total).toBe(Math.max(0, scoreLead(strongLead, context).total - 30));
+    expect(result.qualification).toBe("UNQUALIFIED");
+    expect(result.disqualifiedBy).toMatch(/Chain/);
+    expect(result.adjustments.some((item) => item.points === -30)).toBe(true);
+  });
+
+  it("scores chains up when the workspace prefers them", () => {
+    expect(scoreLead(chainLead, { ...context, chainPolicy: "prefer" }).total).toBeGreaterThan(scoreLead(strongLead, context).total);
+  });
+});
+
+describe("digital gap for sellers who fix weak online presence", () => {
+  const agencyContext: ScoringContext = { ...context, icp: { ...icp, buyingSignals: [{ key: "no_social_presence", label: "No social presence", description: "They need social media help" }] } };
+  const polished: ScorableLead = { ...strongLead, website: "https://polished.example", socialProfiles: { instagram: "x", facebook: "y", linkedin: "z" }, reviewCount: 400, rating: 4.6 };
+  const bare: ScorableLead = { ...strongLead, website: null, socialProfiles: {}, reviewCount: 3, rating: null };
+  const factor = (lead: ScorableLead, ctx: ScoringContext) => scoreLead(lead, ctx).breakdown.find((item) => item.factor === "digitalPresence");
+
+  it("rewards presence for other sellers", () => {
+    expect(factor(polished, context)?.score).toBeGreaterThan(factor(bare, context)?.score ?? 100);
+    expect(factor(polished, context)?.label).toBe("Digital presence");
+  });
+
+  it("rewards the gap — weak presence is the opportunity — and says so", () => {
+    expect(factor(bare, agencyContext)?.score).toBeGreaterThan(factor(polished, agencyContext)?.score ?? 100);
+    expect(factor(bare, agencyContext)?.label).toBe("Digital gap");
+    expect(factor(bare, agencyContext)?.reasons[0]).toMatch(/room for your offer/);
+  });
+});
+
+describe("reachability", () => {
+  it("holds a lead with no phone or email at Needs review, however good the fit", () => {
+    const unreachable: ScorableLead = { ...strongLead, email: null, phone: null, contacts: [] };
+    const result = scoreLead(unreachable, { ...context, qualifiedThreshold: 1 });
+    expect(result.qualification).toBe("NEEDS_REVIEW");
+    expect(result.reviewReason).toMatch(/find a contact/);
+    expect(scoreLead(strongLead, { ...context, qualifiedThreshold: 1 }).qualification).toBe("QUALIFIED");
+  });
+});

@@ -12,6 +12,7 @@ import { logger } from "../logger";
 import { DEFAULT_SCORING_WEIGHTS, type ScoringFactor } from "./scoring-defaults";
 import { recomputeTotal, scoreLead as computeScore, scoringRuleSchema, type ScoreResult, type ScoringContext, type ScoringTarget } from "./scoring";
 import type { LeadSignal } from "./signals";
+import { isChainPolicy } from "./chains";
 
 /** Resolves free-text locations ("South Delhi", "Gurugram") to coordinates/localities where known. */
 export function resolveLocation(label: string): ScoringTarget["locations"][number] {
@@ -59,6 +60,7 @@ async function scoringContext(ctx: TenantContext, campaignId: string | null): Pr
       rules: rules.success ? rules.data : [],
       qualifiedThreshold: scoring?.qualifiedThreshold ?? 65,
       highFitThreshold: scoring?.highFitThreshold ?? 80,
+      chainPolicy: isChainPolicy(scoring?.chainPolicy) ? scoring.chainPolicy : "neutral",
     },
     offer: campaign?.offerSummary ?? icp?.valueProposition ?? profile?.valueProposition ?? null,
     useAI: scoring?.useAI ?? true,
@@ -175,13 +177,16 @@ export async function scoreLeadById(ctx: TenantContext, leadId: string, options:
       total: result.total,
       fitTier: result.fitTier,
       qualification: result.qualification,
-      breakdown: { factors: result.breakdown, adjustments: result.adjustments } as unknown as Prisma.InputJsonValue,
+      breakdown: { factors: result.breakdown, adjustments: result.adjustments, disqualifiedBy: result.disqualifiedBy ?? null, reviewReason: result.reviewReason ?? null } as unknown as Prisma.InputJsonValue,
       reasoning,
       scoringVersion: aiRequestId ? `${result.version}+ai` : result.version,
       aiRequestId,
     },
   });
   const promote = result.qualification === "QUALIFIED" && previousStatus === "NEW";
+  // Qualified only by an earlier score and never contacted: a hard reason (chain policy, no way to
+  // reach them) sends it back to New so it drops out of qualified lists and campaign audiences.
+  const demote = previousStatus === "QUALIFIED" && result.qualification !== "QUALIFIED" && Boolean(result.disqualifiedBy || result.reviewReason);
   await ctx.db.lead.update({
     where: { id: lead.id },
     data: {
@@ -189,7 +194,7 @@ export async function scoreLeadById(ctx: TenantContext, leadId: string, options:
       fitTier: result.fitTier,
       qualification: result.qualification,
       aiSummary: reasoning ?? lead.aiSummary,
-      ...(promote ? { status: "QUALIFIED" } : {}),
+      ...(promote ? { status: "QUALIFIED" } : demote ? { status: "NEW" } : {}),
     },
   });
 
@@ -201,6 +206,9 @@ export async function scoreLeadById(ctx: TenantContext, leadId: string, options:
   });
   if (promote) {
     await recordEvent(ctx, { type: "lead_qualified", leadId: lead.id, campaignId, properties: { score: result.total } });
+  }
+  if (demote) {
+    await recordEvent(ctx, { type: "lead_disqualified", leadId: lead.id, campaignId, properties: { score: result.total, reason: result.disqualifiedBy ?? result.reviewReason } });
   }
   return { ...result, reasoning };
 }

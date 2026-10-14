@@ -2,6 +2,7 @@ import { getCategory, haversineKm } from "@repo/config/taxonomy";
 import { z } from "zod";
 import type { Icp } from "../business/schemas";
 import { DEFAULT_SCORING_WEIGHTS, SCORING_FACTORS, SCORING_FACTOR_LABELS, SCORING_VERSION, type ScoringFactor } from "./scoring-defaults";
+import { CHAIN_POLICY_LABELS, CHAIN_SCORE_ADJUSTMENT, type ChainPolicy } from "./chains";
 import { SIGNAL_CATALOG, isSignalKey, type LeadSignal } from "./signals";
 
 /**
@@ -55,6 +56,8 @@ export interface ScoringContext {
   rules: ScoringRule[];
   qualifiedThreshold: number;
   highFitThreshold: number;
+  /** How chain/franchise outlets are treated. Defaults to neutral. */
+  chainPolicy?: ChainPolicy;
 }
 
 export interface FactorResult {
@@ -71,6 +74,10 @@ export interface ScoreResult {
   qualification: "QUALIFIED" | "NEEDS_REVIEW" | "UNQUALIFIED";
   breakdown: FactorResult[];
   adjustments: Array<{ label: string; points: number }>;
+  /** Why the lead can never be qualified (e.g. the workspace avoids chains), when that applies. */
+  disqualifiedBy?: string;
+  /** Why the lead is held at Needs review at most (e.g. no way to contact it yet). */
+  reviewReason?: string;
   version: string;
 }
 
@@ -201,7 +208,28 @@ function contactability(lead: ScorableLead): Omit<FactorResult, "weight" | "labe
   return { factor: "contactability", score: clamp(score), reasons };
 }
 
-function digitalPresence(lead: ScorableLead): Omit<FactorResult, "weight" | "label"> {
+/** Signals that mean a business lacks something online — i.e. needs a digital/marketing seller. */
+const NEED_SIGNALS = new Set(["no_website", "weak_website", "no_social_presence", "few_reviews", "no_online_ordering"]);
+
+/** True when the seller's buying signals are about gaps (they sell what the business lacks). */
+export function sellsToDigitalGaps(ctx: ScoringContext): boolean {
+  return isGapSeller([...(ctx.icp?.buyingSignals.map((signal) => signal.key) ?? []), ...ctx.target.preferredSignals]);
+}
+
+export function isGapSeller(signalKeys: string[]): boolean {
+  return signalKeys.some((key) => NEED_SIGNALS.has(key));
+}
+
+function digitalPresence(lead: ScorableLead, ctx: ScoringContext): Omit<FactorResult, "weight" | "label"> {
+  const presence = digitalPresenceScore(lead);
+  if (!sellsToDigitalGaps(ctx)) return { factor: "digitalPresence", ...presence };
+  // The seller fixes weak online presence, so a strong one means less need for them.
+  const gap = clamp(100 - presence.score);
+  const verdict = gap >= 60 ? "Weak online presence — clear room for your offer" : gap >= 35 ? "Some online presence — partial room for your offer" : "Strong online presence already — less need for your offer";
+  return { factor: "digitalPresence", score: gap, reasons: [verdict, ...presence.reasons] };
+}
+
+function digitalPresenceScore(lead: ScorableLead): { score: number; reasons: string[] } {
   const reasons: string[] = [];
   let score = 0;
   if (lead.website) {
@@ -219,7 +247,7 @@ function digitalPresence(lead: ScorableLead): Omit<FactorResult, "weight" | "lab
     score += 10;
     reasons.push(`Rated ${lead.rating}★`);
   }
-  return { factor: "digitalPresence", score: clamp(score), reasons };
+  return { score: clamp(score), reasons };
 }
 
 function buyingSignals(lead: ScorableLead, ctx: ScoringContext): Omit<FactorResult, "weight" | "label"> {
@@ -270,27 +298,41 @@ function ruleMatches(rule: ScoringRule, lead: ScorableLead): boolean {
 
 export function scoreLead(lead: ScorableLead, ctx: ScoringContext): ScoreResult {
   const weights = { ...DEFAULT_SCORING_WEIGHTS, ...ctx.weights };
-  const raw = [icpMatch(lead, ctx), industryMatch(lead, ctx), locationMatch(lead, ctx), sizeFit(lead), contactability(lead), digitalPresence(lead), buyingSignals(lead, ctx)];
-  const breakdown: FactorResult[] = raw.map((item) => ({ ...item, label: SCORING_FACTOR_LABELS[item.factor].label, weight: weights[item.factor] ?? 0 }));
+  const raw = [icpMatch(lead, ctx), industryMatch(lead, ctx), locationMatch(lead, ctx), sizeFit(lead), contactability(lead), digitalPresence(lead, ctx), buyingSignals(lead, ctx)];
+  const gapMode = sellsToDigitalGaps(ctx);
+  const breakdown: FactorResult[] = raw.map((item) => ({ ...item, label: item.factor === "digitalPresence" && gapMode ? "Digital gap" : SCORING_FACTOR_LABELS[item.factor].label, weight: weights[item.factor] ?? 0 }));
   const totalWeight = breakdown.reduce((sum, item) => sum + item.weight, 0) || 1;
   const weighted = breakdown.reduce((sum, item) => sum + item.score * item.weight, 0) / totalWeight;
 
   const adjustments = ctx.rules.filter((rule) => ruleMatches(rule, lead)).map((rule) => ({ label: rule.label, points: rule.points }));
+  const policy = ctx.chainPolicy ?? "neutral";
+  const isChain = lead.signals.some((signal) => signal.key === "chain_or_franchise");
+  if (isChain && CHAIN_SCORE_ADJUSTMENT[policy] !== 0) adjustments.push({ label: `Chain or franchise (${CHAIN_POLICY_LABELS[policy].label.toLowerCase()})`, points: CHAIN_SCORE_ADJUSTMENT[policy] });
+  const disqualifiedBy = isChain && (policy === "avoid" || policy === "exclude") ? "Chain or franchise — your workspace avoids these" : undefined;
+  // A lead nobody can reach isn't ready for outreach, however good the fit.
+  const reachable = Boolean(lead.email || lead.phone || lead.contacts.some((contact) => contact.email || contact.phone));
+  const reviewReason = reachable ? undefined : "No phone or email yet — find a contact before outreach";
   const total = lead.doNotContact ? 0 : clamp(weighted + adjustments.reduce((sum, item) => sum + item.points, 0));
   return {
     total,
-    fitTier: total >= ctx.highFitThreshold ? "HIGH" : total >= 50 ? "MEDIUM" : "LOW",
-    qualification: lead.doNotContact
-      ? "UNQUALIFIED"
-      : total >= ctx.qualifiedThreshold
-        ? "QUALIFIED"
-        : total >= ctx.qualifiedThreshold - 15
-          ? "NEEDS_REVIEW"
-          : "UNQUALIFIED",
+    fitTier: tierFor(total, ctx),
+    qualification: qualificationFor(total, ctx, lead.doNotContact, disqualifiedBy, reviewReason),
     breakdown: SCORING_FACTORS.map((factor) => breakdown.find((item) => item.factor === factor) as FactorResult),
     adjustments,
+    ...(disqualifiedBy ? { disqualifiedBy } : {}),
+    ...(reviewReason ? { reviewReason } : {}),
     version: SCORING_VERSION,
   };
+}
+
+function tierFor(total: number, ctx: Pick<ScoringContext, "highFitThreshold">): ScoreResult["fitTier"] {
+  return total >= ctx.highFitThreshold ? "HIGH" : total >= 50 ? "MEDIUM" : "LOW";
+}
+
+function qualificationFor(total: number, ctx: Pick<ScoringContext, "qualifiedThreshold">, doNotContact: boolean, disqualifiedBy?: string, reviewReason?: string): ScoreResult["qualification"] {
+  if (doNotContact || disqualifiedBy) return "UNQUALIFIED";
+  const qualification = total >= ctx.qualifiedThreshold ? "QUALIFIED" : total >= ctx.qualifiedThreshold - 15 ? "NEEDS_REVIEW" : "UNQUALIFIED";
+  return qualification === "QUALIFIED" && reviewReason ? "NEEDS_REVIEW" : qualification;
 }
 
 /** Recomputes the total after AI-adjusted factor scores, keeping rule adjustments. */
@@ -298,10 +340,5 @@ export function recomputeTotal(result: ScoreResult, ctx: Pick<ScoringContext, "q
   const totalWeight = result.breakdown.reduce((sum, item) => sum + item.weight, 0) || 1;
   const weighted = result.breakdown.reduce((sum, item) => sum + item.score * item.weight, 0) / totalWeight;
   const total = doNotContact ? 0 : clamp(weighted + result.adjustments.reduce((sum, item) => sum + item.points, 0));
-  return {
-    ...result,
-    total,
-    fitTier: total >= ctx.highFitThreshold ? "HIGH" : total >= 50 ? "MEDIUM" : "LOW",
-    qualification: doNotContact ? "UNQUALIFIED" : total >= ctx.qualifiedThreshold ? "QUALIFIED" : total >= ctx.qualifiedThreshold - 15 ? "NEEDS_REVIEW" : "UNQUALIFIED",
-  };
+  return { ...result, total, fitTier: tierFor(total, ctx), qualification: qualificationFor(total, ctx, doNotContact, result.disqualifiedBy, result.reviewReason) };
 }

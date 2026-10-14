@@ -79,6 +79,7 @@ interface Stats {
   found: number;
   new: number;
   duplicates: number;
+  skippedChains?: number;
   enriched: number;
   scored: number;
   highFit: number;
@@ -374,7 +375,7 @@ function RadarPulse() {
 function RunProgress({ run }: { run: Run }) {
   const current = run.status === "COMPLETED" ? STAGES.length - 1 : stageIndex(run.stage);
   const tiles = [
-    { label: "Businesses found", value: run.stats.found, hint: run.stats.duplicates ? `${run.stats.duplicates} already in your leads` : undefined },
+    { label: "Businesses found", value: run.stats.found, hint: [run.stats.duplicates ? `${run.stats.duplicates} already in your leads` : null, run.stats.skippedChains ? `${run.stats.skippedChains} chains skipped` : null].filter(Boolean).join(" · ") || undefined },
     { label: "Potential buyers", value: run.stats.qualified, hint: "Qualified by score" },
     { label: "High-fit leads", value: run.stats.highFit, hint: "Score ≥ high-fit threshold" },
     { label: "Contactable", value: run.stats.contactable, hint: "Email or phone available" },

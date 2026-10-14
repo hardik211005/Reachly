@@ -9,6 +9,7 @@ import { ConflictError, NotFoundError, PreconditionError, ValidationError } from
 import { recordEvent } from "../events";
 import { toCsv } from "../shared/csv";
 import { dedupeKeyFor, normalizeDomain, normalizeEmail, normalizePhone, normalizeWebsite } from "./normalize";
+import { getChainPolicy, predictLeadConversion } from "./scoring-settings";
 import {
   bulkLeadActionSchema,
   contactInputSchema,
@@ -47,6 +48,8 @@ export function whereFromQuery(query: ReturnType<typeof leadListQuerySchema.pars
   if (query.hasPhone) and.push({ phone: { not: null } });
   if (query.discoveryRunId) and.push({ discoveryLinks: { some: { runId: query.discoveryRunId } } });
   if (query.ids?.length) and.push({ id: { in: query.ids } });
+  if (query.chains === "hide") and.push({ NOT: { signals: { array_contains: [{ key: "chain_or_franchise" }] } } });
+  if (query.chains === "only") and.push({ signals: { array_contains: [{ key: "chain_or_franchise" }] } });
   return { AND: and };
 }
 
@@ -66,9 +69,11 @@ function orderFromQuery(query: ReturnType<typeof leadListQuerySchema.parse>): Pr
 
 export async function listLeads(ctx: TenantContext, input: LeadListQueryInput) {
   assertCan(ctx, "leads:read");
-  const query = leadListQuerySchema.parse(input);
+  const parsed = leadListQuerySchema.parse(input);
+  // "Exclude chains" means they stay out of sight unless someone asks to see them.
+  const query = parsed.chains ? parsed : { ...parsed, chains: (await getChainPolicy(ctx)) === "exclude" ? ("hide" as const) : ("show" as const) };
   const where = whereFromQuery(query);
-  const [rows, total, statusCounts] = await Promise.all([
+  const [rows, total, statusCounts, hiddenChains] = await Promise.all([
     ctx.db.lead.findMany({
       where,
       orderBy: orderFromQuery(query),
@@ -91,10 +96,13 @@ export async function listLeads(ctx: TenantContext, input: LeadListQueryInput) {
     }),
     ctx.db.lead.count({ where }),
     ctx.db.lead.groupBy({ by: ["status"], where: { deletedAt: null }, _count: { _all: true } }),
+    query.chains === "hide" ? ctx.db.lead.count({ where: whereFromQuery({ ...query, chains: "only" }) }) : Promise.resolve(0),
   ]);
   return {
     items: rows,
     total,
+    chains: query.chains,
+    hiddenChains,
     page: query.page,
     pageSize: query.pageSize,
     facets: { status: Object.fromEntries(statusCounts.map((row) => [row.status, row._count._all])) as Partial<Record<LeadStatus, number>> },
@@ -136,7 +144,8 @@ export async function getLead(ctx: TenantContext, id: string) {
     },
   });
   if (!lead) throw new NotFoundError("Lead", id);
-  return lead;
+  const conversion = await predictLeadConversion(ctx, lead.scores[0]?.breakdown).catch(() => null);
+  return { ...lead, conversion };
 }
 
 export async function getLeadTimeline(ctx: TenantContext, leadId: string, options: { cursor?: string; limit?: number } = {}) {

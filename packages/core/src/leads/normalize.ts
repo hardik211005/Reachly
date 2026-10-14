@@ -97,6 +97,7 @@ export interface LeadCandidate {
   closed: boolean;
   externalId: string;
   sourceUrl: string | null;
+  brand: { name: string | null; wikidata: string | null } | null;
   raw: Record<string, unknown>;
 }
 
@@ -130,6 +131,7 @@ export function normalizeRawBusiness(business: RawBusiness): LeadCandidate {
     closed: business.businessStatus === "CLOSED_PERMANENTLY",
     externalId: business.externalId,
     sourceUrl: business.sourceUrl,
+    brand: business.brand ?? null,
     raw: business.raw,
   };
 }

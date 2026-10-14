@@ -9,6 +9,8 @@ import { enrichLead } from "../leads/enrichment";
 import { dedupeKeyFor, normalizeDomain, normalizeEmail, normalizePhone, normalizeWebsite } from "../leads/normalize";
 import { importMappingSchema } from "../leads/schemas";
 import { scoreLeadById } from "../leads/scoring-service";
+import { trainLearnedModel } from "../leads/scoring-settings";
+import { prisma } from "@repo/db";
 import { notify } from "../notifications";
 import { parseCsvRecords } from "../shared/csv";
 import { registerProcessor } from "./registry";
@@ -30,6 +32,20 @@ registerProcessor("leads.score", async ({ organizationId, leadId, campaignId }) 
   const ctx = systemContext(organizationId);
   const result = await scoreLeadById(ctx, leadId, { campaignId: campaignId ?? null });
   return { total: result.total, qualification: result.qualification };
+});
+
+registerProcessor("scoring.train", async ({ organizationId }) => {
+  const result = await trainLearnedModel(systemContext(organizationId));
+  return result.status === "trained" ? { status: result.status, ...result.model.metrics } : result;
+});
+
+/** Weekly: retrain the learned model for workspaces with outcomes in the last 90 days. */
+registerProcessor("scoring.train-all", async () => {
+  const since = new Date(Date.now() - 90 * 86_400_000);
+  const organizations = await prisma.organization.findMany({ where: { deletedAt: null, leads: { some: { status: { in: ["CONTACTED", "REPLIED", "INTERESTED", "MEETING", "QUOTE_SENT", "WON", "LOST"] }, updatedAt: { gte: since } } } }, select: { id: true } });
+  const week = new Date().toISOString().slice(0, 10);
+  for (const organization of organizations) await getQueue().enqueue("scoring.train", { organizationId: organization.id }, { jobId: `train:${organization.id}:${week}` });
+  return { queued: organizations.length };
 });
 
 const MAX_IMPORT_ROWS = 5000;

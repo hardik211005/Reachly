@@ -174,6 +174,11 @@ export class WebsiteEnrichmentProvider implements EnrichmentProvider {
     if (/(careers|we'?re hiring|join our team|open positions)/i.test(lower)) result.signals.push({ key: "hiring", evidence: "Careers link on homepage", weight: 0.6, source: "website" });
     if (/(delivery|takeaway|take-away|take away)/i.test(lower)) result.signals.push({ key: "takeaway_delivery", evidence: "Mentions delivery/takeaway", weight: 0.6, source: "website" });
     if (/(our (outlets|locations|stores|branches))/i.test(lower)) result.signals.push({ key: "multiple_locations", evidence: "Lists multiple locations", weight: 0.6, source: "website" });
+    // Chains advertise franchising and outlet finders on their homepage.
+    const franchise = /\b(franchis(e|es|ee|ing)|own an? outlet|business opportunit(y|ies) with us)\b/i.exec(lower);
+    const outletFinder = /\b(store locator|find (a|an|your|our) (store|outlet|restaurant|cafe|branch)|(all|view|our) (outlets|stores|branches)|locate (a |an )?(store|outlet)|\d{2,}\+? (outlets|stores|branches|locations))\b/i.exec(lower);
+    if (franchise) result.signals.push({ key: "chain_or_franchise", evidence: `Website mentions “${franchise[0]}”`, weight: 0.9, source: "website" });
+    else if (outletFinder) result.signals.push({ key: "chain_or_franchise", evidence: `Website has “${outletFinder[0]}”`, weight: 0.75, source: "website" });
     if (Object.keys(result.socialProfiles).length === 0) result.signals.push({ key: "no_social_presence", evidence: "No social links on website", weight: 0.6, source: "website" });
     else result.signals.push({ key: "active_social", evidence: `Links to ${Object.keys(result.socialProfiles).join(", ")}`, weight: 0.5, source: "website" });
     return result;

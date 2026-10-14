@@ -33,4 +33,5 @@ export const DEFAULT_SCORING_WEIGHTS: Record<ScoringFactor, number> = {
   buyingSignals: 10,
 };
 
-export const SCORING_VERSION = "rules-v1";
+// v2: chain/franchise policy; digital presence scored as a gap for sellers who fix weak presence.
+export const SCORING_VERSION = "rules-v2";

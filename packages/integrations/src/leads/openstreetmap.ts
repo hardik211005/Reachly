@@ -44,6 +44,21 @@ const CATEGORY_TAGS: Record<string, Array<[string, string]>> = {
   manufacturer: [["man_made", "works"], ["industrial", "factory"], ["craft", "manufacturer"], ["landuse", "industrial"]],
   agency: [["office", "advertising_agency"], ["office", "marketing"], ["office", "consulting"], ["office", "company"]],
   corporate_office: [["office", "company"], ["office", "corporate"], ["office", "financial"], ["office", "insurance"]],
+  pharmacy: [["amenity", "pharmacy"], ["shop", "chemist"], ["healthcare", "pharmacy"]],
+  hospital: [["amenity", "hospital"], ["healthcare", "hospital"], ["healthcare", "laboratory"], ["healthcare", "centre"]],
+  grocery: [["shop", "supermarket"], ["shop", "convenience"], ["shop", "grocery"], ["shop", "greengrocer"]],
+  hardware_store: [["shop", "hardware"], ["shop", "doityourself"], ["shop", "paint"], ["shop", "trade"], ["shop", "electrical"], ["shop", "bathroom_furnishing"]],
+  auto_service: [["shop", "car_repair"], ["shop", "tyres"], ["amenity", "car_wash"], ["shop", "motorcycle_repair"]],
+  car_dealer: [["shop", "car"], ["shop", "motorcycle"]],
+  coworking: [["amenity", "coworking_space"], ["office", "coworking"]],
+  college: [["amenity", "college"], ["amenity", "university"]],
+  coaching_centre: [["amenity", "training"], ["office", "educational_institution"], ["amenity", "prep_school"], ["amenity", "language_school"]],
+  hostel_pg: [["tourism", "hostel"], ["building", "dormitory"]],
+  warehouse: [["building", "warehouse"], ["industrial", "warehouse"], ["office", "logistics"], ["amenity", "courier"], ["office", "courier"]],
+  law_firm: [["office", "lawyer"], ["office", "notary"]],
+  accountant: [["office", "accountant"], ["office", "tax_advisor"]],
+  bar_pub: [["amenity", "bar"], ["amenity", "pub"], ["amenity", "nightclub"], ["craft", "brewery"]],
+  jewellery_store: [["shop", "jewelry"]],
 };
 
 interface OverpassElement {
@@ -163,6 +178,7 @@ export function toRawBusiness(element: OverpassElement, fallback: Point | null):
     openingHours: tags.opening_hours ? [tags.opening_hours] : null,
     businessStatus: closed ? "CLOSED_PERMANENTLY" : "OPERATIONAL",
     sourceUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
+    brand: tags.brand || tags["brand:wikidata"] ? { name: tags.brand?.trim() || null, wikidata: tags["brand:wikidata"]?.trim() || null } : null,
     raw: { type: element.type, id: element.id, tags },
   };
 }

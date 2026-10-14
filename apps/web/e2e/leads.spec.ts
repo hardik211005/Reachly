@@ -33,7 +33,8 @@ test.describe("lead engine", () => {
     await expect(page.locator("tbody tr a").first()).toBeVisible();
     await page.locator("tbody tr a").first().click();
     await expect(page.getByText("Lead score")).toBeVisible();
-    await page.getByText("ICP match").click();
+    // The factor row is a button (the predicted-conversion card may also name "ICP match" as a driver).
+    await page.getByRole("button", { name: /ICP match/ }).click();
     await expect(page.getByText(/target category/).first()).toBeVisible();
     if (shots) await page.screenshot({ path: "e2e/screenshots/lead-detail.png", fullPage: true });
 

@@ -961,6 +961,12 @@ model ScoringProfile {
   qualifiedThreshold Int      @default(65)
   highFitThreshold   Int      @default(80)
   useAI              Boolean  @default(true)
+  /// Chains & franchises: prefer | neutral | avoid | exclude (see leads/chains.ts).
+  chainPolicy        String   @default("neutral")
+  /// Names this workspace marked by hand: {"chains": [nameKey], "independents": [nameKey]} — beats every other signal.
+  chainOverrides     Json     @default("{}")
+  /// Learned conversion model trained on this workspace's outcomes (see leads/learned-model.ts). Null until trained.
+  learnedModel       Json?
   version            Int      @default(1)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt

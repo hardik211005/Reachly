@@ -12,11 +12,14 @@ import { NotFoundError, ValidationError } from "../errors";
 import { recordEvent } from "../events";
 import { logger } from "../logger";
 import { notify } from "../notifications";
-import { enrichLead } from "../leads/enrichment";
+import { enrichLead, mergeSignals } from "../leads/enrichment";
 import { normalizeRawBusiness, type LeadCandidate } from "../leads/normalize";
 import { resolveLeadProvider } from "../leads/providers";
 import { resolveLocation, scoreLeadById } from "../leads/scoring-service";
 import { mapWithConcurrency } from "../shared/concurrency";
+import { chainNameKey, chainSignal } from "../leads/chains";
+import { getChainSettings } from "../leads/scoring-settings";
+import type { LeadSignal } from "../leads/signals";
 import { discoveryRequestSchema, emptyStats, searchCriteriaSchema, type DiscoveryRequest, type DiscoveryStats, type SearchCriteria } from "./schemas";
 
 /** Natural language → structured criteria (Discovery Parser agent), prefilled from the ICP. */
@@ -126,14 +129,18 @@ async function updateRun(ctx: TenantContext, runId: string, data: { stage?: Pris
   });
 }
 
-async function upsertCandidate(ctx: TenantContext, runId: string, candidate: LeadCandidate, rank: number, providerName: string, stats: DiscoveryStats): Promise<string | null> {
-  const existing = await ctx.db.lead.findFirst({ where: { dedupeKey: candidate.dedupeKey }, select: { id: true, deletedAt: true } });
+async function upsertCandidate(ctx: TenantContext, runId: string, candidate: LeadCandidate, rank: number, providerName: string, stats: DiscoveryStats, extraSignals: LeadSignal[] = []): Promise<string | null> {
+  const existing = await ctx.db.lead.findFirst({ where: { dedupeKey: candidate.dedupeKey }, select: { id: true, deletedAt: true, signals: true } });
   let leadId: string;
   let isNew = false;
 
   if (existing && !existing.deletedAt) {
     leadId = existing.id;
     stats.duplicates += 1;
+    if (extraSignals.length) {
+      const merged = mergeSignals((Array.isArray(existing.signals) ? existing.signals : []) as unknown as LeadSignal[], extraSignals);
+      await ctx.db.lead.update({ where: { id: leadId }, data: { signals: merged as unknown as Prisma.InputJsonValue } });
+    }
   } else {
     if (stats.creditsExhausted) return null;
     try {
@@ -165,6 +172,7 @@ async function upsertCandidate(ctx: TenantContext, runId: string, candidate: Lea
       reviewCount: candidate.reviewCount,
       priceLevel: candidate.priceLevel,
       openingHours: candidate.openingHours ?? undefined,
+      signals: extraSignals as unknown as Prisma.InputJsonValue,
       sourceType: "DISCOVERY" as const,
       sourceProvider: providerName,
       status: "NEW" as const,
@@ -205,6 +213,23 @@ async function upsertCandidate(ctx: TenantContext, runId: string, candidate: Lea
   return leadId;
 }
 
+/** Distinct outlets (by dedupe key) per brand-name key: this search's results plus saved leads. */
+async function outletsByNameKey(ctx: TenantContext, candidates: LeadCandidate[]): Promise<Map<string, Set<string>>> {
+  const keys = new Set(candidates.map((candidate) => chainNameKey(candidate.name)).filter((key) => key.length >= 3));
+  const outlets = new Map<string, Set<string>>();
+  const add = (name: string, dedupeKey: string) => {
+    const key = chainNameKey(name);
+    if (!keys.has(key)) return;
+    const set = outlets.get(key) ?? new Set<string>();
+    set.add(dedupeKey);
+    outlets.set(key, set);
+  };
+  for (const candidate of candidates) if (!candidate.closed) add(candidate.name, candidate.dedupeKey);
+  const saved = await ctx.db.lead.findMany({ where: { deletedAt: null }, select: { name: true, dedupeKey: true }, take: 20_000 });
+  for (const lead of saved) add(lead.name, lead.dedupeKey);
+  return outlets;
+}
+
 export async function executeDiscoveryRun(ctx: TenantContext, runId: string): Promise<DiscoveryStats> {
   const run = await ctx.db.discoveryRun.findFirst({ where: { id: runId } });
   if (!run) throw new NotFoundError("Discovery run", runId);
@@ -229,14 +254,25 @@ export async function executeDiscoveryRun(ctx: TenantContext, runId: string): Pr
     stats.found = raw.length;
     await updateRun(ctx, runId, { stage: "NORMALIZING", stats });
 
+    // Chains and franchises: recognised from brand tags, or several outlets sharing a name across
+    // this search and the leads already saved. Excluded ones never use a lead credit.
+    const candidates = raw.map((business) => normalizeRawBusiness(business));
+    const { policy: chainPolicy, overrides: chainOverrides } = await getChainSettings(ctx);
+    const outletsByName = await outletsByNameKey(ctx, candidates);
+
     const leadIds: string[] = [];
-    for (const [index, business] of raw.entries()) {
-      const candidate = normalizeRawBusiness(business);
+    for (const [index, candidate] of candidates.entries()) {
       if (candidate.closed) {
         stats.skippedClosed += 1;
         continue;
       }
-      const leadId = await upsertCandidate(ctx, runId, candidate, index, provider.name, stats);
+      const outlets = outletsByName.get(chainNameKey(candidate.name));
+      const chain = chainSignal({ name: candidate.name, brand: candidate.brand, sameNameOutlets: outlets ? outlets.size - 1 : 0, overrides: chainOverrides });
+      if (chain && chainPolicy === "exclude") {
+        stats.skippedChains = (stats.skippedChains ?? 0) + 1;
+        continue;
+      }
+      const leadId = await upsertCandidate(ctx, runId, candidate, index, provider.name, stats, chain ? [chain] : []);
       if (leadId) leadIds.push(leadId);
       if (index % 5 === 4) await updateRun(ctx, runId, { stats });
     }
