@@ -30,15 +30,15 @@
   --border-strong: rgba(62, 44, 22, 0.23);
   --gridline: #e2d8c7;
   --baseline: #c8bba5;
-  --ring: #3b2f25;
+  --ring: #b4532a;
 
   /* Brand / interactive */
   --primary: #1f1a14; /* primary buttons are ink */
   --primary-foreground: #faf7f1;
-  --accent: #3b2f25; /* deep warm charcoal: links and accent text (no orange text) */
-  --accent-foreground: #fffaf3;
-  --accent-soft: #efe6d8;
-  --accent-soft-foreground: #3b2f25;
+  --accent: #b4532a; /* terracotta: links, focus, selection */
+  --accent-foreground: #ffffff;
+  --accent-soft: #f4e2d5;
+  --accent-soft-foreground: #7a3417;
 
   /* Status (fixed across themes; always paired with an icon/label) */
   --status-good: #0ca30c;
@@ -115,14 +115,14 @@
   --border-strong: rgba(242, 235, 223, 0.18);
   --gridline: #2d2720;
   --baseline: #3d352b;
-  --ring: #e8dccb;
+  --ring: #df8a5c;
 
   --primary: #f2ebdf;
   --primary-foreground: #14110d;
-  --accent: #e8dccb;
+  --accent: #df8a5c;
   --accent-foreground: #14110d;
-  --accent-soft: #2c241c;
-  --accent-soft-foreground: #e8dccb;
+  --accent-soft: #3a2519;
+  --accent-soft-foreground: #f1b591;
 
   --success-text: #2fbf2f;
   --warning-text: #f5c04a;
@@ -299,12 +299,12 @@
 /* ----------------------------------------------------------------------------- Brand utilities */
 
 /*
- * Highlighted words: the heading face in the same ink as the heading (no coloured text).
+ * Highlighted words: the heading face in the accent colour, instead of a rainbow gradient.
  * Kept under the old name so every highlight in the product picks it up.
  */
 @utility text-gradient {
   font-family: var(--font-display);
-  color: inherit;
+  color: var(--brand-1);
 }
 
 @utility bg-brand-gradient {

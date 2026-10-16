@@ -167,7 +167,7 @@ export function ChartCard({
     <section className={cn("flex flex-col rounded-lg border border-border bg-surface shadow-xs", className)}>
       <header className="flex items-start justify-between gap-3 px-4 pt-3.5 pb-2">
         <div className="min-w-0">
-          <h3 className="text-[13px] font-semibold text-foreground">{title}</h3>
+          <h3 className="text-[13.5px] font-bold">{title}</h3>
           {description ? <p className="mt-0.5 text-xs text-foreground-muted">{description}</p> : null}
         </div>
         <div className="flex shrink-0 items-center gap-1">

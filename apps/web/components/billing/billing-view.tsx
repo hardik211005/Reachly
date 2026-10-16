@@ -636,7 +636,7 @@ export function BillingView() {
             <Aurora intensity={1} className="-z-10" />
             <div className="flex flex-wrap items-start justify-between gap-6">
               <div>
-                <p className="text-xs font-semibold tracking-[0.12em] text-foreground-muted uppercase">
+                <p className="text-xs font-semibold tracking-[0.12em] text-brand-1 uppercase">
                   Current plan
                 </p>
                 <h2 className="text-gradient mt-2 text-[34px] leading-none font-semibold tracking-[-0.03em]">

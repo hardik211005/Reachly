@@ -86,7 +86,7 @@ function ProductsUsed({ useCase }: { useCase: UseCase }) {
                     </Link>
                   </h3>
                   <p className="mt-1.5 text-[13.5px] leading-relaxed text-foreground-secondary">{product.summary}</p>
-                  <span className="mt-auto inline-flex items-center gap-1 pt-5 text-[12.5px] font-medium text-foreground">
+                  <span className="mt-auto inline-flex items-center gap-1 pt-5 text-[12.5px] font-medium text-brand-1">
                     Learn more <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1" />
                   </span>
                 </SpotlightCard>

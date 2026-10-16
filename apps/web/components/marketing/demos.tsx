@@ -566,7 +566,7 @@ function AnalyticsDemo() {
               ))}
             </div>
             <div className="border-gradient rounded-xl bg-surface p-3">
-              <p className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
+              <p className="flex items-center gap-1.5 text-[11px] font-semibold text-brand-1">
                 <Sparkles className="size-3" /> Insight · Channels
               </p>
               <p className="mt-1 text-[12.5px] font-semibold">AI calls get more positive responses than email</p>

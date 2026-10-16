@@ -554,7 +554,7 @@ function StepTitle({ step, newWorkspace, firstName }: { step: number; newWorkspa
   const [before, after] = title.includes(copy.highlight) ? title.split(copy.highlight) : [title, undefined];
   return (
     <div className="mb-6">
-      <p className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.12em] text-foreground-muted uppercase">
+      <p className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.12em] text-brand-1 uppercase">
         <span className="border-gradient flex size-6 items-center justify-center rounded-md bg-surface">
           <Icon className="size-3.5" />
         </span>

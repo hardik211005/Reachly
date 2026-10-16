@@ -68,7 +68,7 @@ function DetailRows({ product }: { product: Product }) {
         {product.details.map((detail, index) => (
           <div key={detail.title} className={cn("grid items-center gap-10 lg:grid-cols-2", index % 2 === 1 && "lg:[&>*:first-child]:order-2")}>
             <Reveal x={index % 2 ? 30 : -30} y={0}>
-              <p className="text-xs font-semibold tracking-[0.14em] text-foreground-muted uppercase">{product.eyebrow}</p>
+              <p className="text-xs font-semibold tracking-[0.14em] text-brand-1 uppercase">{product.eyebrow}</p>
               <h3 className="mt-3 text-[28px] leading-tight font-semibold tracking-[-0.03em] text-balance">{detail.title}</h3>
               <p className="mt-4 text-[15px] leading-relaxed text-foreground-secondary">{detail.body}</p>
             </Reveal>
@@ -151,7 +151,7 @@ function ProductChapter({ product, index }: { product: Product; index: number })
   return (
     <div className={cn("grid items-center gap-10 lg:grid-cols-2", index % 2 === 1 && "lg:[&>*:first-child]:order-2")}>
       <Reveal x={index % 2 ? 30 : -30} y={0}>
-        <p className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.14em] text-foreground-muted uppercase">
+        <p className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.14em] text-brand-1 uppercase">
           <span className="border-gradient flex size-7 items-center justify-center rounded-lg bg-surface">
             <product.icon className="size-3.5" />
           </span>

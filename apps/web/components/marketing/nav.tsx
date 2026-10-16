@@ -59,7 +59,7 @@ function ProductMenu({ onNavigate }: { onNavigate: () => void }) {
           <Sparkles className="size-4 text-brand-2" />
           <p className="mt-3 text-[13.5px] font-semibold">Platform overview</p>
           <p className="mt-1 text-[12px] leading-snug text-foreground-muted">How discovery, outreach, calls and the CRM work together.</p>
-          <span className="mt-3 inline-flex items-center gap-1 text-[12px] font-medium text-foreground">
+          <span className="mt-3 inline-flex items-center gap-1 text-[12px] font-medium text-brand-1">
             Explore <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
           </span>
         </Link>

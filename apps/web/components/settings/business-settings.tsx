@@ -71,7 +71,7 @@ function Overview({ profile, services }: { profile: Profile; services: number })
   return (
     <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="relative isolate overflow-hidden rounded-xl border border-border bg-surface p-5 shadow-xs sm:p-6">
       <Aurora intensity={0.7} className="-z-10" />
-      <p className="text-xs font-semibold tracking-[0.12em] text-foreground-muted uppercase">How we understand {profile.name}</p>
+      <p className="text-xs font-semibold tracking-[0.12em] text-brand-1 uppercase">How we understand {profile.name}</p>
       <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-foreground">{profile.icp?.summary ?? profile.description}</p>
       <div className="mt-5 flex flex-wrap gap-6">
         {stats.map((stat) => (

@@ -226,7 +226,7 @@ function CopilotChat() {
         What needs me today?
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.5, duration: 0.4, ease: EASE_OUT }} className="max-w-[90%] rounded-lg rounded-bl-sm border border-border bg-surface px-3 py-2 text-[12px] shadow-xs">
-        <span className="mb-1 flex items-center gap-1 text-[10.5px] font-semibold text-foreground">
+        <span className="mb-1 flex items-center gap-1 text-[10.5px] font-semibold text-brand-1">
           <Bot className="size-3" /> Copilot
         </span>
         <ul className="grid gap-0.5 text-foreground-secondary">
@@ -272,7 +272,7 @@ export function FeaturesBento() {
                   </h3>
                 </div>
                 <p className="mt-2 text-[13.5px] leading-relaxed text-foreground-secondary">{feature.body}</p>
-                <span className="mt-auto inline-flex items-center gap-1 pt-4 text-[12.5px] font-medium text-foreground">
+                <span className="mt-auto inline-flex items-center gap-1 pt-4 text-[12.5px] font-medium text-brand-1">
                   Learn more <ArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-1" />
                 </span>
               </SpotlightCard>
@@ -444,7 +444,7 @@ export function UseCasesStrip({ heading = true }: { heading?: boolean }) {
                 <p className="mt-4 rounded-lg bg-surface-muted px-3 py-2 text-[12px] leading-snug text-foreground-secondary">
                   <span className="font-medium text-foreground">Try: </span>“{item.exampleSearch}”
                 </p>
-                <span className="mt-auto inline-flex items-center gap-1 pt-4 text-[12.5px] font-medium text-foreground">
+                <span className="mt-auto inline-flex items-center gap-1 pt-4 text-[12.5px] font-medium text-brand-1">
                   See the playbook <ArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-1" />
                 </span>
               </SpotlightCard>
