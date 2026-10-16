@@ -33,7 +33,13 @@ import {
   UserRound,
   Users,
 } from "lucide-react";
-import { EVENT_LABELS, LEAD_STATUS_LABELS, LEAD_STATUSES, eventTone, type LeadStatus } from "@repo/config";
+import {
+  EVENT_LABELS,
+  LEAD_STATUS_LABELS,
+  LEAD_STATUSES,
+  eventTone,
+  type LeadStatus,
+} from "@repo/config";
 import {
   Avatar,
   AnimatedNumber,
@@ -45,6 +51,7 @@ import {
   DescriptionList,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -82,7 +89,13 @@ import { LeadOutreachPanel } from "../outreach/lead-outreach";
 import { LeadDeals } from "../crm/lead-deals";
 import type { CrmSettings } from "../crm/shared";
 import type { ProviderState } from "../outreach/shared";
-import { AddToCampaignMenu, FitBadge, LeadStatusBadge, SourceLabel, type LeadSignalView } from "./shared";
+import {
+  AddToCampaignMenu,
+  FitBadge,
+  LeadStatusBadge,
+  SourceLabel,
+  type LeadSignalView,
+} from "./shared";
 
 // ----------------------------------------------------------------------------- Types (serialised Prisma rows)
 
@@ -157,11 +170,32 @@ export interface LeadDetail {
   createdAt: string;
   owner: { id: string; name: string } | null;
   contacts: Contact[];
-  sources: Array<{ id: string; provider: string; sourceType: string; externalId: string | null; url: string | null; rawData: unknown; fetchedAt: string }>;
+  sources: Array<{
+    id: string;
+    provider: string;
+    sourceType: string;
+    externalId: string | null;
+    url: string | null;
+    rawData: unknown;
+    fetchedAt: string;
+  }>;
   scores: LeadScoreRow[];
   conversion: LeadConversion | null;
-  campaignLeads: Array<{ id: string; status: string; addedAt: string; campaign: { id: string; name: string; status: string } }>;
-  tasks: Array<{ id: string; title: string; type: string; priority: string; dueAt: string | null; status: string; assignee: { name: string } | null }>;
+  campaignLeads: Array<{
+    id: string;
+    status: string;
+    addedAt: string;
+    campaign: { id: string; name: string; status: string };
+  }>;
+  tasks: Array<{
+    id: string;
+    title: string;
+    type: string;
+    priority: string;
+    dueAt: string | null;
+    status: string;
+    assignee: { name: string } | null;
+  }>;
   deals: Array<{ id: string; title: string; stage: string; value: string; currency: string }>;
 }
 
@@ -188,7 +222,9 @@ function eventDescription(event: TimelineEvent): string | undefined {
   const p = event.properties;
   switch (event.type) {
     case "lead_created":
-      return p.source === "discovery" ? `Found via ${p.provider === "mock" ? "demo data" : String(p.provider)}` : `Source: ${String(p.source ?? "manual")}`;
+      return p.source === "discovery"
+        ? `Found via ${p.provider === "mock" ? "demo data" : String(p.provider)}`
+        : `Source: ${String(p.source ?? "manual")}`;
     case "lead_enriched":
       return `${Number(p.contactsAdded ?? 0)} contact detail(s) found · signals: ${((p.signals as string[] | undefined) ?? []).map((s) => s.replace(/_/g, " ")).join(", ") || "none"}`;
     case "lead_scored":
@@ -233,22 +269,38 @@ function ConversionCard({ conversion }: { conversion: LeadConversion }) {
         <AnimatedNumber value={pct} format={(value) => `${Math.round(value)}%`} />
       </p>
       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-muted">
-        <GrowBar value={100} className="h-full rounded-full" style={{ width: `${Math.max(2, pct)}%` }} barClassName="rounded-full bg-brand-1" />
+        <GrowBar
+          value={100}
+          className="h-full rounded-full"
+          style={{ width: `${Math.max(2, pct)}%` }}
+          barClassName="rounded-full bg-brand-1"
+        />
       </div>
       {conversion.drivers.length ? (
         <ul className="mt-3 grid gap-1 text-xs">
           {conversion.drivers.map((driver) => (
             <li key={driver.factor} className="flex items-center justify-between gap-2">
               <span className="text-foreground-secondary">{driver.label}</span>
-              <span className={cn("font-medium", driver.effect > 0 ? "text-success-text" : "text-danger-text")}>{driver.effect > 0 ? "raises" : "lowers"} chance</span>
+              <span
+                className={cn(
+                  "font-medium",
+                  driver.effect > 0 ? "text-success-text" : "text-danger-text",
+                )}
+              >
+                {driver.effect > 0 ? "raises" : "lowers"} chance
+              </span>
             </li>
           ))}
         </ul>
       ) : null}
       <p className="mt-3 text-[11px] text-foreground-subtle">
-        Chance of becoming interested once contacted, learned from {conversion.samples} of your past leads
+        Chance of becoming interested once contacted, learned from {conversion.samples} of your past
+        leads
         {conversion.auc !== null ? ` (AUC ${conversion.auc.toFixed(2)})` : ""}.{" "}
-        <Link href="/app/settings/scoring" className="underline underline-offset-2 hover:text-foreground">
+        <Link
+          href="/app/settings/scoring"
+          className="underline underline-offset-2 hover:text-foreground"
+        >
           How it works
         </Link>
       </p>
@@ -260,18 +312,37 @@ function ConversionCard({ conversion }: { conversion: LeadConversion }) {
 
 function ScoreBreakdown({ score }: { score: LeadScoreRow | undefined }) {
   const [expanded, setExpanded] = React.useState<string | null>(null);
-  if (!score) return <EmptyState compact title="Not scored yet" description="Scores appear once enrichment finishes." />;
+  if (!score)
+    return (
+      <EmptyState
+        compact
+        title="Not scored yet"
+        description="Scores appear once enrichment finishes."
+      />
+    );
   return (
     <div className="grid gap-3">
       {score.breakdown.factors.map((factor) => (
         <div key={factor.factor}>
-          <button type="button" className="w-full text-left" onClick={() => setExpanded(expanded === factor.factor ? null : factor.factor)}>
+          <button
+            type="button"
+            className="w-full text-left"
+            onClick={() => setExpanded(expanded === factor.factor ? null : factor.factor)}
+          >
             <ScoreBar label={factor.label} score={factor.score} weight={factor.weight} />
           </button>
           {expanded === factor.factor ? (
             <ul className="mt-1.5 grid gap-1 pl-1 animate-fade-in">
               {factor.reasons.map((reason, index) => (
-                <li key={index} className={cn("flex gap-1.5 text-xs", reason.startsWith("AI") ? "text-accent-soft-foreground" : "text-foreground-muted")}>
+                <li
+                  key={index}
+                  className={cn(
+                    "flex gap-1.5 text-xs",
+                    reason.startsWith("AI")
+                      ? "text-accent-soft-foreground"
+                      : "text-foreground-muted",
+                  )}
+                >
                   <span aria-hidden>•</span> {reason}
                 </li>
               ))}
@@ -290,7 +361,9 @@ function ScoreBreakdown({ score }: { score: LeadScoreRow | undefined }) {
         </div>
       ) : null}
       <p className="text-[11px] text-foreground-subtle">
-        Scored <RelativeTime value={score.createdAt} /> · {score.scoringVersion.includes("ai") ? "rules + AI qualification" : "rules only"} · click a factor for reasons
+        Scored <RelativeTime value={score.createdAt} /> ·{" "}
+        {score.scoringVersion.includes("ai") ? "rules + AI qualification" : "rules only"} · click a
+        factor for reasons
       </p>
     </div>
   );
@@ -307,7 +380,12 @@ function ContactsPanel({ lead }: { lead: LeadDetail }) {
     mutationFn: () =>
       api(`/api/v1/leads/${lead.id}/contacts`, {
         method: "POST",
-        json: { name: form.name || null, title: form.title || null, email: form.email || null, phone: form.phone || null },
+        json: {
+          name: form.name || null,
+          title: form.title || null,
+          email: form.email || null,
+          phone: form.phone || null,
+        },
       }),
     onSuccess: () => {
       setOpen(false);
@@ -324,19 +402,38 @@ function ContactsPanel({ lead }: { lead: LeadDetail }) {
 
   return (
     <div className="grid gap-3">
-      {lead.contacts.length === 0 ? <EmptyState compact icon={Users} title="No contacts yet" description="Enrichment adds contact details it finds; you can also add them manually." /> : null}
+      {lead.contacts.length === 0 ? (
+        <EmptyState
+          compact
+          icon={Users}
+          title="No contacts yet"
+          description="Enrichment adds contact details it finds; you can also add them manually."
+        />
+      ) : null}
       {lead.contacts.map((contact) => (
-        <div key={contact.id} className="flex items-start gap-3 rounded-lg border border-border bg-surface p-3">
+        <div
+          key={contact.id}
+          className="flex items-start gap-3 rounded-lg border border-border bg-surface p-3"
+        >
           <Avatar name={contact.name ?? contact.email ?? "?"} size="sm" />
           <div className="min-w-0 flex-1">
             <p className="text-[13px] font-medium">
               {contact.name ?? (contact.kind === "GENERIC" ? "Business line" : "Unnamed")}
-              {contact.title ? <span className="font-normal text-foreground-muted"> · {contact.title}</span> : null}
-              {contact.isPrimary ? <Badge tone="accent" className="ml-2">Primary</Badge> : null}
+              {contact.title ? (
+                <span className="font-normal text-foreground-muted"> · {contact.title}</span>
+              ) : null}
+              {contact.isPrimary ? (
+                <Badge tone="accent" className="ml-2">
+                  Primary
+                </Badge>
+              ) : null}
             </p>
             <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-foreground-secondary">
               {contact.email ? (
-                <a href={`mailto:${contact.email}`} className="inline-flex items-center gap-1 hover:underline">
+                <a
+                  href={`mailto:${contact.email}`}
+                  className="inline-flex items-center gap-1 hover:underline"
+                >
                   <Mail className="size-3" /> {contact.email}
                 </a>
               ) : null}
@@ -346,10 +443,18 @@ function ContactsPanel({ lead }: { lead: LeadDetail }) {
                 </span>
               ) : null}
             </div>
-            <p className="mt-1 text-[11px] text-foreground-subtle">Source: {contact.source === "mock-website" ? "demo website (simulated)" : contact.source}</p>
+            <p className="mt-1 text-[11px] text-foreground-subtle">
+              Source:{" "}
+              {contact.source === "mock-website" ? "demo website (simulated)" : contact.source}
+            </p>
           </div>
           {canWrite ? (
-            <Button variant="ghost" size="icon-xs" aria-label="Remove contact" onClick={() => remove.mutate(contact.id)}>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              aria-label="Remove contact"
+              onClick={() => remove.mutate(contact.id)}
+            >
               <Trash2 />
             </Button>
           ) : null}
@@ -370,7 +475,11 @@ function ContactsPanel({ lead }: { lead: LeadDetail }) {
               {(["name", "title", "email", "phone"] as const).map((key) => (
                 <Field key={key}>
                   <Label htmlFor={`contact-${key}`}>{humanize(key)}</Label>
-                  <Input id={`contact-${key}`} value={form[key]} onChange={(event) => setForm({ ...form, [key]: event.target.value })} />
+                  <Input
+                    id={`contact-${key}`}
+                    value={form[key]}
+                    onChange={(event) => setForm({ ...form, [key]: event.target.value })}
+                  />
                 </Field>
               ))}
             </div>
@@ -388,10 +497,17 @@ function ContactsPanel({ lead }: { lead: LeadDetail }) {
 
 // ----------------------------------------------------------------------------- Activity + notes
 
-function ActivityPanel({ leadId, initial }: { leadId: string; initial: { events: TimelineEvent[]; notes: NoteRow[] } }) {
+function ActivityPanel({
+  leadId,
+  initial,
+}: {
+  leadId: string;
+  initial: { events: TimelineEvent[]; notes: NoteRow[] };
+}) {
   const timeline = useQuery({
     queryKey: ["lead-timeline", leadId],
-    queryFn: () => api<{ events: TimelineEvent[]; notes: NoteRow[] }>(`/api/v1/leads/${leadId}/timeline`),
+    queryFn: () =>
+      api<{ events: TimelineEvent[]; notes: NoteRow[] }>(`/api/v1/leads/${leadId}/timeline`),
     initialData: initial,
   });
   const items: TimelineItem[] = [
@@ -404,7 +520,13 @@ function ActivityPanel({ leadId, initial }: { leadId: string; initial: { events:
         title: EVENT_LABELS[event.type] ?? humanize(event.type),
         description: eventDescription(event),
         tone: eventTone(event.type),
-        icon: event.type.startsWith("email") ? Mail : event.type.startsWith("call") ? Phone : event.type.includes("score") || event.type.includes("qualif") ? Sparkles : Activity,
+        icon: event.type.startsWith("email")
+          ? Mail
+          : event.type.startsWith("call")
+            ? Phone
+            : event.type.includes("score") || event.type.includes("qualif")
+              ? Sparkles
+              : Activity,
       } satisfies TimelineItem,
     })),
     ...timeline.data.notes.map((note) => ({
@@ -422,7 +544,11 @@ function ActivityPanel({ leadId, initial }: { leadId: string; initial: { events:
     .sort((a, b) => b.at.getTime() - a.at.getTime())
     .map((entry) => entry.item);
 
-  return items.length ? <Timeline items={items} /> : <EmptyState compact icon={Activity} title="No activity yet" />;
+  return items.length ? (
+    <Timeline items={items} />
+  ) : (
+    <EmptyState compact icon={Activity} title="No activity yet" />
+  );
 }
 
 function NotesComposer({ leadId }: { leadId: string }) {
@@ -438,9 +564,21 @@ function NotesComposer({ leadId }: { leadId: string }) {
   });
   return (
     <div className="grid gap-2 rounded-lg border border-border bg-surface p-3">
-      <Textarea rows={2} placeholder="Add a note for your team…" value={body} onChange={(event) => setBody(event.target.value)} className="border-0 px-0 shadow-none focus-visible:ring-0" />
+      <Textarea
+        rows={2}
+        placeholder="Add a note for your team…"
+        value={body}
+        onChange={(event) => setBody(event.target.value)}
+        className="border-0 px-0 shadow-none focus-visible:ring-0"
+      />
       <div className="flex justify-end">
-        <Button size="sm" variant="primary" disabled={!body.trim()} loading={add.isPending} onClick={() => add.mutate()}>
+        <Button
+          size="sm"
+          variant="primary"
+          disabled={!body.trim()}
+          loading={add.isPending}
+          onClick={() => add.mutate()}
+        >
           Add note
         </Button>
       </div>
@@ -456,7 +594,16 @@ function TasksPanel({ lead }: { lead: LeadDetail }) {
   const [title, setTitle] = React.useState("");
   const [due, setDue] = React.useState("");
   const create = useMutation({
-    mutationFn: () => api("/api/v1/tasks", { method: "POST", json: { title, leadId: lead.id, type: "FOLLOW_UP", dueAt: due ? new Date(due).toISOString() : null } }),
+    mutationFn: () =>
+      api("/api/v1/tasks", {
+        method: "POST",
+        json: {
+          title,
+          leadId: lead.id,
+          type: "FOLLOW_UP",
+          dueAt: due ? new Date(due).toISOString() : null,
+        },
+      }),
     onSuccess: () => {
       setTitle("");
       setDue("");
@@ -465,7 +612,8 @@ function TasksPanel({ lead }: { lead: LeadDetail }) {
     onError: (error) => toast.error(errorMessage(error)),
   });
   const complete = useMutation({
-    mutationFn: (id: string) => api(`/api/v1/tasks/${id}`, { method: "PATCH", json: { status: "DONE" } }),
+    mutationFn: (id: string) =>
+      api(`/api/v1/tasks/${id}`, { method: "PATCH", json: { status: "DONE" } }),
     onSuccess: () => router.refresh(),
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -479,25 +627,52 @@ function TasksPanel({ lead }: { lead: LeadDetail }) {
             if (title.trim()) create.mutate();
           }}
         >
-          <Input className="min-w-48 flex-1" placeholder="Follow up about pricing…" value={title} onChange={(event) => setTitle(event.target.value)} />
-          <Input type="date" className="w-40" value={due} onChange={(event) => setDue(event.target.value)} aria-label="Due date" />
+          <Input
+            className="min-w-48 flex-1"
+            placeholder="Follow up about pricing…"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+          />
+          <Input
+            type="date"
+            className="w-40"
+            value={due}
+            onChange={(event) => setDue(event.target.value)}
+            aria-label="Due date"
+          />
           <Button type="submit" loading={create.isPending} disabled={!title.trim()}>
             <Plus /> Add task
           </Button>
         </form>
       ) : null}
-      {lead.tasks.length === 0 ? <EmptyState compact icon={ListTodo} title="No open tasks" /> : null}
+      {lead.tasks.length === 0 ? (
+        <EmptyState compact icon={ListTodo} title="No open tasks" />
+      ) : null}
       <ul className="grid gap-1.5">
         {lead.tasks.map((task) => {
           const overdue = task.dueAt && new Date(task.dueAt) < new Date();
           return (
-            <li key={task.id} className="flex items-center gap-2.5 rounded-md border border-border bg-surface px-3 py-2">
-              <button type="button" aria-label="Mark done" onClick={() => complete.mutate(task.id)} disabled={!canWrite} className="text-foreground-muted hover:text-success-text">
+            <li
+              key={task.id}
+              className="flex items-center gap-2.5 rounded-md border border-border bg-surface px-3 py-2"
+            >
+              <button
+                type="button"
+                aria-label="Mark done"
+                onClick={() => complete.mutate(task.id)}
+                disabled={!canWrite}
+                className="text-foreground-muted hover:text-success-text"
+              >
                 <Circle className="size-4" />
               </button>
               <span className="flex-1 text-[13px]">{task.title}</span>
               {task.dueAt ? (
-                <span className={cn("inline-flex items-center gap-1 text-xs", overdue ? "text-danger-text" : "text-foreground-muted")}>
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 text-xs",
+                    overdue ? "text-danger-text" : "text-foreground-muted",
+                  )}
+                >
                   <Clock className="size-3" /> <LocalTime value={task.dueAt} style="date" />
                 </span>
               ) : null}
@@ -531,7 +706,8 @@ export function LeadWorkspace({
   const latestScore = lead.scores[0];
 
   const patch = useMutation({
-    mutationFn: (body: Record<string, unknown>) => api(`/api/v1/leads/${lead.id}`, { method: "PATCH", json: body }),
+    mutationFn: (body: Record<string, unknown>) =>
+      api(`/api/v1/leads/${lead.id}`, { method: "PATCH", json: body }),
     onSuccess: () => {
       router.refresh();
       void queryClient.invalidateQueries({ queryKey: ["lead-timeline", lead.id] });
@@ -539,7 +715,8 @@ export function LeadWorkspace({
     onError: (error) => toast.error(errorMessage(error)),
   });
   const rescore = useMutation({
-    mutationFn: () => api<{ total: number }>(`/api/v1/leads/${lead.id}/score`, { method: "POST", json: {} }),
+    mutationFn: () =>
+      api<{ total: number }>(`/api/v1/leads/${lead.id}/score`, { method: "POST", json: {} }),
     onSuccess: (result) => {
       toast.success(`Re-scored: ${result.total}`);
       router.refresh();
@@ -547,10 +724,30 @@ export function LeadWorkspace({
     onError: (error) => toast.error(errorMessage(error)),
   });
   const chainSignal = lead.signals.find((signal) => signal.key === "chain_or_franchise");
+  const [reviewInvite, setReviewInvite] = React.useState<{
+    url: string;
+    message: string;
+    whatsappUrl: string;
+  } | null>(null);
+  const askReview = useMutation({
+    mutationFn: () =>
+      api<{ url: string; message: string; whatsappUrl: string }>("/api/v1/grow/reviews", {
+        method: "POST",
+        json: { leadId: lead.id },
+      }),
+    onSuccess: (invite) => setReviewInvite(invite),
+    onError: (error) => toast.error(errorMessage(error)),
+  });
   const markChain = useMutation({
-    mutationFn: (isChain: boolean) => api<{ outlets: number; isChain: boolean }>(`/api/v1/leads/${lead.id}/chain`, { method: "POST", json: { isChain } }),
+    mutationFn: (isChain: boolean) =>
+      api<{ outlets: number; isChain: boolean }>(`/api/v1/leads/${lead.id}/chain`, {
+        method: "POST",
+        json: { isChain },
+      }),
     onSuccess: (result) => {
-      toast.success(result.isChain ? `Marked as a chain` : `Marked as independent`, { description: `Applies to ${result.outlets === 1 ? "this outlet" : `all ${result.outlets} outlets`} named “${lead.name}” and to future searches.` });
+      toast.success(result.isChain ? `Marked as a chain` : `Marked as independent`, {
+        description: `Applies to ${result.outlets === 1 ? "this outlet" : `all ${result.outlets} outlets`} named “${lead.name}” and to future searches.`,
+      });
       router.refresh();
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -564,7 +761,11 @@ export function LeadWorkspace({
     onError: (error) => toast.error(errorMessage(error)),
   });
   const dnc = useMutation({
-    mutationFn: () => api("/api/v1/leads/bulk", { method: "POST", json: { action: "do_not_contact", ids: [lead.id] } }),
+    mutationFn: () =>
+      api("/api/v1/leads/bulk", {
+        method: "POST",
+        json: { action: "do_not_contact", ids: [lead.id] },
+      }),
     onSuccess: () => {
       toast.success("Marked do-not-contact — all outreach stopped");
       router.refresh();
@@ -581,8 +782,47 @@ export function LeadWorkspace({
 
   return (
     <div className="grid gap-6">
+      <Dialog open={Boolean(reviewInvite)} onOpenChange={(open) => !open && setReviewInvite(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ask {lead.name} for a review</DialogTitle>
+            <DialogDescription>
+              Their private link — only they can use it. Their review appears on your public page as
+              a verified customer.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            readOnly
+            rows={4}
+            value={reviewInvite?.message ?? ""}
+            className="text-[13px]"
+            aria-label="Message"
+          />
+          <DialogFooter className="gap-2 sm:justify-between">
+            <Button
+              variant="secondary"
+              onClick={() =>
+                reviewInvite &&
+                void navigator.clipboard
+                  .writeText(reviewInvite.message)
+                  .then(() => toast.success("Message copied"))
+              }
+            >
+              Copy message
+            </Button>
+            <Button asChild variant="primary">
+              <a href={reviewInvite?.whatsappUrl} target="_blank" rel="noopener">
+                Send on WhatsApp
+              </a>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <div>
-        <Link href="/app/leads" className="mb-3 inline-flex items-center gap-1 text-xs text-foreground-muted hover:text-foreground">
+        <Link
+          href="/app/leads"
+          className="mb-3 inline-flex items-center gap-1 text-xs text-foreground-muted hover:text-foreground"
+        >
           <ArrowLeft className="size-3" /> Leads
         </Link>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -594,7 +834,8 @@ export function LeadWorkspace({
                 <span>{humanize(lead.category)}</span>
                 {lead.locality || lead.city ? (
                   <span className="inline-flex items-center gap-1">
-                    <MapPin className="size-3" /> {[lead.locality, lead.city].filter(Boolean).join(", ")}
+                    <MapPin className="size-3" />{" "}
+                    {[lead.locality, lead.city].filter(Boolean).join(", ")}
                   </span>
                 ) : null}
                 {lead.reviewCount ? (
@@ -635,7 +876,9 @@ export function LeadWorkspace({
                 </SelectContent>
               </Select>
             ) : null}
-            {canWrite && !lead.doNotContact ? <AddToCampaignMenu leadIds={[lead.id]} onDone={() => router.refresh()} /> : null}
+            {canWrite && !lead.doNotContact ? (
+              <AddToCampaignMenu leadIds={[lead.id]} onDone={() => router.refresh()} />
+            ) : null}
             {canWrite ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -651,15 +894,29 @@ export function LeadWorkspace({
                     <Database /> Re-enrich
                   </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => markChain.mutate(!chainSignal)}>
-                    <Store /> {chainSignal ? "Not a chain — independent" : "Mark as chain or franchise"}
+                    <Store />{" "}
+                    {chainSignal ? "Not a chain — independent" : "Mark as chain or franchise"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => askReview.mutate()}>
+                    <Star /> Ask for a review
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   {!lead.doNotContact ? (
-                    <DropdownMenuItem destructive onSelect={() => window.confirm("Mark as do-not-contact? All outreach to this business stops.") && dnc.mutate()}>
+                    <DropdownMenuItem
+                      destructive
+                      onSelect={() =>
+                        window.confirm(
+                          "Mark as do-not-contact? All outreach to this business stops.",
+                        ) && dnc.mutate()
+                      }
+                    >
                       <Ban /> Mark do-not-contact
                     </DropdownMenuItem>
                   ) : null}
-                  <DropdownMenuItem destructive onSelect={() => window.confirm("Delete this lead?") && remove.mutate()}>
+                  <DropdownMenuItem
+                    destructive
+                    onSelect={() => window.confirm("Delete this lead?") && remove.mutate()}
+                  >
                     <Trash2 /> Delete lead
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -671,7 +928,8 @@ export function LeadWorkspace({
 
       {lead.doNotContact ? (
         <Callout tone="danger" icon={Ban} title="Do not contact">
-          This business is on your do-not-contact list. It is excluded from every campaign and channel.
+          This business is on your do-not-contact list. It is excluded from every campaign and
+          channel.
         </Callout>
       ) : null}
 
@@ -686,10 +944,12 @@ export function LeadWorkspace({
               <Activity /> Activity
             </TabsTrigger>
             <TabsTrigger value="contacts">
-              <UserRound /> Contacts <span className="text-foreground-subtle">{lead.contacts.length}</span>
+              <UserRound /> Contacts{" "}
+              <span className="text-foreground-subtle">{lead.contacts.length}</span>
             </TabsTrigger>
             <TabsTrigger value="deals">
-              <Handshake /> Deals & quotes <span className="text-foreground-subtle">{lead.deals.length}</span>
+              <Handshake /> Deals & quotes{" "}
+              <span className="text-foreground-subtle">{lead.deals.length}</span>
             </TabsTrigger>
             <TabsTrigger value="tasks">
               <ListTodo /> Tasks <span className="text-foreground-subtle">{lead.tasks.length}</span>
@@ -712,17 +972,22 @@ export function LeadWorkspace({
                   <p className="text-[13px] text-foreground-muted">No signals detected yet.</p>
                 ) : (
                   <ul className="grid gap-2.5">
-                    {[...lead.signals].sort((a, b) => b.weight - a.weight).map((signal) => (
-                      <li key={signal.key} className="flex items-start gap-2">
-                        <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-success-text" />
-                        <div>
-                          <p className="text-[13px] font-medium">{signal.label}</p>
-                          <p className="text-xs text-foreground-muted">
-                            {signal.evidence} · source: {signal.source === "mock-website" ? "demo website (simulated)" : signal.source}
-                          </p>
-                        </div>
-                      </li>
-                    ))}
+                    {[...lead.signals]
+                      .sort((a, b) => b.weight - a.weight)
+                      .map((signal) => (
+                        <li key={signal.key} className="flex items-start gap-2">
+                          <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-success-text" />
+                          <div>
+                            <p className="text-[13px] font-medium">{signal.label}</p>
+                            <p className="text-xs text-foreground-muted">
+                              {signal.evidence} · source:{" "}
+                              {signal.source === "mock-website"
+                                ? "demo website (simulated)"
+                                : signal.source}
+                            </p>
+                          </div>
+                        </li>
+                      ))}
                   </ul>
                 )}
               </section>
@@ -733,30 +998,59 @@ export function LeadWorkspace({
                     {
                       label: "Website",
                       value: lead.website ? (
-                        <a href={lead.website} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-1 text-accent hover:underline">
-                          <Globe className="size-3" /> {lead.domain ?? lead.website} <ExternalLink className="size-3" />
+                        <a
+                          href={lead.website}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          className="inline-flex items-center gap-1 text-accent hover:underline"
+                        >
+                          <Globe className="size-3" /> {lead.domain ?? lead.website}{" "}
+                          <ExternalLink className="size-3" />
                         </a>
                       ) : null,
                     },
                     { label: "Phone", value: lead.phone },
                     { label: "Email", value: lead.email },
                     { label: "Address", value: lead.address },
-                    { label: "Locations", value: lead.locationsCount ? String(lead.locationsCount) : null },
+                    {
+                      label: "Locations",
+                      value: lead.locationsCount ? String(lead.locationsCount) : null,
+                    },
                     { label: "Team size", value: lead.employeeRange },
                     { label: "Industry", value: lead.industry },
-                    { label: "Offers", value: lead.services.length ? lead.services.join(", ") : null },
-                    { label: "Social", value: socials.length ? socials.map(([network]) => humanize(network)).join(", ") : null },
+                    {
+                      label: "Offers",
+                      value: lead.services.length ? lead.services.join(", ") : null,
+                    },
+                    {
+                      label: "Social",
+                      value: socials.length
+                        ? socials.map(([network]) => humanize(network)).join(", ")
+                        : null,
+                    },
                     { label: "Hours", value: lead.openingHours?.join("; ") ?? null },
                   ]}
                 />
               </section>
             </div>
-            {lead.description ? <p className="text-[13px] leading-relaxed text-foreground-secondary">{lead.description}</p> : null}
+            {lead.description ? (
+              <p className="text-[13px] leading-relaxed text-foreground-secondary">
+                {lead.description}
+              </p>
+            ) : null}
           </TabsContent>
 
           <TabsContent value="outreach" className="pt-4">
             <LeadOutreachPanel
-              lead={{ id: lead.id, name: lead.name, doNotContact: lead.doNotContact, city: lead.city, locality: lead.locality, score: lead.score, phone: lead.phone ?? lead.contacts.find((contact) => contact.phone)?.phone ?? null }}
+              lead={{
+                id: lead.id,
+                name: lead.name,
+                doNotContact: lead.doNotContact,
+                city: lead.city,
+                locality: lead.locality,
+                score: lead.score,
+                phone: lead.phone ?? lead.contacts.find((contact) => contact.phone)?.phone ?? null,
+              }}
               providers={providers}
             />
           </TabsContent>
@@ -779,16 +1073,24 @@ export function LeadWorkspace({
           </TabsContent>
 
           <TabsContent value="sources" className="grid gap-3 pt-4">
-            <p className="text-[13px] text-foreground-muted">Every place this business was found, with the raw data received — nothing about a lead is untraceable.</p>
+            <p className="text-[13px] text-foreground-muted">
+              Every place this business was found, with the raw data received — nothing about a lead
+              is untraceable.
+            </p>
             {lead.sources.map((source) => (
               <details key={source.id} className="rounded-lg border border-border bg-surface">
                 <summary className="flex cursor-pointer items-center gap-2 px-3 py-2.5 text-[13px]">
                   <ChevronDown className="size-3.5 text-foreground-muted" />
                   <SourceLabel provider={source.provider} />
                   <span className="text-foreground-muted">· {humanize(source.sourceType)}</span>
-                  <LocalTime value={source.fetchedAt} className="ml-auto text-xs text-foreground-subtle" />
+                  <LocalTime
+                    value={source.fetchedAt}
+                    className="ml-auto text-xs text-foreground-subtle"
+                  />
                 </summary>
-                <pre className="max-h-80 overflow-auto border-t border-border bg-surface-muted px-3 py-2 font-mono text-[11px] leading-relaxed">{JSON.stringify(source.rawData, null, 2)}</pre>
+                <pre className="max-h-80 overflow-auto border-t border-border bg-surface-muted px-3 py-2 font-mono text-[11px] leading-relaxed">
+                  {JSON.stringify(source.rawData, null, 2)}
+                </pre>
               </details>
             ))}
           </TabsContent>
@@ -800,7 +1102,9 @@ export function LeadWorkspace({
               <ScoreIndicator score={lead.score} size="lg" />
               <div>
                 <p className="text-[13px] font-semibold">Lead score</p>
-                <p className="text-xs text-foreground-muted">{lead.qualification ? humanize(lead.qualification) : "Pending"}</p>
+                <p className="text-xs text-foreground-muted">
+                  {lead.qualification ? humanize(lead.qualification) : "Pending"}
+                </p>
               </div>
             </div>
             <ScoreBreakdown score={latestScore} />
@@ -812,7 +1116,10 @@ export function LeadWorkspace({
               items={[
                 { label: "Owner", value: lead.owner?.name ?? null },
                 { label: "Added", value: <RelativeTime value={lead.createdAt} /> },
-                { label: "Last activity", value: lead.lastActivityAt ? <RelativeTime value={lead.lastActivityAt} /> : null },
+                {
+                  label: "Last activity",
+                  value: lead.lastActivityAt ? <RelativeTime value={lead.lastActivityAt} /> : null,
+                },
                 { label: "Enrichment", value: humanize(lead.enrichmentStatus) },
               ]}
             />
@@ -824,8 +1131,14 @@ export function LeadWorkspace({
             ) : (
               <ul className="grid gap-2">
                 {lead.campaignLeads.map((membership) => (
-                  <li key={membership.id} className="flex items-center justify-between gap-2 text-[13px]">
-                    <Link href={`/app/campaigns/${membership.campaign.id}`} className="truncate hover:underline">
+                  <li
+                    key={membership.id}
+                    className="flex items-center justify-between gap-2 text-[13px]"
+                  >
+                    <Link
+                      href={`/app/campaigns/${membership.campaign.id}`}
+                      className="truncate hover:underline"
+                    >
                       {membership.campaign.name}
                     </Link>
                     <Badge tone="neutral">{humanize(membership.status)}</Badge>

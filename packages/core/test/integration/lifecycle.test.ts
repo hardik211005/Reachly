@@ -6,6 +6,7 @@ import { createTenantContext } from "../../src/context";
 import { accountDeletionPlan, deleteAccount, deleteWorkspace, exportWorkspaceData, purgeDeletedWorkspaces, restoreWorkspace, WORKSPACE_PURGE_DAYS } from "../../src/organizations/lifecycle";
 import { resolveMembership } from "../../src/organizations/service";
 import { getPlatformOverview, isPlatformAdmin } from "../../src/platform/admin";
+import { getPlatformActivity, getPlatformFeed, getPlatformHealth, getWorkspaceDetail } from "../../src/platform/monitor";
 import { resetEnvCache } from "@repo/config/env";
 import { createLead, createUser, createWorkspace, resetDatabase, setPlan } from "./helpers";
 
@@ -192,5 +193,41 @@ describe("platform admin", () => {
     expect(overview.workspaces.map((item) => item.name).sort()).toEqual(["Alpha", "Beta"]);
     expect(overview.workspaces.find((item) => item.name === "Beta")?.deletedAt).not.toBeNull();
     expect(overview.users).toHaveLength(2);
+  });
+});
+
+describe("platform monitoring", () => {
+  beforeEach(async () => {
+    await resetDatabase();
+  });
+
+  it("shows growth per day, a newest-first feed, problems and one workspace in detail", async () => {
+    const { ctx, organizationId } = await createWorkspace("Monitor Co");
+    await createLead(ctx, { name: "Lead one", qualification: "QUALIFIED" });
+    await createLead(ctx, { name: "Lead two" });
+    await prisma.discoveryRun.create({ data: { organizationId, query: "cafés in Delhi", criteria: {}, providers: ["openstreetmap"], status: "FAILED", stage: "DONE", stats: {}, resultLimit: 25, error: "Overpass timed out" } });
+    await prisma.discoveryRun.create({ data: { organizationId, query: "offices in Noida", criteria: {}, providers: ["openstreetmap"], status: "COMPLETED", stage: "DONE", stats: { new: 2, found: 3 }, resultLimit: 25, completedAt: new Date() } });
+
+    const activity = await getPlatformActivity(7);
+    expect(activity).toHaveLength(7);
+    const today = activity.at(-1)!;
+    expect(today.date).toBe(new Date().toISOString().slice(0, 10));
+    expect(today.leads).toBe(2);
+    expect(today.searches).toBe(2);
+    expect(today.signups).toBeGreaterThanOrEqual(1);
+
+    const feed = await getPlatformFeed(20);
+    expect(feed.map((item) => item.kind)).toEqual(expect.arrayContaining(["signup", "search", "problem"]));
+    expect([...feed].sort((a, b) => b.at.localeCompare(a.at))).toEqual(feed);
+    expect(feed.find((item) => item.kind === "search")?.title).toBe("Monitor Co found 2 new leads");
+
+    const health = await getPlatformHealth();
+    expect(health.failures.find((item) => item.label === "Lead searches")?.count).toBe(1);
+    expect(JSON.stringify(health.providers)).not.toMatch(/sk_|rzp_|secret/i);
+
+    const detail = await getWorkspaceDetail(organizationId);
+    expect(detail.counts).toMatchObject({ leads: 2, qualified: 1, searches: 2 });
+    expect(detail.recentRuns[0]?.query).toBe("offices in Noida");
+    await expect(getWorkspaceDetail("00000000-0000-0000-0000-000000000000")).rejects.toThrow();
   });
 });

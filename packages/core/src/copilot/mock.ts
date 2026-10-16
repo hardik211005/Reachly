@@ -74,7 +74,7 @@ registerMockFormatter("get_usage", (result) => {
 
 registerMockFormatter("get_overview_metrics", (result) => {
   const data = result as { days: number; kpis: Array<{ metric: string; value: number; change: number | null; format: string }> };
-  const pick = ["New leads", "Qualified leads", "Outreach sent", "Replies", "Positive replies", "Meetings", "Deals won", "Revenue won"];
+  const pick = ["Customers found", "Good fits", "Messages sent", "Replies", "Interested replies", "Meetings", "Deals won", "Money earned"];
   const lines = data.kpis
     .filter((kpi) => pick.includes(kpi.metric))
     .map((kpi) => `• ${kpi.metric}: ${kpi.format === "percent" ? `${(kpi.value * 100).toFixed(1)}%` : kpi.value.toLocaleString()} (${pct(kpi.change)} vs previous period)`);

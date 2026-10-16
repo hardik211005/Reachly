@@ -115,6 +115,8 @@ enum LeadSourceType {
   CRM_IMPORT
   API
   WORKFLOW
+  /// Enquiry from the business's public page.
+  INBOUND
 }
 
 enum EnrichmentStatus {
@@ -502,6 +504,7 @@ model User {
   notes            Note[]
   notifications    Notification[]
   createdCampaigns Campaign[]     @relation("CampaignCreator")
+  avatar           UserAvatar?
 
   @@map("users")
 }
@@ -586,6 +589,10 @@ model Organization {
   payments           Payment[]
   businessProfile    BusinessProfile?
   scoringProfile     ScoringProfile?
+  publicPage         PublicPage?
+  reviews            Review[]
+  creditBalances     CreditBalance[]
+  creditPurchases    CreditPurchase[]
   complianceSettings ComplianceSettings?
   quoteSettings      QuoteSettings?
   offerings          Offering[]
@@ -1081,6 +1088,7 @@ model Lead {
   meetings        Meeting[]
   quotes          Quote[]
   events          Event[]
+  reviews         Review[]
 
   @@unique([organizationId, dedupeKey])
   @@index([organizationId, status])
@@ -1721,6 +1729,7 @@ model Deal {
   notes        Note[]
   meetings     Meeting[]
   quotes       Quote[]
+  reviews      Review[]
 
   @@index([organizationId, stage, position])
   @@index([leadId])
@@ -2140,6 +2149,21 @@ model ContactRequest {
   @@map("contact_requests")
 }
 
+/// A person's profile picture (PNG, JPEG or WebP, max 1 MB). Kept in the database like workspace
+/// logos; served at /api/public/avatars/:userId. users.image points at it.
+model UserAvatar {
+  userId    String   @id @db.Uuid
+  mimeType  String
+  data      Bytes
+  sha256    String
+  size      Int
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_avatars")
+}
+
 /// A workspace's brand logo (PNG, JPEG or WebP, max 1 MB). Kept in the database so it works
 /// on any deployment; served at /api/public/logos/:organizationId.
 model OrganizationLogo {
@@ -2153,4 +2177,101 @@ model OrganizationLogo {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@map("organization_logos")
+}
+
+// -----------------------------------------------------------------------------
+// Grow: public business page, reviews from real customers, after-win follow-ups
+// -----------------------------------------------------------------------------
+
+/// The business's public page at /b/<slug>: services, prices, reviews and an enquiry form.
+model PublicPage {
+  id                String   @id @default(uuid()) @db.Uuid
+  organizationId    String   @unique @db.Uuid
+  enabled           Boolean  @default(false)
+  headline          String?
+  about             String?
+  showPrices        Boolean  @default(true)
+  acceptEnquiries   Boolean  @default(true)
+  /// After a deal is won: ask for a review and check back for repeat business.
+  afterWinFollowUps Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("public_pages")
+}
+
+enum ReviewStatus {
+  /// Link sent to the customer, not answered yet.
+  REQUESTED
+  PUBLISHED
+  /// Hidden from the public page by the business.
+  HIDDEN
+}
+
+/// A review from a real customer: only possible through a private invite link tied to a lead/deal.
+model Review {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  leadId         String?      @db.Uuid
+  dealId         String?      @db.Uuid
+  /// Random, unguessable; the customer's private link is /r/<token>.
+  token          String       @unique
+  status         ReviewStatus @default(REQUESTED)
+  rating         Int?
+  comment        String?
+  authorName     String?
+  authorRole     String?
+  requestedAt    DateTime     @default(now())
+  submittedAt    DateTime?
+  createdAt      DateTime     @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  lead         Lead?        @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  deal         Deal?        @relation(fields: [dealId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status, submittedAt(sort: Desc)])
+  @@map("reviews")
+}
+
+// -----------------------------------------------------------------------------
+// Credits: top-up packs bought on top of the plan's monthly allowance
+// -----------------------------------------------------------------------------
+
+/// Bought credits that never expire. Used only after the plan's monthly allowance runs out.
+model CreditBalance {
+  id             String      @id @default(uuid()) @db.Uuid
+  organizationId String      @db.Uuid
+  metric         UsageMetric
+  balance        Int         @default(0)
+  updatedAt      DateTime    @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, metric])
+  @@map("credit_balances")
+}
+
+/// One credit pack purchase. The provider payment id makes applying a payment idempotent.
+model CreditPurchase {
+  id                String      @id @default(uuid()) @db.Uuid
+  organizationId    String      @db.Uuid
+  packKey           String
+  metric            UsageMetric
+  amount            Int
+  /// Price charged in the smallest currency unit (0 when no payment was collected, e.g. local development).
+  price             Int
+  currency          String      @default("INR")
+  /// razorpay | none
+  provider          String
+  providerOrderId   String?
+  providerPaymentId String?     @unique
+  createdById       String?     @db.Uuid
+  createdAt         DateTime    @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt(sort: Desc)])
+  @@map("credit_purchases")
 }

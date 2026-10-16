@@ -76,8 +76,9 @@ jobs:
       - run: npm run db:seed
       - run: npx playwright install --with-deps chromium
         working-directory: apps/web
+      # Tests a production build (see playwright.config.ts), which needs NODE_ENV=production.
       - run: npm run test:e2e
-        env: { CI: "true" }
+        env: { CI: "true", NODE_ENV: production }
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

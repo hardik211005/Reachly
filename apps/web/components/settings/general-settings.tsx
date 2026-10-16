@@ -5,12 +5,32 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, Check, ChevronsUpDown, Globe2, Info } from "lucide-react";
-import { Button, Command, CommandEmpty, CommandInput, CommandItem, CommandList, ErrorState, Input, Popover, PopoverContent, PopoverTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Skeleton, cn, toast } from "@repo/ui";
+import {
+  Button,
+  Command,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  ErrorState,
+  Input,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Skeleton,
+  cn,
+  toast,
+} from "@repo/ui";
 import { api, errorMessage } from "@/lib/api-client";
 import { useCanManage, useShell } from "../shell/shell-context";
 import { ReadOnlyNotice, Row, SaveBar, Section } from "./kit";
 import { DeleteWorkspaceSection, ExportDataSection } from "./danger-zone";
-import { LogoSection } from "./logo-section";
+import { WorkspacePicture } from "./logo-section";
 
 interface Workspace {
   id: string;
@@ -24,7 +44,15 @@ interface Workspace {
 }
 type Form = Pick<Workspace, "name" | "timezone" | "currency"> & { country: string };
 
-const CURRENCY_NAMES: Record<string, string> = { INR: "Indian rupee", USD: "US dollar", EUR: "Euro", GBP: "British pound", AED: "UAE dirham", SGD: "Singapore dollar", AUD: "Australian dollar" };
+const CURRENCY_NAMES: Record<string, string> = {
+  INR: "Indian rupee",
+  USD: "US dollar",
+  EUR: "Euro",
+  GBP: "British pound",
+  AED: "UAE dirham",
+  SGD: "Singapore dollar",
+  AUD: "Australian dollar",
+};
 
 function zones(): string[] {
   try {
@@ -36,22 +64,40 @@ function zones(): string[] {
 
 function offsetLabel(zone: string) {
   try {
-    const part = new Intl.DateTimeFormat("en-US", { timeZone: zone, timeZoneName: "shortOffset" }).formatToParts(new Date()).find((item) => item.type === "timeZoneName");
+    const part = new Intl.DateTimeFormat("en-US", { timeZone: zone, timeZoneName: "shortOffset" })
+      .formatToParts(new Date())
+      .find((item) => item.type === "timeZoneName");
     return part?.value.replace("GMT", "UTC") ?? "";
   } catch {
     return "";
   }
 }
 
-function TimeZonePicker({ value, onChange, disabled }: { value: string; onChange: (value: string) => void; disabled?: boolean }) {
+function TimeZonePicker({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+}) {
   const [open, setOpen] = React.useState(false);
   const all = React.useMemo(() => zones(), []);
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button id="workspace-timezone" variant="secondary" role="combobox" aria-expanded={open} disabled={disabled} className="w-full justify-between font-normal">
+        <Button
+          id="workspace-timezone"
+          variant="secondary"
+          role="combobox"
+          aria-expanded={open}
+          disabled={disabled}
+          className="w-full justify-between font-normal"
+        >
           <span className="truncate">
-            {value.replace(/_/g, " ")} <span className="text-foreground-muted">· {offsetLabel(value)}</span>
+            {value.replace(/_/g, " ")}{" "}
+            <span className="text-foreground-muted">· {offsetLabel(value)}</span>
           </span>
           <ChevronsUpDown className="text-foreground-muted" />
         </Button>
@@ -83,7 +129,12 @@ function TimeZonePicker({ value, onChange, disabled }: { value: string; onChange
 }
 
 function toForm(workspace: Workspace): Form {
-  return { name: workspace.name, timezone: workspace.timezone, currency: workspace.currency, country: workspace.country ?? "" };
+  return {
+    name: workspace.name,
+    timezone: workspace.timezone,
+    currency: workspace.currency,
+    country: workspace.country ?? "",
+  };
 }
 
 function WorkspaceForm({ workspace }: { workspace: Workspace }) {
@@ -94,7 +145,11 @@ function WorkspaceForm({ workspace }: { workspace: Workspace }) {
   const initial = toForm(workspace);
   const dirty = (Object.keys(form) as Array<keyof Form>).some((key) => form[key] !== initial[key]);
   const save = useMutation({
-    mutationFn: () => api<Workspace>("/api/v1/workspace", { method: "PATCH", json: { ...form, country: form.country || null } }),
+    mutationFn: () =>
+      api<Workspace>("/api/v1/workspace", {
+        method: "PATCH",
+        json: { ...form, country: form.country || null },
+      }),
     onSuccess: (updated) => {
       queryClient.setQueryData(["workspace"], { ...workspace, ...updated });
       toast.success("Workspace updated");
@@ -102,19 +157,69 @@ function WorkspaceForm({ workspace }: { workspace: Workspace }) {
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
-  const set = <K extends keyof Form>(key: K, value: Form[K]) => setForm((current) => ({ ...current, [key]: value }));
+  const set = <K extends keyof Form>(key: K, value: Form[K]) =>
+    setForm((current) => ({ ...current, [key]: value }));
 
   return (
-    <Section title="Workspace" description="How your workspace appears and how dates and money are shown." icon={Building2} footer={canManage ? <SaveBar dirty={dirty} pending={save.isPending} onSave={() => save.mutate()} onReset={() => setForm(initial)} disabled={form.name.trim().length < 2} /> : null}>
+    <Section
+      title="Workspace"
+      description="How your workspace appears and how dates and money are shown."
+      icon={Building2}
+      footer={
+        canManage ? (
+          <SaveBar
+            dirty={dirty}
+            pending={save.isPending}
+            onSave={() => save.mutate()}
+            onReset={() => setForm(initial)}
+            disabled={form.name.trim().length < 2}
+          />
+        ) : null
+      }
+    >
       {canManage ? null : <ReadOnlyNotice what="workspace settings" />}
-      <Row label="Workspace name" hint="Shown to your team and in outgoing emails when no sender name is set." htmlFor="workspace-name">
-        <Input id="workspace-name" value={form.name} maxLength={80} disabled={!canManage} onChange={(event) => set("name", event.target.value)} />
+      <div className="mb-5 flex items-center gap-4">
+        <WorkspacePicture />
+        <div className="min-w-0">
+          <p className="truncate text-[15px] font-semibold">{form.name || workspace.name}</p>
+          <p className="text-[13px] text-foreground-muted">
+            Your business logo · shown in the sidebar and on quotes
+          </p>
+        </div>
+      </div>
+      <Row
+        label="Workspace name"
+        hint="Shown to your team and in outgoing emails when no sender name is set."
+        htmlFor="workspace-name"
+      >
+        <Input
+          id="workspace-name"
+          value={form.name}
+          maxLength={80}
+          disabled={!canManage}
+          onChange={(event) => set("name", event.target.value)}
+        />
       </Row>
-      <Row label="Time zone" hint="Used for sending windows, reports and reply heatmaps." htmlFor="workspace-timezone">
-        <TimeZonePicker value={form.timezone} onChange={(value) => set("timezone", value)} disabled={!canManage} />
+      <Row
+        label="Time zone"
+        hint="Used for sending windows, reports and reply heatmaps."
+        htmlFor="workspace-timezone"
+      >
+        <TimeZonePicker
+          value={form.timezone}
+          onChange={(value) => set("timezone", value)}
+          disabled={!canManage}
+        />
       </Row>
-      <Row label="Currency" hint="For deal values, quotes and cost reports. Existing amounts aren't converted.">
-        <Select value={form.currency} onValueChange={(value) => set("currency", value)} disabled={!canManage}>
+      <Row
+        label="Currency"
+        hint="For deal values, quotes and cost reports. Existing amounts aren't converted."
+      >
+        <Select
+          value={form.currency}
+          onValueChange={(value) => set("currency", value)}
+          disabled={!canManage}
+        >
           <SelectTrigger aria-label="Currency">
             <SelectValue />
           </SelectTrigger>
@@ -127,8 +232,19 @@ function WorkspaceForm({ workspace }: { workspace: Workspace }) {
           </SelectContent>
         </Select>
       </Row>
-      <Row label="Country" hint="Optional. Helps with phone number formatting." htmlFor="workspace-country">
-        <Input id="workspace-country" value={form.country} maxLength={60} placeholder="India" disabled={!canManage} onChange={(event) => set("country", event.target.value)} />
+      <Row
+        label="Country"
+        hint="Optional. Helps with phone number formatting."
+        htmlFor="workspace-country"
+      >
+        <Input
+          id="workspace-country"
+          value={form.country}
+          maxLength={60}
+          placeholder="India"
+          disabled={!canManage}
+          onChange={(event) => set("country", event.target.value)}
+        />
       </Row>
     </Section>
   );
@@ -136,13 +252,21 @@ function WorkspaceForm({ workspace }: { workspace: Workspace }) {
 
 export function GeneralSettings() {
   const shell = useShell();
-  const workspace = useQuery({ queryKey: ["workspace"], queryFn: () => api<Workspace>("/api/v1/workspace") });
-  if (workspace.isError) return <ErrorState description={errorMessage(workspace.error)} onRetry={() => void workspace.refetch()} />;
+  const workspace = useQuery({
+    queryKey: ["workspace"],
+    queryFn: () => api<Workspace>("/api/v1/workspace"),
+  });
+  if (workspace.isError)
+    return (
+      <ErrorState
+        description={errorMessage(workspace.error)}
+        onRetry={() => void workspace.refetch()}
+      />
+    );
   if (!workspace.data) return <Skeleton className="h-96 rounded-xl" />;
   return (
     <>
       <WorkspaceForm key={workspace.data.id} workspace={workspace.data} />
-      <LogoSection />
       <Section title="Details" description="For reference and support requests." icon={Info}>
         <dl className="grid gap-4 text-[13px] sm:grid-cols-2">
           <div>
@@ -155,13 +279,20 @@ export function GeneralSettings() {
           </div>
           <div>
             <dt className="text-foreground-muted">Created</dt>
-            <dd className="mt-0.5">{new Date(workspace.data.createdAt).toLocaleDateString(undefined, { dateStyle: "long" })}</dd>
+            <dd className="mt-0.5">
+              {new Date(workspace.data.createdAt).toLocaleDateString(undefined, {
+                dateStyle: "long",
+              })}
+            </dd>
           </div>
           <div>
             <dt className="text-foreground-muted">Plan</dt>
             <dd className="mt-0.5">
               {shell.plan.name} ·{" "}
-              <Link href="/app/billing" className="font-medium text-foreground underline-offset-2 hover:underline">
+              <Link
+                href="/app/billing"
+                className="font-medium text-foreground underline-offset-2 hover:underline"
+              >
                 Manage plan
               </Link>
             </dd>
@@ -170,8 +301,12 @@ export function GeneralSettings() {
       </Section>
       <Section title="Your role" description="What you can do in this workspace." icon={Globe2}>
         <p className="text-[13px] text-foreground-secondary">
-          You&apos;re {shell.role === "ADMIN" || shell.role === "OWNER" ? "an" : "a"} <span className="font-semibold text-foreground">{shell.role.toLowerCase()}</span> here.{" "}
-          <Link href="/app/settings/team" className="font-medium text-foreground underline-offset-2 hover:underline">
+          You&apos;re {shell.role === "ADMIN" || shell.role === "OWNER" ? "an" : "a"}{" "}
+          <span className="font-semibold text-foreground">{shell.role.toLowerCase()}</span> here.{" "}
+          <Link
+            href="/app/settings/team"
+            className="font-medium text-foreground underline-offset-2 hover:underline"
+          >
             See the team
           </Link>
         </p>

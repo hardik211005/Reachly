@@ -1,9 +1,10 @@
 import { getEnv } from "@repo/config/env";
 import { assertCan, type TenantContext } from "../context";
 import { PreconditionError } from "../errors";
-import { paymentProviders, paymentsConfigured, upiPrice } from "./payments";
-import { listPlans, resolvePlan } from "./plans";
+import { listCreditPurchases, paymentProviders, paymentsConfigured, upiPrice } from "./payments";
+import { listPlans, resolvePlan, trialStatus } from "./plans";
 import { changePlanWithoutPayment } from "./subscription";
+import { CREDIT_PACKS, USAGE_METRIC_LABELS } from "@repo/config";
 import { getUsage } from "./usage";
 
 /**
@@ -14,7 +15,8 @@ import { getUsage } from "./usage";
  */
 export async function getBillingOverview(ctx: TenantContext) {
   assertCan(ctx, "workspace:read");
-  const [plan, usage, plans, invoices] = await Promise.all([resolvePlan(ctx), getUsage(ctx), listPlans(), ctx.db.invoice.findMany({ orderBy: { createdAt: "desc" }, take: 12 })]);
+  const [plan, usage, plans, invoices, purchases] = await Promise.all([resolvePlan(ctx), getUsage(ctx), listPlans(), ctx.db.invoice.findMany({ orderBy: { createdAt: "desc" }, take: 12 }), listCreditPurchases(ctx)]);
+  const trial = trialStatus(plan.subscription);
   const current = plans.find((item) => item.id === plan.id);
   return {
     plan: { key: plan.key, name: plan.name, priceMonthly: current?.priceMonthly ?? 0, currency: current?.currency ?? "USD", description: current?.description ?? "" },
@@ -25,7 +27,10 @@ export async function getBillingOverview(ctx: TenantContext) {
       currentPeriodEnd: plan.subscription.currentPeriodEnd,
       cancelAtPeriodEnd: plan.subscription.cancelAtPeriodEnd,
     },
+    /** Free trial of the paid plan, while it lasts. */
+    trial: trial ? { planName: plan.name, endsAt: trial.endsAt, daysLeft: trial.daysLeft } : null,
     usage,
+    credits: { packs: CREDIT_PACKS.map((pack) => ({ ...pack, label: USAGE_METRIC_LABELS[pack.metric].label })), purchases },
     plans: plans
       .filter((item) => item.isActive)
       .sort((a, b) => a.sortOrder - b.sortOrder)

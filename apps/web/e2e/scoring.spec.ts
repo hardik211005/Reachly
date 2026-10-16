@@ -22,6 +22,9 @@ test.describe("Lead scoring settings and the learned model", () => {
     await expect(page.getByLabel("Rule label")).toHaveValue("E2E multi-location");
     await page.getByRole("button", { name: "Remove rule E2E multi-location" }).click();
     await page.getByRole("button", { name: "Save changes" }).first().click();
+    // Wait for the save to land, so the rule never leaks into the next run on a reused database.
+    await expect(page.getByText("Scoring saved")).toBeVisible();
+    await page.reload();
     await expect(page.getByText("No rules yet.")).toBeVisible();
   });
 

@@ -5,7 +5,7 @@ import { recordEvent } from "../../src/events";
 import { finishOnboarding, saveOnboardingBusiness } from "../../src/onboarding/service";
 import { analyzeBusiness } from "../../src/business/service";
 import { FeatureNotInPlanError } from "../../src/errors";
-import { createUser, resetDatabase } from "./helpers";
+import { createUser, resetDatabase, startOnFree } from "./helpers";
 
 const businessInput = {
   profile: {
@@ -33,7 +33,11 @@ describe("onboarding", () => {
     });
     expect(org.name).toBe("CupCraft Packaging");
     expect(org.memberships[0]?.role).toBe("OWNER");
-    expect(org.subscription?.plan.key).toBe("free");
+    // New businesses get the free Pro trial (TRIAL in @repo/config), no card needed.
+    expect(org.subscription?.plan.key).toBe("pro");
+    expect(org.subscription).toMatchObject({ status: "TRIALING", billingProvider: "trial" });
+    const days = Math.round(((org.subscription?.currentPeriodEnd.getTime() ?? 0) - Date.now()) / 86_400_000);
+    expect(days).toBe(14);
     expect(org.complianceSettings).not.toBeNull();
     expect(org.scoringProfile).not.toBeNull();
   });
@@ -55,6 +59,7 @@ describe("onboarding", () => {
   it("enforces plan automation modes when creating the first campaign", async () => {
     const user = await createUser();
     const { organizationId } = await saveOnboardingBusiness(user.id, businessInput);
+    await startOnFree(organizationId);
     const ctx = createTenantContext({ organizationId, userId: user.id, role: "OWNER" });
     const campaign = {
       name: "Delhi Cafes",

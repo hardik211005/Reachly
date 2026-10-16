@@ -7,6 +7,7 @@
     "dev": "next dev --port 3000",
     "build": "next build",
     "start": "next start --port 3000",
+    "fast": "node scripts/fast.mjs",
     "typecheck": "next typegen && tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run --passWithNoTests",
@@ -37,6 +38,7 @@
     "react-hook-form": "^7.88.0",
     "recharts": "^3.10.1",
     "server-only": "^0.0.1",
+    "simple-icons": "16.35.0",
     "sonner": "^2.0.8",
     "zod": "^4.6.5"
   },

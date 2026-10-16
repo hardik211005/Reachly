@@ -28,7 +28,7 @@ export function IcpEditor({ icp, onChange }: { icp: Icp; onChange: (icp: Icp) =>
     <div className="grid gap-4">
       <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, ease: EASE_OUT }} className="border-gradient relative overflow-hidden rounded-xl bg-surface p-4">
         <span aria-hidden className="bg-brand-gradient absolute -top-12 -right-12 size-32 rounded-full opacity-15 blur-2xl" />
-        <p className="flex items-center gap-1.5 text-[11.5px] font-semibold tracking-wide text-brand-1 uppercase">
+        <p className="flex items-center gap-1.5 text-[11.5px] font-semibold tracking-wide text-foreground-muted uppercase">
           <Sparkles className="size-3.5" /> How we understand your business
         </p>
         <p className="relative mt-2 text-[14px] leading-relaxed">{icp.summary}</p>

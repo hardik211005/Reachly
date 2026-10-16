@@ -5,8 +5,8 @@ const shots = process.env.E2E_SCREENSHOTS === "1";
 test.describe("lead engine", () => {
   test("overview renders metrics from real data", async ({ page }) => {
     await page.goto("/app");
-    await expect(page.getByText("New leads").first()).toBeVisible();
-    await expect(page.getByText("Conversion funnel")).toBeVisible();
+    await expect(page.getByText("Customers found").first()).toBeVisible();
+    await expect(page.getByText("From found to won")).toBeVisible();
     if (shots) await page.screenshot({ path: "e2e/screenshots/overview.png", fullPage: true });
   });
 
@@ -14,7 +14,7 @@ test.describe("lead engine", () => {
     await page.goto("/app/discover");
     await page.getByRole("radio", { name: "Describe it" }).click();
     await page.getByLabel("What are you looking for?").fill("Find bakeries in Noida with 2+ locations that may need custom branded boxes");
-    await page.getByRole("button", { name: "Find leads" }).click();
+    await page.getByRole("button", { name: "Find customers" }).click();
     await expect(page.getByText(/Searching for/)).toBeVisible();
     // "Save search" is disabled until the run completes.
     await expect(page.getByRole("button", { name: "Save search" })).toBeEnabled({ timeout: 60_000 });
@@ -24,7 +24,7 @@ test.describe("lead engine", () => {
 
   test("leads table filters and opens a lead workspace with a transparent score", async ({ page }) => {
     await page.goto("/app/leads");
-    await expect(page.getByRole("heading", { name: "Leads" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Customer list", exact: true })).toBeVisible();
     await expect(page.locator("tbody tr a").first()).toBeVisible();
     if (shots) await page.screenshot({ path: "e2e/screenshots/leads.png" });
 

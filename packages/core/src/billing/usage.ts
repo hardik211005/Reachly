@@ -18,8 +18,11 @@ export interface UsageSnapshot {
   used: number;
   /** Plan allowance + credit grants; null = unlimited. */
   limit: number | null;
+  /** What's left: the rest of this month's allowance plus any bought credits. */
   remaining: number | null;
   percent: number | null;
+  /** Bought top-up credits (never expire; used after the monthly allowance). */
+  extra: number;
 }
 
 export interface ConsumeOptions {
@@ -51,11 +54,13 @@ function effectiveLimit(base: number | null, granted: number): number | null {
 
 export async function getUsage(ctx: TenantContext): Promise<{ periodStart: Date; periodEnd: Date; metrics: UsageSnapshot[] }> {
   const period = await periodFor(ctx);
-  const [counters, grants] = await Promise.all([
+  const [counters, grants, wallets] = await Promise.all([
     ctx.db.usageCounter.findMany({ where: { periodStart: period.start } }),
     grantsFor(ctx, period.start),
+    ctx.db.creditBalance.findMany(),
   ]);
   const used = new Map(counters.map((counter) => [counter.metric, counter.used]));
+  const extra = new Map(wallets.map((wallet) => [wallet.metric, wallet.balance]));
   const metrics = USAGE_METRICS.map((metric): UsageSnapshot => {
     const limit = effectiveLimit(period.limits[metric], grants.get(metric) ?? 0);
     const value = used.get(metric) ?? 0;
@@ -65,8 +70,9 @@ export async function getUsage(ctx: TenantContext): Promise<{ periodStart: Date;
       unit: USAGE_METRIC_LABELS[metric].unit,
       used: value,
       limit,
-      remaining: limit === null ? null : Math.max(0, limit - value),
+      remaining: limit === null ? null : Math.max(0, limit - value) + (extra.get(metric) ?? 0),
       percent: limit === null ? null : limit === 0 ? 100 : Math.min(100, Math.round((value / limit) * 100)),
+      extra: extra.get(metric) ?? 0,
     };
   });
   return { periodStart: period.start, periodEnd: period.end, metrics };
@@ -115,13 +121,30 @@ export async function consumeUsage(
          AND (${limit}::int IS NULL OR used + ${quantity} <= ${limit}::int)
       RETURNING used`;
 
-    const row = rows[0];
+    let row = rows[0];
+    let fromWallet = 0;
+    if (!row && limit !== null) {
+      // Over the monthly allowance: whatever doesn't fit comes from bought credits, if there are enough.
+      const current = await tx.usageCounter.findFirst({ where: { organizationId: ctx.organizationId, metric, periodStart: period.start } });
+      const fromPlan = Math.max(0, Math.min(quantity, limit - (current?.used ?? 0)));
+      fromWallet = quantity - fromPlan;
+      const debited = await tx.$executeRaw`
+        UPDATE credit_balances SET balance = balance - ${fromWallet}, "updatedAt" = now()
+         WHERE "organizationId" = ${ctx.organizationId}::uuid AND metric = ${metric}::"UsageMetric" AND balance >= ${fromWallet}`;
+      if (debited === 1) {
+        const counted = await tx.$queryRaw<Array<{ used: number }>>`
+          UPDATE usage_counters SET used = used + ${quantity}, "updatedAt" = now()
+           WHERE "organizationId" = ${ctx.organizationId}::uuid AND metric = ${metric}::"UsageMetric" AND "periodStart" = ${period.start}
+          RETURNING used`;
+        row = counted[0];
+      }
+    }
     if (!row) {
       const current = await tx.usageCounter.findFirst({
         where: { organizationId: ctx.organizationId, metric, periodStart: period.start },
       });
       throw new LimitExceededError(
-        `You've used your ${USAGE_METRIC_LABELS[metric].label.toLowerCase()} for this billing period on the ${period.planName} plan.`,
+        `You've used your ${USAGE_METRIC_LABELS[metric].label.toLowerCase()} for this billing period on the ${period.planName} plan. Buy a top-up or upgrade in Billing to keep going.`,
         { metric, limit, used: current?.used ?? 0, requested: quantity },
       );
     }
@@ -132,7 +155,7 @@ export async function consumeUsage(
         metric,
         quantity,
         periodStart: period.start,
-        sourceType: options.sourceType,
+        sourceType: fromWallet ? `${options.sourceType}:credits` : options.sourceType,
         sourceId: options.sourceId ?? null,
         userId: ctx.userId,
         campaignId: options.campaignId ?? null,
@@ -164,11 +187,17 @@ export async function consumeUsage(
 /** Gives back usage consumed for an action that ultimately did not happen (e.g. a failed send). */
 export async function releaseUsage(ctx: TenantContext, metric: UsageMetric, quantity: number, reason: string, sourceId?: string) {
   const period = await periodFor(ctx);
+  const grants = await grantsFor(ctx, period.start);
+  const limit = effectiveLimit(period.limits[metric], grants.get(metric) ?? 0);
+  const counter = await ctx.db.usageCounter.findFirst({ where: { metric, periodStart: period.start } });
+  // Usage beyond the monthly allowance was paid for with bought credits — give those back first.
+  const refund = limit === null || !counter ? 0 : Math.min(quantity, Math.max(0, counter.used - limit));
   await ctx.db.$transaction([
     ctx.db.usageCounter.updateMany({
       where: { metric, periodStart: period.start, used: { gte: quantity } },
       data: { used: { decrement: quantity } },
     }),
+    ...(refund > 0 ? [ctx.db.creditBalance.updateMany({ where: { metric }, data: { balance: { increment: refund } } })] : []),
     ctx.db.usageRecord.create({
       data: {
         organizationId: ctx.organizationId,

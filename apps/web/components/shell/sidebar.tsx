@@ -1,9 +1,18 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Check, ChevronsUpDown, LogOut, Moon, PanelLeftClose, Plus, Sun, UserRound } from "lucide-react";
+import {
+  Check,
+  ChevronRight,
+  ChevronsUpDown,
+  LogOut,
+  Moon,
+  Plus,
+  Sun,
+  UserRound,
+} from "lucide-react";
 import { useTheme } from "next-themes";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
@@ -29,7 +38,14 @@ import { useCanManage, useShell } from "./shell-context";
 function useNavCounts(): Record<string, number> {
   const summary = useQuery({
     queryKey: ["inbox-summary"],
-    queryFn: () => api<{ needsResponse: number; unread: number; pendingApproval: number; callsWaiting: number; tasksDue: number }>("/api/v1/conversations/summary"),
+    queryFn: () =>
+      api<{
+        needsResponse: number;
+        unread: number;
+        pendingApproval: number;
+        callsWaiting: number;
+        tasksDue: number;
+      }>("/api/v1/conversations/summary"),
     refetchInterval: 30_000,
     staleTime: 15_000,
   });
@@ -41,7 +57,35 @@ function useNavCounts(): Record<string, number> {
   };
 }
 
-function NavLink({ item, collapsed, onNavigate, count = 0 }: { item: NavItem; collapsed: boolean; onNavigate?: () => void; count?: number }) {
+/**
+ * A small spinner on the sidebar item you clicked, only while its page is still loading. It fades
+ * in after a short delay, so quick navigations (the usual case) show nothing at all.
+ */
+function NavPending({ collapsed }: { collapsed: boolean }) {
+  const { pending } = useLinkStatus();
+  if (!pending) return null;
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "size-3 rounded-full border-2 border-foreground-subtle border-t-transparent opacity-0 [animation:spin_0.7s_linear_infinite,fade-in_150ms_ease-out_150ms_forwards]",
+        collapsed ? "absolute top-1 right-1" : "relative ml-auto",
+      )}
+    />
+  );
+}
+
+function NavLink({
+  item,
+  collapsed,
+  onNavigate,
+  count = 0,
+}: {
+  item: NavItem;
+  collapsed: boolean;
+  onNavigate?: () => void;
+  count?: number;
+}) {
   const pathname = usePathname();
   const active = isActive(pathname, item.href);
   const label = count ? `${item.label} (${count})` : item.label;
@@ -51,27 +95,54 @@ function NavLink({ item, collapsed, onNavigate, count = 0 }: { item: NavItem; co
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group relative flex h-9 items-center gap-2.5 rounded-md px-2.5 text-[14px] font-semibold transition-colors",
-        active ? "text-foreground" : "text-foreground-secondary hover:bg-surface-muted/70 hover:text-foreground",
+        "group relative flex h-9 items-center gap-2.5 rounded-md px-2.5 text-[14.5px] font-[680] tracking-[-0.012em] transition-colors",
+        active
+          ? "text-foreground"
+          : "text-foreground/80 hover:bg-surface-muted/70 hover:text-foreground",
         collapsed && "justify-center px-0",
       )}
     >
       {active ? (
         // One indicator glides between items instead of each item lighting up on its own.
-        <motion.span layoutId="nav-active" aria-hidden className="absolute inset-0 -z-0 rounded-md bg-surface-muted shadow-xs ring-1 ring-border" transition={{ type: "spring", stiffness: 500, damping: 38 }}>
+        <motion.span
+          layoutId="nav-active"
+          aria-hidden
+          className="absolute inset-0 -z-0 rounded-md bg-surface-muted shadow-xs ring-1 ring-border"
+          transition={{ type: "spring", stiffness: 500, damping: 38 }}
+        >
           <span className="absolute top-1.5 bottom-1.5 left-0 w-[3px] rounded-full bg-accent" />
         </motion.span>
       ) : null}
       <span className="relative">
-        <item.icon className={cn("size-4 shrink-0", active ? "text-foreground" : "text-foreground-muted group-hover:text-foreground-secondary")} />
-        {collapsed && count ? <span aria-hidden className="absolute -top-1 -right-1 size-2 rounded-full bg-accent ring-2 ring-background" /> : null}
+        <item.icon
+          className={cn(
+            "size-4 shrink-0",
+            active
+              ? "text-foreground"
+              : "text-foreground-secondary group-hover:text-foreground",
+          )}
+        />
+        {collapsed && count ? (
+          <span
+            aria-hidden
+            className="absolute -top-1 -right-1 size-2 rounded-full bg-accent ring-2 ring-background"
+          />
+        ) : null}
       </span>
-      {collapsed ? <span className="sr-only">{label}</span> : <span className="relative truncate">{item.label}</span>}
+      {collapsed ? (
+        <span className="sr-only">{label}</span>
+      ) : (
+        <span className="relative truncate">{item.label}</span>
+      )}
       {!collapsed && count ? (
-        <span className="relative ml-auto rounded-full bg-accent-soft px-1.5 text-[10.5px] leading-[18px] font-semibold text-accent-soft-foreground tabular" aria-label={`${count} need attention`}>
+        <span
+          className="relative ml-auto rounded-full bg-accent-soft px-1.5 text-[10.5px] leading-[18px] font-semibold text-accent-soft-foreground tabular"
+          aria-label={`${count} need attention`}
+        >
           {count > 99 ? "99+" : count}
         </span>
       ) : null}
+      <NavPending collapsed={collapsed} />
     </Link>
   );
   return collapsed ? (
@@ -109,15 +180,23 @@ function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
         >
           {workspace.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- small uploaded logos served by our own API
-            <img src={workspace.logoUrl} alt="" className="size-8 shrink-0 rounded-lg border border-border bg-surface object-contain" />
+            <img
+              src={workspace.logoUrl}
+              alt=""
+              className="size-8 shrink-0 rounded-lg border border-border bg-surface object-contain"
+            />
           ) : (
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-[13px] font-semibold text-accent-soft-foreground">{workspace.name.slice(0, 1).toUpperCase()}</span>
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-[13px] font-semibold text-accent-soft-foreground">
+              {workspace.name.slice(0, 1).toUpperCase()}
+            </span>
           )}
           {collapsed ? null : (
             <>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[13.5px] font-bold">{workspace.name}</span>
-                <span className="block truncate text-[11.5px] font-medium text-foreground-muted">{plan.name} plan</span>
+                <span className="block truncate text-[11.5px] font-medium text-foreground-muted">
+                  {plan.name} plan
+                </span>
               </span>
               <ChevronsUpDown className="size-3.5 shrink-0 text-foreground-muted" />
             </>
@@ -127,7 +206,10 @@ function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
       <DropdownMenuContent align="start" className="w-60">
         <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
         {workspaces.map((item) => (
-          <DropdownMenuItem key={item.id} onSelect={() => item.id !== workspace.id && switchTo(item.id)}>
+          <DropdownMenuItem
+            key={item.id}
+            onSelect={() => item.id !== workspace.id && switchTo(item.id)}
+          >
             <span className="flex size-5 items-center justify-center rounded-sm bg-surface-sunken text-[10px] font-semibold">
               {item.name.slice(0, 1).toUpperCase()}
             </span>
@@ -153,7 +235,10 @@ function UserMenu({ collapsed }: { collapsed: boolean }) {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className={cn("flex h-10 w-full items-center gap-2 rounded-md px-1.5 text-left hover:bg-surface-muted", collapsed && "justify-center")}
+          className={cn(
+            "flex h-10 w-full items-center gap-2 rounded-md px-1.5 text-left hover:bg-surface-muted",
+            collapsed && "justify-center",
+          )}
         >
           <Avatar name={user.name} src={user.image} size="sm" />
           {collapsed ? null : (
@@ -169,7 +254,8 @@ function UserMenu({ collapsed }: { collapsed: boolean }) {
           <UserRound /> Profile
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}>
-          {resolvedTheme === "dark" ? <Sun /> : <Moon />} {resolvedTheme === "dark" ? "Light" : "Dark"} theme
+          {resolvedTheme === "dark" ? <Sun /> : <Moon />}{" "}
+          {resolvedTheme === "dark" ? "Light" : "Dark"} theme
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
@@ -186,7 +272,38 @@ function UserMenu({ collapsed }: { collapsed: boolean }) {
   );
 }
 
-export function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
+/** "More tools" open/closed, remembered per browser. */
+const MORE_KEY = "nav-more-open";
+const moreListeners = new Set<() => void>();
+function readMore(): boolean {
+  try {
+    return localStorage.getItem(MORE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function subscribeMore(listener: () => void) {
+  moreListeners.add(listener);
+  return () => moreListeners.delete(listener);
+}
+
+export function SidebarContent({
+  collapsed,
+  onNavigate,
+}: {
+  collapsed: boolean;
+  onNavigate?: () => void;
+}) {
+  const pathname = usePathname();
+  const moreOpen = React.useSyncExternalStore(subscribeMore, readMore, () => false);
+  const toggleMore = React.useCallback(() => {
+    try {
+      localStorage.setItem(MORE_KEY, readMore() ? "0" : "1");
+    } catch {
+      /* storage unavailable: just not remembered */
+    }
+    moreListeners.forEach((listener) => listener());
+  }, []);
   const canManage = useCanManage();
   const { platformAdmin } = useShell();
   const counts = useNavCounts();
@@ -196,20 +313,69 @@ export function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; 
         <WorkspaceSwitcher collapsed={collapsed} />
       </div>
       {/* Everything scrolls together (thin scrollbar on hover); only the profile stays pinned. */}
-      <nav aria-label="Main" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pt-4 pb-3 [scrollbar-color:var(--border-strong)_transparent] [scrollbar-width:none] hover:[scrollbar-width:thin]">
-        {[...NAV_GROUPS, { label: "Workspace", items: NAV_FOOTER.filter((item) => (!item.adminOnly || canManage) && (!item.platformOnly || platformAdmin)) }].map((group, index) => (
-          <div key={group.label ?? index} className={cn(index > 0 && "mt-5")}>
-            {group.label && !collapsed ? (
-              <p className="mb-1.5 px-2.5 text-[11px] font-bold tracking-[0.08em] text-foreground-muted uppercase">{group.label}</p>
-            ) : null}
-            {group.label && collapsed ? <div className="mx-2 mb-2 h-px bg-border" /> : null}
-            <div className="grid gap-0.5">
-              {group.items.map((item) => (
-                <NavLink key={item.href} item={item} collapsed={collapsed} onNavigate={onNavigate} count={counts[item.href]} />
-              ))}
+      <nav
+        aria-label="Main"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pt-4 pb-3 [scrollbar-color:var(--border-strong)_transparent] [scrollbar-width:none] hover:[scrollbar-width:thin]"
+      >
+        {[
+          ...NAV_GROUPS,
+          {
+            label: "Workspace",
+            items: NAV_FOOTER.filter(
+              (item) => (!item.adminOnly || canManage) && (!item.platformOnly || platformAdmin),
+            ),
+          },
+        ].map((group, index) => {
+          const folded =
+            "collapsible" in group &&
+            group.collapsible &&
+            !collapsed &&
+            !moreOpen &&
+            !group.items.some((item) => isActive(pathname, item.href));
+          const waiting = group.items.reduce((sum, item) => sum + (counts[item.href] ?? 0), 0);
+          return (
+            <div key={group.label ?? index} className={cn(index > 0 && "mt-5")}>
+              {group.label && !collapsed ? (
+                "collapsible" in group && group.collapsible ? (
+                  <button
+                    type="button"
+                    onClick={toggleMore}
+                    aria-expanded={!folded}
+                    className="mb-1.5 flex w-full items-center gap-1.5 rounded-md px-2.5 text-[11px] font-extrabold tracking-[0.08em] text-foreground-muted uppercase hover:text-foreground"
+                  >
+                    <ChevronRight
+                      className={cn("size-3 transition-transform", !folded && "rotate-90")}
+                    />
+                    {group.label}
+                    {folded && waiting > 0 ? (
+                      <span className="ml-auto rounded-full bg-accent-soft px-1.5 text-[10px] tracking-normal text-accent-soft-foreground normal-case">
+                        {waiting}
+                      </span>
+                    ) : null}
+                  </button>
+                ) : (
+                  <p className="mb-1.5 px-2.5 text-[11px] font-extrabold tracking-[0.08em] text-foreground-muted uppercase">
+                    {group.label}
+                  </p>
+                )
+              ) : null}
+              {group.label && collapsed ? <div className="mx-2 mb-2 h-px bg-border" /> : null}
+              {folded ? null : (
+                <div className="grid gap-0.5">
+                  {group.items.map((item) => (
+                    <NavLink
+                      key={item.href}
+                      item={item}
+                      collapsed={collapsed}
+                      onNavigate={onNavigate}
+                      count={counts[item.href]}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </nav>
       <div className="border-t border-border px-3 py-3">
         <UserMenu collapsed={collapsed} />
@@ -260,7 +426,11 @@ function subscribeTablet(listener: () => void) {
   return () => query.removeEventListener("change", listener);
 }
 function useTabletRail(): boolean {
-  return React.useSyncExternalStore(subscribeTablet, () => window.matchMedia(TABLET_QUERY).matches, () => false);
+  return React.useSyncExternalStore(
+    subscribeTablet,
+    () => window.matchMedia(TABLET_QUERY).matches,
+    () => false,
+  );
 }
 
 export function Sidebar({ onOpenDrawer }: { onOpenDrawer?: () => void }) {
@@ -271,24 +441,39 @@ export function Sidebar({ onOpenDrawer }: { onOpenDrawer?: () => void }) {
   return (
     <aside
       className={cn(
-        "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-border bg-surface transition-[width] duration-200 md:flex",
+        "sticky top-0 z-40 hidden h-dvh shrink-0 flex-col border-r border-border bg-surface transition-[width] duration-200 md:flex",
         collapsed ? "w-[64px]" : "w-[248px]",
       )}
     >
-      <div className={cn("flex h-[72px] items-center border-b border-border px-3.5", collapsed ? "justify-center" : "justify-between")}>
+      {/* Pull-out tab on the edge: always visible, so opening the menu doesn't depend on knowing the logo is a button. */}
+      <button
+        type="button"
+        onClick={rail && onOpenDrawer ? onOpenDrawer : toggle}
+        aria-label={collapsed ? (rail ? "Open navigation" : "Expand sidebar") : "Collapse sidebar"}
+        title={collapsed ? "Show menu" : "Hide menu"}
+        className="absolute top-6 -right-3 z-10 flex size-6 items-center justify-center rounded-full border border-border bg-surface text-foreground-muted shadow-sm transition-colors hover:border-border-strong hover:text-foreground"
+      >
+        <ChevronRight className={cn("size-3.5 transition-transform", !collapsed && "rotate-180")} />
+      </button>
+      <div
+        className={cn(
+          "flex h-[72px] items-center border-b border-border px-3.5",
+          collapsed ? "justify-center" : "justify-between",
+        )}
+      >
         {collapsed ? (
-          <button type="button" onClick={rail && onOpenDrawer ? onOpenDrawer : toggle} aria-label={rail ? "Open navigation" : "Expand sidebar"} className="rounded-lg transition-transform hover:scale-105">
+          <button
+            type="button"
+            onClick={rail && onOpenDrawer ? onOpenDrawer : toggle}
+            aria-label={rail ? "Open navigation" : "Expand sidebar"}
+            className="rounded-lg transition-transform hover:scale-105"
+          >
             <Logo showName={false} size="lg" />
           </button>
         ) : (
-          <>
-            <Link href="/app" aria-label="Home">
-              <Logo size="xl" />
-            </Link>
-            <button type="button" onClick={toggle} aria-label="Collapse sidebar" className="rounded-md p-1.5 text-foreground-muted hover:bg-surface-muted hover:text-foreground">
-              <PanelLeftClose className="size-4" />
-            </button>
-          </>
+          <Link href="/app" aria-label="Home">
+            <Logo size="xl" />
+          </Link>
         )}
       </div>
       <SidebarContent collapsed={collapsed} />

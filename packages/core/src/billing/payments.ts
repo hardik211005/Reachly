@@ -1,5 +1,5 @@
 import { addMonths } from "date-fns";
-import { DEFAULT_PLAN_KEY, PLAN_DEFINITIONS } from "@repo/config";
+import { CREDIT_PACKS, DEFAULT_PLAN_KEY, PLAN_DEFINITIONS, type CreditPack } from "@repo/config";
 import { getEnv } from "@repo/config/env";
 import { prisma, type Plan, type Prisma, type Subscription } from "@repo/db";
 import {
@@ -395,6 +395,7 @@ async function recordFailedUpiPayment(organizationId: string, payment: RazorpayP
 
 /** Applies a Razorpay payment for an order Reachly created. Safe to call twice (browser + webhook). */
 async function applyUpiPayment(client: RazorpayClient, order: RazorpayOrder, payment: RazorpayPayment): Promise<UpiOutcome> {
+  if (razorpayNote(order, "packKey")) return applyCreditPackPayment(client, order, payment);
   const organizationId = razorpayNote(order, "organizationId");
   const planKey = razorpayNote(order, "planKey");
   if (!organizationId || !planKey) throw new ValidationError("That order wasn't created by Reachly");
@@ -529,4 +530,79 @@ export async function ingestRazorpayWebhook(input: { rawBody: string; signature:
     }
     return null;
   });
+}
+
+// ----------------------------------------------------------------------------- Credit packs
+
+export type CreditCheckout = CheckoutStart | { kind: "granted"; provider: "none"; added: number; metric: string };
+
+/** Starts buying a credit pack. Without payment keys (development only) the credits are added straight away. */
+export async function startCreditPurchase(ctx: TenantContext, input: { pack: string }): Promise<CreditCheckout> {
+  assertCan(ctx, "billing:manage");
+  const pack = CREDIT_PACKS.find((item) => item.key === input.pack);
+  if (!pack) throw new NotFoundError("Credit pack", input.pack);
+  if (!paymentProviders().razorpay) {
+    if (getEnv().APP_ENV === "production") throw new PreconditionError("Payments aren't set up yet. Add Razorpay keys to sell credit packs.");
+    await grantCreditPack(ctx.organizationId, pack, { provider: "none", price: 0, userId: ctx.userId });
+    await audit(ctx, { action: "billing.credits_added", resourceType: "credit_purchase", metadata: { pack: pack.key, amount: pack.amount, paymentCollected: false } });
+    return { kind: "granted", provider: "none", added: pack.amount, metric: pack.metric };
+  }
+  const { client, keyId } = razorpay();
+  const who = await payer(ctx);
+  const order = await call("razorpay", () =>
+    client.createOrder({ amount: pack.priceInr, currency: "INR", receipt: `RC-${Date.now().toString(36).toUpperCase()}`, notes: { organizationId: ctx.organizationId, packKey: pack.key } }),
+  );
+  await audit(ctx, { action: "billing.credits_checkout_started", resourceType: "credit_purchase", metadata: { pack: pack.key, orderId: order.id } });
+  return { kind: "razorpay", provider: "razorpay", keyId, orderId: order.id, amount: order.amount, currency: order.currency, planName: pack.name, workspace: who.workspace, prefill: { name: who.name, email: who.email } };
+}
+
+async function applyCreditPackPayment(client: RazorpayClient, order: RazorpayOrder, payment: RazorpayPayment): Promise<UpiOutcome> {
+  const organizationId = razorpayNote(order, "organizationId");
+  const pack = CREDIT_PACKS.find((item) => item.key === razorpayNote(order, "packKey"));
+  if (!organizationId || !pack) throw new ValidationError("That order wasn't created by Reachly");
+  if (payment.order_id !== order.id) throw new ValidationError("The payment doesn't belong to that order");
+  if (payment.status === "failed") {
+    await recordFailedUpiPayment(organizationId, payment);
+    return "failed";
+  }
+  if (payment.status !== "captured" && payment.status !== "authorized") return "pending";
+  // The amount is checked against the pack's own price, never trusted from the browser.
+  if (payment.amount !== order.amount || payment.currency !== order.currency || order.amount !== pack.priceInr) throw new ValidationError("The amount paid doesn't match the pack");
+  if (payment.status === "authorized") payment = await call("razorpay", () => client.capturePayment(payment.id, payment.amount, payment.currency));
+  try {
+    await grantCreditPack(organizationId, pack, { provider: "razorpay", price: payment.amount, orderId: order.id, paymentId: payment.id, receipt: order.receipt ?? undefined });
+  } catch (error) {
+    if ((error as { code?: string }).code === "P2002") return "already_applied";
+    throw error;
+  }
+  await audit(systemContext(organizationId), { action: "billing.credits_added", resourceType: "credit_purchase", metadata: { pack: pack.key, amount: pack.amount, paymentCollected: true, method: payment.method, price: payment.amount } });
+  return "applied";
+}
+
+/** Adds a pack to the balance, records the purchase (and, when paid, an invoice + payment). The payment id makes it run once. */
+async function grantCreditPack(organizationId: string, pack: CreditPack, input: { provider: "razorpay" | "none"; price: number; orderId?: string; paymentId?: string; receipt?: string; userId?: string | null }) {
+  await prisma.$transaction(async (tx) => {
+    await tx.creditPurchase.create({
+      data: { organizationId, packKey: pack.key, metric: pack.metric, amount: pack.amount, price: input.price, currency: "INR", provider: input.provider, providerOrderId: input.orderId ?? null, providerPaymentId: input.paymentId ?? null, createdById: input.userId ?? null },
+    });
+    if (input.paymentId && input.orderId) {
+      const now = new Date();
+      const invoice = await tx.invoice.upsert({
+        where: { providerInvoiceId: input.orderId },
+        create: { organizationId, providerInvoiceId: input.orderId, number: input.receipt ?? null, status: "PAID", amountDue: input.price, amountPaid: input.price, currency: "INR", periodStart: now, periodEnd: now },
+        update: { status: "PAID", amountPaid: input.price },
+      });
+      await tx.payment.create({ data: { organizationId, invoiceId: invoice.id, providerPaymentId: input.paymentId, amount: input.price, currency: "INR", status: "SUCCEEDED" } });
+    }
+    await tx.creditBalance.upsert({
+      where: { organizationId_metric: { organizationId, metric: pack.metric } },
+      create: { organizationId, metric: pack.metric, balance: pack.amount },
+      update: { balance: { increment: pack.amount } },
+    });
+  });
+}
+
+export async function listCreditPurchases(ctx: TenantContext) {
+  assertCan(ctx, "workspace:read");
+  return ctx.db.creditPurchase.findMany({ orderBy: { createdAt: "desc" }, take: 20, select: { id: true, packKey: true, metric: true, amount: true, price: true, currency: true, provider: true, createdAt: true } });
 }

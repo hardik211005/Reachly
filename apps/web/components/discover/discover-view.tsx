@@ -58,7 +58,14 @@ import {
   toast,
 } from "@repo/ui";
 import { api, ApiError, errorMessage } from "@/lib/api-client";
-import { AddToCampaignMenu, ContactIndicators, FitBadge, SignalBadges, SourceLabel, type LeadSignalView } from "../leads/shared";
+import {
+  AddToCampaignMenu,
+  ContactIndicators,
+  FitBadge,
+  SignalBadges,
+  SourceLabel,
+  type LeadSignalView,
+} from "../leads/shared";
 
 // ----------------------------------------------------------------------------- Types
 
@@ -189,16 +196,27 @@ function SearchForm({
   }
 
   return (
-    <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: EASE_OUT }} className="relative isolate overflow-hidden rounded-2xl border border-border bg-surface shadow-xs">
+    <motion.section
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: EASE_OUT }}
+      className="relative isolate overflow-hidden rounded-2xl border border-border bg-surface shadow-xs"
+    >
       <Aurora intensity={1} className="-z-10" />
-      <div aria-hidden className="bg-grid absolute inset-0 -z-10 opacity-40 [mask-image:radial-gradient(ellipse_at_top_right,black,transparent_65%)]" />
+      <div
+        aria-hidden
+        className="bg-grid absolute inset-0 -z-10 opacity-40 [mask-image:radial-gradient(ellipse_at_top_right,black,transparent_65%)]"
+      />
       <div className="px-5 pt-6 sm:px-7">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.03em]">
               Find potential <span className="text-gradient animate-gradient-pan">customers</span>
             </h1>
-            <p className="mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-foreground-secondary">Tell us what you sell and who buys it. We search approved data sources, enrich every business and score it against your ideal customer profile.</p>
+            <p className="mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-foreground-secondary">
+              Tell us what you sell and who buys it. We find matching businesses near you, check
+              their details and rank the best fits first.
+            </p>
           </div>
           {defaults.campaign ? (
             <Badge tone="accent">
@@ -207,7 +225,10 @@ function SearchForm({
           ) : null}
         </div>
       </div>
-      <form onSubmit={submit} className="m-3 mt-5 rounded-xl border border-border bg-surface/85 p-4 shadow-sm backdrop-blur sm:m-5 sm:p-5">
+      <form
+        onSubmit={submit}
+        className="m-3 mt-5 rounded-xl border border-border bg-surface/85 p-4 shadow-sm backdrop-blur sm:m-5 sm:p-5"
+      >
         <div className="mb-4">
           <SegmentedControl
             size="sm"
@@ -221,20 +242,43 @@ function SearchForm({
         </div>
         <AnimatePresence mode="wait" initial={false}>
           {mode === "guided" ? (
-            <motion.div key="guided" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }} className="grid gap-4 md:grid-cols-[1.1fr_1.1fr_1fr_110px]">
+            <motion.div
+              key="guided"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18 }}
+              className="grid gap-4 md:grid-cols-[1.1fr_1.1fr_1fr_110px]"
+            >
               <Field>
                 <Label htmlFor="offer">What are you selling?</Label>
-                <Input id="offer" value={offer} onChange={(event) => setOffer(event.target.value)} placeholder="Custom branded paper cups" />
+                <Input
+                  id="offer"
+                  value={offer}
+                  onChange={(event) => setOffer(event.target.value)}
+                  placeholder="Custom branded paper cups"
+                />
               </Field>
               <Field>
                 <Label htmlFor="audience">Who do you want to sell to?</Label>
-                <Input id="audience" value={audience} onChange={(event) => setAudience(event.target.value)} placeholder="Cafés, restaurants, cloud kitchens" />
+                <Input
+                  id="audience"
+                  value={audience}
+                  onChange={(event) => setAudience(event.target.value)}
+                  placeholder="Cafés, restaurants, cloud kitchens"
+                />
               </Field>
               <Field>
                 <Label htmlFor="location">Where?</Label>
                 <div className="relative">
                   <MapPin className="pointer-events-none absolute top-2 left-2.5 size-3.5 text-foreground-muted" />
-                  <Input id="location" className="pl-8" value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Delhi NCR" />
+                  <Input
+                    id="location"
+                    className="pl-8"
+                    value={location}
+                    onChange={(event) => setLocation(event.target.value)}
+                    placeholder="Delhi NCR"
+                  />
                 </div>
               </Field>
               <Field>
@@ -254,7 +298,13 @@ function SearchForm({
               </Field>
             </motion.div>
           ) : (
-            <motion.div key="describe" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}>
+            <motion.div
+              key="describe"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18 }}
+            >
               <Field>
                 <Label htmlFor="description">What are you looking for?</Label>
                 <Textarea
@@ -288,9 +338,19 @@ function SearchForm({
             </Select>
             <span>results · each new lead uses one lead credit</span>
           </div>
-          <Button type="submit" variant="primary" size="lg" loading={busy} className="relative overflow-hidden px-5 shadow-[var(--brand-glow)]">
-            <Telescope /> Find leads
-            <span aria-hidden className="absolute inset-y-0 left-0 w-10 bg-white/25 blur-md" style={{ animation: "sheen 3.2s ease-in-out infinite" }} />
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            loading={busy}
+            className="relative overflow-hidden px-5 shadow-[var(--brand-glow)]"
+          >
+            <Telescope /> Find customers
+            <span
+              aria-hidden
+              className="absolute inset-y-0 left-0 w-10 bg-white/25 blur-md"
+              style={{ animation: "sheen 3.2s ease-in-out infinite" }}
+            />
           </Button>
         </div>
       </form>
@@ -301,10 +361,26 @@ function SearchForm({
 // ----------------------------------------------------------------------------- Before the first search
 
 const HOW = [
-  { icon: Wand2, title: "Understand", body: "Your words become categories, places and signals you can check." },
-  { icon: Telescope, title: "Search", body: "Approved sources are searched and duplicates removed." },
-  { icon: Sparkles, title: "Enrich", body: "Websites and public profiles fill in contacts and signals." },
-  { icon: Star, title: "Score", body: "Each lead is scored against your ideal customer, with reasons." },
+  {
+    icon: Wand2,
+    title: "Understand",
+    body: "Your words become categories, places and signals you can check.",
+  },
+  {
+    icon: Telescope,
+    title: "Search",
+    body: "Approved sources are searched and duplicates removed.",
+  },
+  {
+    icon: Sparkles,
+    title: "Enrich",
+    body: "Websites and public profiles fill in contacts and signals.",
+  },
+  {
+    icon: Star,
+    title: "Score",
+    body: "Each lead is scored against your ideal customer, with reasons.",
+  },
 ];
 
 function StartHere({ ideas, onPick }: { ideas: SearchIdea[]; onPick: (idea: SearchIdea) => void }) {
@@ -318,16 +394,26 @@ function StartHere({ ideas, onPick }: { ideas: SearchIdea[]; onPick: (idea: Sear
           <Stagger step={0.05} className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
             {ideas.map((idea) => (
               <StaggerItem key={`${idea.audience}-${idea.location}`}>
-                <button type="button" onClick={() => onPick(idea)} className="group lift flex h-full w-full items-start gap-3 rounded-xl border border-border bg-surface p-3.5 text-left shadow-xs transition-colors hover:border-border-strong">
+                <button
+                  type="button"
+                  onClick={() => onPick(idea)}
+                  className="group lift flex h-full w-full items-start gap-3 rounded-xl border border-border bg-surface p-3.5 text-left shadow-xs transition-colors hover:border-border-strong"
+                >
                   <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent-soft-foreground">
                     <Building2 className="size-4" />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13.5px] font-medium">{idea.audience}</span>
+                    <span className="block truncate text-[13.5px] font-medium">
+                      {idea.audience}
+                    </span>
                     <span className="flex items-center gap-1 text-[12px] text-foreground-muted">
                       <MapPin className="size-3" /> {idea.location}
                     </span>
-                    {idea.offer ? <span className="mt-1 block truncate text-[11.5px] text-foreground-subtle">for {idea.offer}</span> : null}
+                    {idea.offer ? (
+                      <span className="mt-1 block truncate text-[11.5px] text-foreground-subtle">
+                        for {idea.offer}
+                      </span>
+                    ) : null}
                   </span>
                   <ArrowRight className="mt-1 size-4 shrink-0 text-foreground-subtle transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
                 </button>
@@ -339,9 +425,21 @@ function StartHere({ ideas, onPick }: { ideas: SearchIdea[]; onPick: (idea: Sear
       <section className="rounded-xl border border-dashed border-border-strong p-5">
         <p className="text-[13px] font-semibold">How discovery works</p>
         <ol className="relative mt-4 grid gap-4 sm:grid-cols-4">
-          <motion.span aria-hidden initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.3, duration: 1, ease: EASE_OUT }} className="bg-brand-gradient absolute top-4 right-[12%] left-[12%] hidden h-px origin-left sm:block" />
+          <motion.span
+            aria-hidden
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ delay: 0.3, duration: 1, ease: EASE_OUT }}
+            className="bg-brand-gradient absolute top-4 right-[12%] left-[12%] hidden h-px origin-left sm:block"
+          />
           {HOW.map((step, index) => (
-            <motion.li key={step.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + index * 0.12 }} className="relative text-center">
+            <motion.li
+              key={step.title}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 + index * 0.12 }}
+              className="relative text-center"
+            >
               <span className="relative mx-auto flex size-8 items-center justify-center rounded-full border border-border bg-surface shadow-sm">
                 <step.icon className="size-4 text-brand-1" />
               </span>
@@ -351,7 +449,8 @@ function StartHere({ ideas, onPick }: { ideas: SearchIdea[]; onPick: (idea: Sear
           ))}
         </ol>
         <p className="mt-5 flex items-center justify-center gap-1.5 text-[12px] text-foreground-muted">
-          <ShieldCheck className="size-3.5 text-good" /> Nothing is contacted until you add leads to a campaign.
+          <ShieldCheck className="size-3.5 text-good" /> Nothing is contacted until you add leads to
+          a campaign.
         </p>
       </section>
     </div>
@@ -362,7 +461,15 @@ function RadarPulse() {
   const reduce = useReducedMotion();
   return (
     <span aria-hidden className="relative flex size-10 shrink-0 items-center justify-center">
-      {reduce ? null : [0, 0.6, 1.2].map((delay) => <span key={delay} className="absolute inset-0 rounded-full border border-brand-1/40" style={{ animation: `pulse-ring 1.8s ease-out ${delay}s infinite` }} />)}
+      {reduce
+        ? null
+        : [0, 0.6, 1.2].map((delay) => (
+            <span
+              key={delay}
+              className="absolute inset-0 rounded-full border border-brand-1/40"
+              style={{ animation: `pulse-ring 1.8s ease-out ${delay}s infinite` }}
+            />
+          ))}
       <span className="bg-brand-gradient relative flex size-7 items-center justify-center rounded-full text-white shadow-[var(--brand-glow)]">
         <Radar className="size-3.5" />
       </span>
@@ -375,13 +482,24 @@ function RadarPulse() {
 function RunProgress({ run }: { run: Run }) {
   const current = run.status === "COMPLETED" ? STAGES.length - 1 : stageIndex(run.stage);
   const tiles = [
-    { label: "Businesses found", value: run.stats.found, hint: [run.stats.duplicates ? `${run.stats.duplicates} already in your leads` : null, run.stats.skippedChains ? `${run.stats.skippedChains} chains skipped` : null].filter(Boolean).join(" · ") || undefined },
+    {
+      label: "Businesses found",
+      value: run.stats.found,
+      hint:
+        [
+          run.stats.duplicates ? `${run.stats.duplicates} already in your leads` : null,
+          run.stats.skippedChains ? `${run.stats.skippedChains} chains skipped` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ") || undefined,
+    },
     { label: "Potential buyers", value: run.stats.qualified, hint: "Qualified by score" },
     { label: "High-fit leads", value: run.stats.highFit, hint: "Score ≥ high-fit threshold" },
     { label: "Contactable", value: run.stats.contactable, hint: "Email or phone available" },
   ];
   const active = run.status === "PENDING" || run.status === "RUNNING";
-  const progress = run.status === "COMPLETED" ? 100 : Math.max(0, current) * (100 / (STAGES.length - 1));
+  const progress =
+    run.status === "COMPLETED" ? 100 : Math.max(0, current) * (100 / (STAGES.length - 1));
   return (
     <div className="grid gap-3">
       <div className="rounded-xl border border-border bg-surface px-4 py-3.5 shadow-xs">
@@ -392,9 +510,20 @@ function RunProgress({ run }: { run: Run }) {
               const done = index < current || run.status === "COMPLETED";
               const inProgress = index === current && active;
               return (
-                <li key={stage.key} className={cn("flex items-center gap-2 text-[13px]", !done && !inProgress && "text-foreground-subtle")}>
+                <li
+                  key={stage.key}
+                  className={cn(
+                    "flex items-center gap-2 text-[13px]",
+                    !done && !inProgress && "text-foreground-subtle",
+                  )}
+                >
                   {done ? (
-                    <motion.span initial={{ scale: 0.4 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 20 }} className="flex size-4 items-center justify-center rounded-full bg-good text-white">
+                    <motion.span
+                      initial={{ scale: 0.4 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                      className="flex size-4 items-center justify-center rounded-full bg-good text-white"
+                    >
                       <Check className="size-2.5" strokeWidth={3} />
                     </motion.span>
                   ) : inProgress ? (
@@ -412,17 +541,27 @@ function RunProgress({ run }: { run: Run }) {
           </ol>
         </div>
         <div className="mt-3 h-1 overflow-hidden rounded-full bg-surface-sunken">
-          <motion.div className="bg-brand-gradient h-full rounded-full" initial={false} animate={{ width: `${progress}%` }} transition={{ duration: 0.6, ease: EASE_OUT }} />
+          <motion.div
+            className="bg-brand-gradient h-full rounded-full"
+            initial={false}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.6, ease: EASE_OUT }}
+          />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {tiles.map((tile) => (
-          <div key={tile.label} className="lift rounded-xl border border-border bg-surface px-4 py-3 shadow-xs">
+          <div
+            key={tile.label}
+            className="lift rounded-xl border border-border bg-surface px-4 py-3 shadow-xs"
+          >
             <p className="text-xs text-foreground-muted">{tile.label}</p>
             <p className="mt-1 text-[24px] leading-none font-semibold tracking-[-0.02em] tabular">
               <AnimatedNumber value={tile.value} duration={0.6} />
             </p>
-            {tile.hint ? <p className="mt-1 text-[11px] text-foreground-subtle">{tile.hint}</p> : null}
+            {tile.hint ? (
+              <p className="mt-1 text-[11px] text-foreground-subtle">{tile.hint}</p>
+            ) : null}
           </div>
         ))}
       </div>
@@ -437,7 +576,8 @@ function RunProgress({ run }: { run: Run }) {
             </Button>
           }
         >
-          Some businesses weren&apos;t saved because your plan&apos;s lead credits for this period are used up.
+          Some businesses weren&apos;t saved because your plan&apos;s lead credits for this period
+          are used up.
         </Callout>
       ) : null}
       {run.status === "FAILED" ? (
@@ -452,7 +592,11 @@ function RunProgress({ run }: { run: Run }) {
 function CriteriaSummary({ run, interpretation }: { run: Run; interpretation: string | null }) {
   const criteria = run.criteria;
   return (
-    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap items-center gap-1.5 rounded-xl border border-dashed border-border-strong bg-surface/60 px-3 py-2.5 text-[13px]">
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-wrap items-center gap-1.5 rounded-xl border border-dashed border-border-strong bg-surface/60 px-3 py-2.5 text-[13px]"
+    >
       <Wand2 className="mr-1 size-3.5 text-brand-1" />
       <span className="mr-1 text-foreground-muted">{interpretation ?? "Understood as"}</span>
       {criteria.categories.map((category) => (
@@ -473,12 +617,28 @@ function CriteriaSummary({ run, interpretation }: { run: Run; interpretation: st
       {criteria.criteria ? <Badge tone="outline">{criteria.criteria}</Badge> : null}
       {criteria.offer ? <Badge tone="outline">Offer: {criteria.offer}</Badge> : null}
       <span className="ml-auto text-[11px] text-foreground-subtle">
-        Source: {run.providers.map((p) => (p === "mock" ? "demo data (simulated)" : p === "openstreetmap" ? "OpenStreetMap" : p === "google_places" ? "Google Places" : p)).join(", ")}
+        Source:{" "}
+        {run.providers
+          .map((p) =>
+            p === "mock"
+              ? "demo data (simulated)"
+              : p === "openstreetmap"
+                ? "OpenStreetMap"
+                : p === "google_places"
+                  ? "Google Places"
+                  : p,
+          )
+          .join(", ")}
         {run.providers.includes("openstreetmap") ? (
           <>
             {" · "}
             {/* Required attribution for OpenStreetMap data (ODbL). */}
-            <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="underline-offset-2 hover:text-foreground hover:underline">
+            <a
+              href="https://www.openstreetmap.org/copyright"
+              target="_blank"
+              rel="noreferrer"
+              className="underline-offset-2 hover:text-foreground hover:underline"
+            >
               © OpenStreetMap contributors
             </a>
           </>
@@ -490,14 +650,30 @@ function CriteriaSummary({ run, interpretation }: { run: Run; interpretation: st
 
 // ----------------------------------------------------------------------------- Results
 
-function ResultsTable({ results, selected, onToggle, onToggleAll, scoring }: { results: ResultLead[]; selected: Set<string>; onToggle: (id: string) => void; onToggleAll: () => void; scoring: boolean }) {
+function ResultsTable({
+  results,
+  selected,
+  onToggle,
+  onToggleAll,
+  scoring,
+}: {
+  results: ResultLead[];
+  selected: Set<string>;
+  onToggle: (id: string) => void;
+  onToggleAll: () => void;
+  scoring: boolean;
+}) {
   const allSelected = results.length > 0 && results.every((lead) => selected.has(lead.id));
   return (
     <Table>
       <TableHeader>
         <TableRow className="hover:bg-transparent">
           <TableHead className="w-9">
-            <Checkbox aria-label="Select all results" checked={allSelected ? true : selected.size ? "indeterminate" : false} onCheckedChange={onToggleAll} />
+            <Checkbox
+              aria-label="Select all results"
+              checked={allSelected ? true : selected.size ? "indeterminate" : false}
+              onCheckedChange={onToggleAll}
+            />
           </TableHead>
           <TableHead className="w-14">Score</TableHead>
           <TableHead>Business</TableHead>
@@ -509,23 +685,56 @@ function ResultsTable({ results, selected, onToggle, onToggleAll, scoring }: { r
       </TableHeader>
       <TableBody>
         {results.map((lead, index) => (
-          <TableRow key={lead.id} data-state={selected.has(lead.id) ? "selected" : undefined} className="animate-rise" style={{ animationDelay: `${Math.min(index, 20) * 35}ms` }}>
+          <TableRow
+            key={lead.id}
+            data-state={selected.has(lead.id) ? "selected" : undefined}
+            className="animate-rise"
+            style={{ animationDelay: `${Math.min(index, 20) * 35}ms` }}
+          >
             <TableCell>
-              <Checkbox aria-label={`Select ${lead.name}`} checked={selected.has(lead.id)} onCheckedChange={() => onToggle(lead.id)} />
+              <Checkbox
+                aria-label={`Select ${lead.name}`}
+                checked={selected.has(lead.id)}
+                onCheckedChange={() => onToggle(lead.id)}
+              />
             </TableCell>
-            <TableCell>{lead.score === null && scoring ? <Loader2 className="size-4 animate-spin text-foreground-muted" /> : <ScoreIndicator score={lead.score} />}</TableCell>
+            <TableCell>
+              {lead.score === null && scoring ? (
+                <Loader2 className="size-4 animate-spin text-foreground-muted" />
+              ) : (
+                <ScoreIndicator score={lead.score} />
+              )}
+            </TableCell>
             <TableCell className="max-w-[260px]">
-              <Link href={`/app/leads/${lead.id}`} className="block truncate font-medium hover:underline">
+              <Link
+                href={`/app/leads/${lead.id}`}
+                className="block truncate font-medium hover:underline"
+              >
                 {lead.name}
               </Link>
               <p className="truncate text-xs text-foreground-muted">
-                {[lead.category ? humanCategory(lead.category) : null, lead.locality ?? lead.city, lead.reviewCount ? `${lead.rating ?? "–"}★ · ${lead.reviewCount} reviews` : null].filter(Boolean).join(" · ")}
+                {[
+                  lead.category ? humanCategory(lead.category) : null,
+                  lead.locality ?? lead.city,
+                  lead.reviewCount ? `${lead.rating ?? "–"}★ · ${lead.reviewCount} reviews` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
                 {!lead.isNew ? " · already in leads" : ""}
               </p>
             </TableCell>
-            <TableCell className="hidden max-w-[320px] lg:table-cell">{lead.enrichmentStatus === "PENDING" || lead.enrichmentStatus === "ENRICHING" ? <Skeleton className="h-4 w-40" /> : <SignalBadges signals={lead.signals ?? []} />}</TableCell>
+            <TableCell className="hidden max-w-[320px] lg:table-cell">
+              {lead.enrichmentStatus === "PENDING" || lead.enrichmentStatus === "ENRICHING" ? (
+                <Skeleton className="h-4 w-40" />
+              ) : (
+                <SignalBadges signals={lead.signals ?? []} />
+              )}
+            </TableCell>
             <TableCell>
-              <ContactIndicators email={lead.email ?? lead.contacts.find((c) => c.email)?.email} phone={lead.phone ?? lead.contacts.find((c) => c.phone)?.phone} />
+              <ContactIndicators
+                email={lead.email ?? lead.contacts.find((c) => c.email)?.email}
+                phone={lead.phone ?? lead.contacts.find((c) => c.phone)?.phone}
+              />
             </TableCell>
             <TableCell className="hidden md:table-cell">
               <FitBadge tier={lead.fitTier} />
@@ -547,15 +756,30 @@ function groupRuns(runs: Run[]): Array<{ run: Run; repeats: number }> {
   const groups: Array<{ run: Run; repeats: number }> = [];
   for (const run of runs) {
     const last = groups[groups.length - 1];
-    if (last && last.run.query.trim().toLowerCase() === run.query.trim().toLowerCase()) last.repeats += 1;
+    if (last && last.run.query.trim().toLowerCase() === run.query.trim().toLowerCase())
+      last.repeats += 1;
     else groups.push({ run, repeats: 1 });
   }
   return groups;
 }
 
-function RunHistory({ activeId, onSelect }: { activeId: string | null; onSelect: (id: string) => void }) {
-  const runs = useQuery({ queryKey: ["discovery-runs"], queryFn: () => api<Run[]>("/api/v1/discovery?limit=12"), refetchInterval: 15_000 });
-  const saved = useQuery({ queryKey: ["saved-searches"], queryFn: () => api<Array<{ id: string; name: string; query: string }>>("/api/v1/saved-searches") });
+function RunHistory({
+  activeId,
+  onSelect,
+}: {
+  activeId: string | null;
+  onSelect: (id: string) => void;
+}) {
+  const runs = useQuery({
+    queryKey: ["discovery-runs"],
+    queryFn: () => api<Run[]>("/api/v1/discovery?limit=12"),
+    refetchInterval: 15_000,
+  });
+  const saved = useQuery({
+    queryKey: ["saved-searches"],
+    queryFn: () =>
+      api<Array<{ id: string; name: string; query: string }>>("/api/v1/saved-searches"),
+  });
   return (
     <aside className="grid content-start gap-5 xl:sticky xl:top-20">
       <div className="rounded-xl border border-border bg-surface p-3 shadow-xs">
@@ -565,7 +789,11 @@ function RunHistory({ activeId, onSelect }: { activeId: string | null; onSelect:
         {saved.data?.length ? (
           <ul className="grid gap-0.5">
             {saved.data.map((search) => (
-              <li key={search.id} className="truncate rounded-md px-2 py-1.5 text-[13px] text-foreground-secondary" title={search.query}>
+              <li
+                key={search.id}
+                className="truncate rounded-md px-2 py-1.5 text-[13px] text-foreground-secondary"
+                title={search.query}
+              >
                 {search.name}
               </li>
             ))}
@@ -582,14 +810,30 @@ function RunHistory({ activeId, onSelect }: { activeId: string | null; onSelect:
         <ul className="grid gap-0.5">
           {groupRuns(runs.data ?? []).map(({ run, repeats }) => (
             <li key={run.id}>
-              <button type="button" onClick={() => onSelect(run.id)} className={cn("relative w-full rounded-md px-2 py-1.5 text-left transition-colors hover:bg-surface-muted", run.id === activeId && "bg-surface-muted")}>
-                {run.id === activeId ? <span className="bg-brand-gradient absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded-full" /> : null}
+              <button
+                type="button"
+                onClick={() => onSelect(run.id)}
+                className={cn(
+                  "relative w-full rounded-md px-2 py-1.5 text-left transition-colors hover:bg-surface-muted",
+                  run.id === activeId && "bg-surface-muted",
+                )}
+              >
+                {run.id === activeId ? (
+                  <span className="bg-brand-gradient absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded-full" />
+                ) : null}
                 <span className="line-clamp-2 text-[13px] text-foreground-secondary">
                   {run.query}
-                  {repeats > 1 ? <span className="ml-1.5 rounded-sm bg-surface-sunken px-1 text-[10.5px] font-medium text-foreground-muted">×{repeats}</span> : null}
+                  {repeats > 1 ? (
+                    <span className="ml-1.5 rounded-sm bg-surface-sunken px-1 text-[10.5px] font-medium text-foreground-muted">
+                      ×{repeats}
+                    </span>
+                  ) : null}
                 </span>
                 <span className="mt-0.5 block text-[11px] text-foreground-subtle">
-                  {run.status === "COMPLETED" ? `${run.stats.new ?? 0} new · ${run.stats.highFit ?? 0} high-fit` : run.status.toLowerCase()} · {formatDistanceToNowStrict(new Date(run.createdAt), { addSuffix: true })}
+                  {run.status === "COMPLETED"
+                    ? `${run.stats.new ?? 0} new · ${run.stats.highFit ?? 0} high-fit`
+                    : run.status.toLowerCase()}{" "}
+                  · {formatDistanceToNowStrict(new Date(run.createdAt), { addSuffix: true })}
                 </span>
               </button>
             </li>
@@ -602,7 +846,13 @@ function RunHistory({ activeId, onSelect }: { activeId: string | null; onSelect:
 
 // ----------------------------------------------------------------------------- Page
 
-export function DiscoverView({ defaults, ideas = [] }: { defaults: DiscoverDefaults; ideas?: SearchIdea[] }) {
+export function DiscoverView({
+  defaults,
+  ideas = [],
+}: {
+  defaults: DiscoverDefaults;
+  ideas?: SearchIdea[];
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -611,7 +861,9 @@ export function DiscoverView({ defaults, ideas = [] }: { defaults: DiscoverDefau
   const [interpretation, setInterpretation] = React.useState<string | null>(null);
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
   // Picking an idea re-mounts the form with those values filled in.
-  const [preset, setPreset] = React.useState<{ key: number; values: DiscoverDefaults } | null>(null);
+  const [preset, setPreset] = React.useState<{ key: number; values: DiscoverDefaults } | null>(
+    null,
+  );
 
   const setRun = React.useCallback(
     (id: string | null) => {
@@ -626,14 +878,22 @@ export function DiscoverView({ defaults, ideas = [] }: { defaults: DiscoverDefau
 
   const start = useMutation({
     mutationFn: async (input: { query: string; limit: number }) => {
-      const parsed = await api<{ criteria: Criteria; interpretation: string }>("/api/v1/discovery/parse", {
-        method: "POST",
-        json: { query: input.query, campaignId: defaults.campaign?.id },
-      });
+      const parsed = await api<{ criteria: Criteria; interpretation: string }>(
+        "/api/v1/discovery/parse",
+        {
+          method: "POST",
+          json: { query: input.query, campaignId: defaults.campaign?.id },
+        },
+      );
       setInterpretation(parsed.interpretation);
       return api<Run>("/api/v1/discovery", {
         method: "POST",
-        json: { query: input.query, criteria: parsed.criteria, limit: input.limit, campaignId: defaults.campaign?.id },
+        json: {
+          query: input.query,
+          criteria: parsed.criteria,
+          limit: input.limit,
+          campaignId: defaults.campaign?.id,
+        },
       });
     },
     onSuccess: (run) => {
@@ -642,7 +902,9 @@ export function DiscoverView({ defaults, ideas = [] }: { defaults: DiscoverDefau
     },
     onError: (error) => {
       if (error instanceof ApiError && error.code === "PROVIDER_NOT_CONFIGURED") {
-        toast.error("No lead data provider is connected", { description: "Connect one in Integrations to discover leads." });
+        toast.error("No lead data provider is connected", {
+          description: "Connect one in Integrations to discover leads.",
+        });
       } else toast.error(errorMessage(error));
     },
   });
@@ -658,7 +920,11 @@ export function DiscoverView({ defaults, ideas = [] }: { defaults: DiscoverDefau
   });
 
   const save = useMutation({
-    mutationFn: (run: Run) => api("/api/v1/saved-searches", { method: "POST", json: { name: run.query.slice(0, 80), query: run.query, criteria: run.criteria } }),
+    mutationFn: (run: Run) =>
+      api("/api/v1/saved-searches", {
+        method: "POST",
+        json: { name: run.query.slice(0, 80), query: run.query, criteria: run.criteria },
+      }),
     onSuccess: () => {
       toast.success("Search saved");
       void queryClient.invalidateQueries({ queryKey: ["saved-searches"] });
@@ -670,7 +936,8 @@ export function DiscoverView({ defaults, ideas = [] }: { defaults: DiscoverDefau
   const runStatus = data?.run.status;
   React.useEffect(() => {
     // Refresh the history list once a run finishes.
-    if (runStatus === "COMPLETED" || runStatus === "FAILED") void queryClient.invalidateQueries({ queryKey: ["discovery-runs"] });
+    if (runStatus === "COMPLETED" || runStatus === "FAILED")
+      void queryClient.invalidateQueries({ queryKey: ["discovery-runs"] });
   }, [runStatus, queryClient]);
   const results = data?.results ?? [];
   const running = data?.run.status === "PENDING" || data?.run.status === "RUNNING";
@@ -687,15 +954,30 @@ export function DiscoverView({ defaults, ideas = [] }: { defaults: DiscoverDefau
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
       <div className="grid min-w-0 content-start gap-5">
-        <SearchForm key={preset?.key ?? 0} defaults={preset?.values ?? defaults} onSearch={(input) => start.mutate(input)} busy={start.isPending} />
+        <SearchForm
+          key={preset?.key ?? 0}
+          defaults={preset?.values ?? defaults}
+          onSearch={(input) => start.mutate(input)}
+          busy={start.isPending}
+        />
 
         {!runId ? (
           <StartHere
             ideas={ideas}
             onPick={(idea) => {
-              setPreset((current) => ({ key: (current?.key ?? 0) + 1, values: { ...defaults, audience: idea.audience, location: idea.location, offer: idea.offer || defaults.offer } }));
+              setPreset((current) => ({
+                key: (current?.key ?? 0) + 1,
+                values: {
+                  ...defaults,
+                  audience: idea.audience,
+                  location: idea.location,
+                  offer: idea.offer || defaults.offer,
+                },
+              }));
               window.scrollTo({ top: 0, behavior: "smooth" });
-              toast.success("Search filled in", { description: "Check the details, then press Find leads." });
+              toast.success("Search filled in", {
+                description: "Check the details, then press Find customers.",
+              });
             }}
           />
         ) : runQuery.isLoading ? (
@@ -712,7 +994,13 @@ export function DiscoverView({ defaults, ideas = [] }: { defaults: DiscoverDefau
                   {selected.size ? <Badge tone="accent">{selected.size} selected</Badge> : null}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => save.mutate(data.run)} loading={save.isPending} disabled={running}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => save.mutate(data.run)}
+                    loading={save.isPending}
+                    disabled={running}
+                  >
                     <Bookmark /> Save search
                   </Button>
                   <Button variant="ghost" size="sm" asChild>
@@ -720,9 +1008,17 @@ export function DiscoverView({ defaults, ideas = [] }: { defaults: DiscoverDefau
                       <Download /> Export
                     </a>
                   </Button>
-                  <AddToCampaignMenu leadIds={[...selected]} onDone={() => setSelected(new Set())} />
+                  <AddToCampaignMenu
+                    leadIds={[...selected]}
+                    onDone={() => setSelected(new Set())}
+                  />
                   {selected.size ? (
-                    <Button variant="ghost" size="icon-sm" aria-label="Clear selection" onClick={() => setSelected(new Set())}>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Clear selection"
+                      onClick={() => setSelected(new Set())}
+                    >
                       <X />
                     </Button>
                   ) : null}
@@ -736,14 +1032,25 @@ export function DiscoverView({ defaults, ideas = [] }: { defaults: DiscoverDefau
                     ))}
                   </div>
                 ) : (
-                  <EmptyState compact icon={Telescope} title="No businesses matched" description="Try a broader area, a larger radius or different business types." />
+                  <EmptyState
+                    compact
+                    icon={Telescope}
+                    title="No businesses matched"
+                    description="Try a broader area, a larger radius or different business types."
+                  />
                 )
               ) : (
                 <ResultsTable
                   results={results}
                   selected={selected}
                   onToggle={toggle}
-                  onToggleAll={() => setSelected((current) => (results.every((lead) => current.has(lead.id)) ? new Set() : new Set(results.map((lead) => lead.id))))}
+                  onToggleAll={() =>
+                    setSelected((current) =>
+                      results.every((lead) => current.has(lead.id))
+                        ? new Set()
+                        : new Set(results.map((lead) => lead.id)),
+                    )
+                  }
                   scoring={running}
                 />
               )}

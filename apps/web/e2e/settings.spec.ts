@@ -6,14 +6,22 @@ test.describe("Settings, integrations, billing and health", () => {
   test("every sidebar destination opens a working page", async ({ page }) => {
     for (const [path, heading] of [
       ["/app/settings", "Settings"],
-      ["/app/integrations", "Integrations"],
+      ["/app/integrations", "Connect apps"],
       ["/app/billing", "Billing & plan"],
-      ["/app/system", "System health"],
     ] as const) {
       await page.goto(path);
       await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
     }
-    await expect(page.getByText("All systems normal").or(page.getByText("Some things need attention"))).toBeVisible();
+    // Server internals and the admin portal are not part of a business account: a plain 404, and
+    // the admin sign-in says this account has no access. Checked by status code (with the same
+    // session) so the intended 404 doesn't trip the page-error guard in fixtures.ts.
+    for (const path of ["/admin", "/admin/system", "/app/system"]) {
+      const response = await page.request.get(path);
+      expect(response.status(), path).toBe(404);
+    }
+    expect((await page.request.get("/api/v1/system/health")).status()).toBe(403);
+    await page.goto("/admin/login");
+    await expect(page.getByText("No admin access")).toBeVisible();
   });
 
   test("business & services shows the catalog and the ideal customer profile", async ({ page }) => {

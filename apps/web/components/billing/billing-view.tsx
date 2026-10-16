@@ -4,13 +4,51 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Check, CreditCard, ExternalLink, Gauge, IndianRupee, Info, Receipt, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Coins,
+  CreditCard,
+  ExternalLink,
+  Gauge,
+  Gift,
+  IndianRupee,
+  Info,
+  Plus,
+  Receipt,
+  RotateCcw,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { motion } from "motion/react";
 import type { PlanFeatures, PlanLimits, UsageMetric } from "@repo/config";
-import { AnimatedNumber, Aurora, Badge, Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, EASE_OUT, EmptyState, ErrorState, Skeleton, SpotlightCard, Spinner, Stagger, StaggerItem, cn, formatCurrency, toast } from "@repo/ui";
+import {
+  AnimatedNumber,
+  Aurora,
+  Badge,
+  Button,
+  Callout,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  EASE_OUT,
+  EmptyState,
+  ErrorState,
+  Skeleton,
+  SpotlightCard,
+  Spinner,
+  Stagger,
+  StaggerItem,
+  cn,
+  formatCurrency,
+  toast,
+} from "@repo/ui";
 import { api, errorMessage } from "@/lib/api-client";
 import { PageHero } from "../page-hero";
-import { useCheckout } from "./checkout";
+import { useCheckout, useCreditCheckout } from "./checkout";
 
 interface Usage {
   metric: UsageMetric;
@@ -20,6 +58,7 @@ interface Usage {
   limit: number | null;
   remaining: number | null;
   percent: number | null;
+  extra: number;
 }
 interface PlanOption {
   key: string;
@@ -35,10 +74,48 @@ interface PlanOption {
 }
 interface Overview {
   plan: { key: string; name: string; priceMonthly: number; currency: string; description: string };
-  subscription: { status: string; provider: string; currentPeriodStart: string; currentPeriodEnd: string; cancelAtPeriodEnd: boolean };
+  subscription: {
+    status: string;
+    provider: string;
+    currentPeriodStart: string;
+    currentPeriodEnd: string;
+    cancelAtPeriodEnd: boolean;
+  };
   usage: { periodStart: string; periodEnd: string; metrics: Usage[] };
+  trial: { planName: string; endsAt: string; daysLeft: number } | null;
+  credits: {
+    packs: Array<{
+      key: string;
+      metric: string;
+      amount: number;
+      name: string;
+      description: string;
+      priceInr: number;
+      label: string;
+    }>;
+    purchases: Array<{
+      id: string;
+      packKey: string;
+      metric: string;
+      amount: number;
+      price: number;
+      currency: string;
+      provider: string;
+      createdAt: string;
+    }>;
+  };
   plans: PlanOption[];
-  invoices: Array<{ id: string; number: string | null; status: string; amountDue: number; amountPaid: number; currency: string; hostedInvoiceUrl: string | null; pdfUrl: string | null; createdAt: string }>;
+  invoices: Array<{
+    id: string;
+    number: string | null;
+    status: string;
+    amountDue: number;
+    amountPaid: number;
+    currency: string;
+    hostedInvoiceUrl: string | null;
+    pdfUrl: string | null;
+    createdAt: string;
+  }>;
   paymentsConfigured: boolean;
   payments: { stripe: boolean; razorpay: boolean };
   directPlanChanges: boolean;
@@ -46,8 +123,10 @@ interface Overview {
   canManage: boolean;
 }
 
-const price = (cents: number, currency: string) => (cents === 0 ? "Free" : formatCurrency(cents / 100, currency, { decimals: 0 }));
-const date = (value: string) => new Date(value).toLocaleDateString(undefined, { dateStyle: "medium" });
+const price = (cents: number, currency: string) =>
+  cents === 0 ? "Free" : formatCurrency(cents / 100, currency, { decimals: 0 });
+const date = (value: string) =>
+  new Date(value).toLocaleDateString(undefined, { dateStyle: "medium" });
 
 function Meter({ item }: { item: Usage }) {
   const excluded = item.limit === 0;
@@ -58,29 +137,63 @@ function Meter({ item }: { item: Usage }) {
     <div className={cn("rounded-xl border border-border bg-surface p-4", excluded && "opacity-60")}>
       <div className="flex items-baseline justify-between gap-2">
         <p className="text-[13px] font-medium">{item.label}</p>
-        {percent >= 90 ? <Badge tone="danger">Almost out</Badge> : percent >= 75 ? <Badge tone="warning">Running low</Badge> : null}
+        {percent >= 90 ? (
+          <Badge tone="danger">Almost out</Badge>
+        ) : percent >= 75 ? (
+          <Badge tone="warning">Running low</Badge>
+        ) : null}
       </div>
       <p className="mt-2 text-[22px] leading-none font-semibold tracking-[-0.02em] tabular">
         <AnimatedNumber value={item.used} />
-        <span className="ml-1 text-[13px] font-normal text-foreground-muted">{excluded ? "· not in plan" : unlimited ? "· unlimited" : `/ ${item.limit!.toLocaleString()}`}</span>
+        <span className="ml-1 text-[13px] font-normal text-foreground-muted">
+          {excluded
+            ? "· not in plan"
+            : unlimited
+              ? "· unlimited"
+              : `/ ${item.limit!.toLocaleString()}`}
+        </span>
       </p>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-sunken" role="meter" aria-label={item.label} aria-valuemin={0} aria-valuemax={item.limit ?? undefined} aria-valuenow={item.used}>
-        <motion.div className={cn("h-full rounded-full", tone)} initial={{ width: 0 }} animate={{ width: `${percent}%` }} transition={{ duration: 0.9, ease: EASE_OUT }} />
+      <div
+        className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-sunken"
+        role="meter"
+        aria-label={item.label}
+        aria-valuemin={0}
+        aria-valuemax={item.limit ?? undefined}
+        aria-valuenow={item.used}
+      >
+        <motion.div
+          className={cn("h-full rounded-full", tone)}
+          initial={{ width: 0 }}
+          animate={{ width: `${percent}%` }}
+          transition={{ duration: 0.9, ease: EASE_OUT }}
+        />
       </div>
-      <p className="mt-1.5 text-[11.5px] text-foreground-muted">{excluded ? "Upgrade to use this" : unlimited ? "No monthly cap" : `${(item.remaining ?? 0).toLocaleString()} ${item.unit} left`}</p>
+      <p className="mt-1.5 text-[11.5px] text-foreground-muted">
+        {excluded
+          ? "Upgrade to use this"
+          : unlimited
+            ? "No monthly cap"
+            : `${(item.remaining ?? 0).toLocaleString()} ${item.unit} left`}
+        {item.extra ? (
+          <span className="text-success-text"> · incl. {item.extra.toLocaleString()} bought</span>
+        ) : null}
+      </p>
     </div>
   );
 }
 
 function planHighlights(plan: PlanOption) {
   const usage = plan.limits.usage;
-  const n = (value: number | null, unit: string) => (value === null ? `Unlimited ${unit}` : value === 0 ? null : `${value.toLocaleString()} ${unit}`);
+  const n = (value: number | null, unit: string) =>
+    value === null ? `Unlimited ${unit}` : value === 0 ? null : `${value.toLocaleString()} ${unit}`;
   return [
     n(usage.LEAD_CREDITS, "leads / month"),
     n(usage.EMAIL_SENDS, "emails / month"),
     n(usage.WHATSAPP_MESSAGES, "WhatsApp messages"),
     n(usage.VOICE_MINUTES, "voice minutes"),
-    plan.limits.resources.members === null ? "Unlimited teammates" : `${plan.limits.resources.members} teammate${plan.limits.resources.members === 1 ? "" : "s"}`,
+    plan.limits.resources.members === null
+      ? "Unlimited teammates"
+      : `${plan.limits.resources.members} teammate${plan.limits.resources.members === 1 ? "" : "s"}`,
     plan.features.aiInsights ? "AI insights & advanced analytics" : null,
     plan.features.apiAccess ? "API access" : null,
   ].filter((item): item is string => Boolean(item));
@@ -112,17 +225,36 @@ function PaymentStatus({ data, onPayAgain }: { data: Overview; onPayAgain: () =>
       <div className="mt-3 grid justify-items-end gap-2">
         <p className="inline-flex items-center gap-1.5 text-[12px] text-foreground-secondary">
           <CreditCard className="size-3.5" />
-          {subscription.status === "PAST_DUE" ? <span className="font-medium text-critical-text">Last card payment failed — update your card</span> : subscription.cancelAtPeriodEnd ? `Paid by card · ends ${end}` : `Paid by card · renews ${end}`}
+          {subscription.status === "PAST_DUE" ? (
+            <span className="font-medium text-critical-text">
+              Last card payment failed — update your card
+            </span>
+          ) : subscription.cancelAtPeriodEnd ? (
+            `Paid by card · ends ${end}`
+          ) : (
+            `Paid by card · renews ${end}`
+          )}
         </p>
         {data.canManage ? (
           <div className="flex flex-wrap justify-end gap-2">
             {subscription.cancelAtPeriodEnd ? (
-              <Button size="sm" variant="secondary" disabled={resume.isPending} onClick={() => resume.mutate()}>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={resume.isPending}
+                onClick={() => resume.mutate()}
+              >
                 {resume.isPending ? <Spinner className="size-3.5" /> : <RotateCcw />} Keep my plan
               </Button>
             ) : null}
-            <Button size="sm" variant="secondary" disabled={portal.isPending} onClick={() => portal.mutate()}>
-              {portal.isPending ? <Spinner className="size-3.5" /> : <ExternalLink />} Manage card & invoices
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={portal.isPending}
+              onClick={() => portal.mutate()}
+            >
+              {portal.isPending ? <Spinner className="size-3.5" /> : <ExternalLink />} Manage card &
+              invoices
             </Button>
           </div>
         ) : null}
@@ -143,13 +275,26 @@ function PaymentStatus({ data, onPayAgain }: { data: Overview; onPayAgain: () =>
       </div>
     );
   }
-  if (data.plan.priceMonthly > 0) return <p className="mt-2 text-[11.5px] text-warning-text">No payment collected — payments weren&apos;t set up when this plan was chosen.</p>;
+  if (data.plan.priceMonthly > 0)
+    return (
+      <p className="mt-2 text-[11.5px] text-warning-text">
+        No payment collected — payments weren&apos;t set up when this plan was chosen.
+      </p>
+    );
   return null;
 }
 
 type DialogState = { plan: PlanOption; mode: "pay" | "direct" | "cancel" } | null;
 
-function PlanDialog({ state, data, onClose }: { state: DialogState; data: Overview; onClose: () => void }) {
+function PlanDialog({
+  state,
+  data,
+  onClose,
+}: {
+  state: DialogState;
+  data: Overview;
+  onClose: () => void;
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const checkout = useCheckout(onClose);
@@ -160,13 +305,20 @@ function PlanDialog({ state, data, onClose }: { state: DialogState; data: Overvi
     router.refresh();
   };
   const direct = useMutation({
-    mutationFn: (plan: string) => api<Overview>("/api/v1/billing/plan", { method: "POST", json: { plan } }),
+    mutationFn: (plan: string) =>
+      api<Overview>("/api/v1/billing/plan", { method: "POST", json: { plan } }),
     onSuccess: (next) => applied(next, `You're on ${next.plan.name} now`),
     onError: (error) => toast.error(errorMessage(error)),
   });
   const cancel = useMutation({
     mutationFn: () => api<Overview>("/api/v1/billing/cancel", { method: "POST" }),
-    onSuccess: (next) => applied(next, next.subscription.cancelAtPeriodEnd ? `You'll move to Free on ${date(next.subscription.currentPeriodEnd)}` : "You're on Free now"),
+    onSuccess: (next) =>
+      applied(
+        next,
+        next.subscription.cancelAtPeriodEnd
+          ? `You'll move to Free on ${date(next.subscription.currentPeriodEnd)}`
+          : "You're on Free now",
+      ),
     onError: (error) => toast.error(errorMessage(error)),
   });
   const plan = state?.plan;
@@ -190,7 +342,11 @@ function PlanDialog({ state, data, onClose }: { state: DialogState; data: Overvi
                 <Button variant="secondary" onClick={onClose}>
                   Keep {data.plan.name}
                 </Button>
-                <Button variant="danger" disabled={cancel.isPending} onClick={() => cancel.mutate()}>
+                <Button
+                  variant="danger"
+                  disabled={cancel.isPending}
+                  onClick={() => cancel.mutate()}
+                >
                   {cancel.isPending ? <Spinner className="size-3.5" /> : null} Move to {plan.name}
                 </Button>
               </DialogFooter>
@@ -199,13 +355,20 @@ function PlanDialog({ state, data, onClose }: { state: DialogState; data: Overvi
             <>
               <DialogHeader>
                 <DialogTitle>Switch to {plan.name}?</DialogTitle>
-                <DialogDescription>Payments aren&apos;t set up on this server (no Stripe or Razorpay keys), so the change applies straight away and no payment is collected.</DialogDescription>
+                <DialogDescription>
+                  Payments aren&apos;t set up on this server (no Stripe or Razorpay keys), so the
+                  change applies straight away and no payment is collected.
+                </DialogDescription>
               </DialogHeader>
               <DialogFooter>
                 <Button variant="secondary" onClick={onClose}>
                   Cancel
                 </Button>
-                <Button variant="primary" disabled={direct.isPending} onClick={() => direct.mutate(plan.key)}>
+                <Button
+                  variant="primary"
+                  disabled={direct.isPending}
+                  onClick={() => direct.mutate(plan.key)}
+                >
                   {direct.isPending ? <Spinner className="size-3.5" /> : null} Switch plan
                 </Button>
               </DialogFooter>
@@ -213,15 +376,23 @@ function PlanDialog({ state, data, onClose }: { state: DialogState; data: Overvi
           ) : (
             <>
               <DialogHeader>
-                <DialogTitle>{data.plan.key === plan.key ? `Add a month of ${plan.name}` : `Get ${plan.name}`}</DialogTitle>
-                <DialogDescription>Choose how to pay. Your new limits apply as soon as the payment goes through.</DialogDescription>
+                <DialogTitle>
+                  {data.plan.key === plan.key ? `Add a month of ${plan.name}` : `Get ${plan.name}`}
+                </DialogTitle>
+                <DialogDescription>
+                  Choose how to pay. Your new limits apply as soon as the payment goes through.
+                </DialogDescription>
               </DialogHeader>
               <div className="grid gap-2.5">
                 {data.payments.stripe ? (
                   <PayOption
                     icon={CreditCard}
                     title={onCard ? "Switch my card subscription" : "Card"}
-                    detail={onCard ? "Prorated on your next invoice · same card" : "Visa, Mastercard, Amex · renews monthly, cancel anytime · via Stripe"}
+                    detail={
+                      onCard
+                        ? "Prorated on your next invoice · same card"
+                        : "Visa, Mastercard, Amex · renews monthly, cancel anytime · via Stripe"
+                    }
                     amount={`${price(plan.priceMonthly, plan.currency)}/mo`}
                     busy={checkout.pendingProvider === "stripe"}
                     disabled={checkout.pending}
@@ -241,7 +412,8 @@ function PlanDialog({ state, data, onClose }: { state: DialogState; data: Overvi
                 ) : null}
               </div>
               <p className="flex items-center gap-1.5 text-[11.5px] text-foreground-muted">
-                <ShieldCheck className="size-3.5" /> Card and UPI details go straight to Stripe or Razorpay — Reachly never sees them.
+                <ShieldCheck className="size-3.5" /> Card and UPI details go straight to Stripe or
+                Razorpay — Reachly never sees them.
               </p>
             </>
           )
@@ -251,7 +423,23 @@ function PlanDialog({ state, data, onClose }: { state: DialogState; data: Overvi
   );
 }
 
-function PayOption({ icon: Icon, title, detail, amount, busy, disabled, onClick }: { icon: React.ComponentType<{ className?: string }>; title: string; detail: string; amount: string; busy: boolean; disabled: boolean; onClick: () => void }) {
+function PayOption({
+  icon: Icon,
+  title,
+  detail,
+  amount,
+  busy,
+  disabled,
+  onClick,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  detail: string;
+  amount: string;
+  busy: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
@@ -259,7 +447,9 @@ function PayOption({ icon: Icon, title, detail, amount, busy, disabled, onClick 
       onClick={onClick}
       className="group flex w-full items-center gap-3.5 rounded-xl border border-border bg-surface px-4 py-3.5 text-left transition-[border-color,background-color,transform] hover:-translate-y-px hover:border-accent/60 hover:bg-accent-soft/30 disabled:pointer-events-none disabled:opacity-60"
     >
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent-soft-foreground">{busy ? <Spinner className="size-4" /> : <Icon className="size-[18px]" />}</span>
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent-soft-foreground">
+        {busy ? <Spinner className="size-4" /> : <Icon className="size-[18px]" />}
+      </span>
       <span className="min-w-0 flex-1">
         <span className="block text-[14px] font-semibold">{title}</span>
         <span className="block text-[12px] leading-snug text-foreground-muted">{detail}</span>
@@ -289,10 +479,14 @@ function useCheckoutReturn() {
     }
     if (outcome !== "success" || !sessionId) return;
     const id = toast.loading("Confirming your payment…");
-    api<{ status: string; overview: Overview }>("/api/v1/billing/checkout/confirm", { method: "POST", json: { sessionId } })
+    api<{ status: string; overview: Overview }>("/api/v1/billing/checkout/confirm", {
+      method: "POST",
+      json: { sessionId },
+    })
       .then((result) => {
         queryClient.setQueryData(["billing"], result.overview);
-        if (result.status === "complete") toast.success(`Payment received — you're on ${result.overview.plan.name}`, { id });
+        if (result.status === "complete")
+          toast.success(`Payment received — you're on ${result.overview.plan.name}`, { id });
         else toast.message("Checkout isn't finished yet", { id });
         router.refresh();
       })
@@ -300,13 +494,104 @@ function useCheckoutReturn() {
   }, [params, queryClient, router]);
 }
 
+function CreditsSection({ data }: { data: Overview }) {
+  const { buy, pendingPack } = useCreditCheckout();
+  const canBuy = data.canManage && (data.payments.razorpay || data.directPlanChanges);
+  return (
+    <section>
+      <div className="mb-3">
+        <h2 className="flex items-center gap-2 text-[14px] font-semibold">
+          <Coins className="size-4 text-foreground-muted" /> Top up credits
+        </h2>
+        <p className="mt-0.5 text-[12.5px] text-foreground-muted">
+          Need more this month without changing plan? Top-ups never expire and are used only after
+          your monthly allowance runs out.
+        </p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {data.credits.packs.map((pack) => (
+          <div
+            key={pack.key}
+            className="flex flex-col justify-between gap-3 rounded-xl border border-border bg-surface p-4 shadow-xs"
+          >
+            <div>
+              <p className="text-[14px] font-semibold">{pack.name}</p>
+              <p className="mt-0.5 text-[12.5px] text-foreground-muted">{pack.description}</p>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[20px] font-semibold tracking-[-0.02em] tabular">
+                {price(pack.priceInr, "INR")}
+              </p>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={!canBuy || pendingPack !== undefined}
+                onClick={() => buy(pack.key)}
+              >
+                {pendingPack === pack.key ? <Spinner className="size-3.5" /> : <Plus />} Buy
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+      {!data.canManage ? (
+        <p className="mt-2 text-[12px] text-foreground-muted">
+          Only the workspace owner can buy credits.
+        </p>
+      ) : !data.payments.razorpay ? (
+        <p className="mt-2 text-[12px] text-foreground-muted">
+          {data.directPlanChanges
+            ? "Payments aren't set up on this server, so top-ups are added without payment (development only)."
+            : "Top-ups can be bought once Razorpay is connected."}
+        </p>
+      ) : (
+        <p className="mt-2 text-[12px] text-foreground-muted">
+          Pay with UPI, card or netbanking via Razorpay.
+        </p>
+      )}
+      {data.credits.purchases.length ? (
+        <ul className="mt-3 divide-y divide-border rounded-xl border border-border bg-surface text-[12.5px]">
+          {data.credits.purchases.map((purchase) => (
+            <li
+              key={purchase.id}
+              className="flex flex-wrap items-center justify-between gap-2 px-4 py-2"
+            >
+              <span>
+                +{purchase.amount.toLocaleString("en-IN")}{" "}
+                {data.credits.packs
+                  .find((pack) => pack.metric === purchase.metric)
+                  ?.label.toLowerCase() ?? purchase.metric}
+              </span>
+              <span className="text-foreground-muted">
+                {purchase.provider === "none"
+                  ? "No payment collected"
+                  : price(purchase.price, purchase.currency)}{" "}
+                · {date(purchase.createdAt)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </section>
+  );
+}
+
 export function BillingView() {
-  const overview = useQuery({ queryKey: ["billing"], queryFn: () => api<Overview>("/api/v1/billing") });
+  const overview = useQuery({
+    queryKey: ["billing"],
+    queryFn: () => api<Overview>("/api/v1/billing"),
+  });
   const [dialog, setDialog] = React.useState<DialogState>(null);
   const close = React.useCallback(() => setDialog(null), []);
   useCheckoutReturn();
 
-  if (overview.isError) return <ErrorState description={errorMessage(overview.error)} onRetry={() => void overview.refetch()} />;
+  if (overview.isError)
+    return (
+      <ErrorState
+        description={errorMessage(overview.error)}
+        onRetry={() => void overview.refetch()}
+      />
+    );
   const data = overview.data;
   const currentIndex = data ? data.plans.findIndex((plan) => plan.key === data.plan.key) : -1;
 
@@ -316,33 +601,73 @@ export function BillingView() {
     else if (data.paymentsConfigured) setDialog({ plan, mode: "pay" });
     else setDialog({ plan, mode: "direct" });
   }
-  const canBuy = (plan: PlanOption) => data && (plan.priceMonthly === 0 || data.paymentsConfigured || data.directPlanChanges);
-  const scheduledFree = data?.subscription.cancelAtPeriodEnd && data.subscription.provider !== "none";
+  const canBuy = (plan: PlanOption) =>
+    data && (plan.priceMonthly === 0 || data.paymentsConfigured || data.directPlanChanges);
+  const scheduledFree =
+    data?.subscription.cancelAtPeriodEnd && data.subscription.provider !== "none";
 
   return (
     <div className="grid gap-6">
-      <PageHero title="Billing & plan" highlight="Billing" description="Your plan, what you've used this period, and invoices. Pay by card or UPI." />
+      <PageHero
+        title="Billing & plan"
+        highlight="Billing"
+        description="Your plan, what you've used this period, and invoices. Pay by card or UPI."
+      />
       {!data ? (
         <Skeleton className="h-[520px] rounded-xl" />
       ) : (
         <>
-          <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="relative isolate overflow-hidden rounded-2xl border border-border bg-surface p-6 shadow-xs">
+          {data.trial ? (
+            <Callout
+              tone={data.trial.daysLeft <= 3 ? "warning" : "accent"}
+              icon={Gift}
+              title={`Free ${data.trial.planName} trial — ${data.trial.daysLeft} day${data.trial.daysLeft === 1 ? "" : "s"} left`}
+            >
+              Everything in {data.trial.planName} is unlocked until {date(data.trial.endsAt)}.
+              Choose a plan below to keep it — otherwise you&apos;ll move to Free and keep all your
+              data.
+            </Callout>
+          ) : null}
+          <motion.section
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative isolate overflow-hidden rounded-2xl border border-border bg-surface p-6 shadow-xs"
+          >
             <Aurora intensity={1} className="-z-10" />
             <div className="flex flex-wrap items-start justify-between gap-6">
               <div>
-                <p className="text-xs font-semibold tracking-[0.12em] text-brand-1 uppercase">Current plan</p>
-                <h2 className="text-gradient mt-2 text-[34px] leading-none font-semibold tracking-[-0.03em]">{data.plan.name}</h2>
-                <p className="mt-2 max-w-md text-[13.5px] text-foreground-secondary">{data.plan.description}</p>
+                <p className="text-xs font-semibold tracking-[0.12em] text-foreground-muted uppercase">
+                  Current plan
+                </p>
+                <h2 className="text-gradient mt-2 text-[34px] leading-none font-semibold tracking-[-0.03em]">
+                  {data.plan.name}
+                </h2>
+                <p className="mt-2 max-w-md text-[13.5px] text-foreground-secondary">
+                  {data.plan.description}
+                </p>
                 <div className="mt-4 flex flex-wrap items-center gap-2 text-[12.5px] text-foreground-muted">
-                  <Badge tone={data.subscription.status === "ACTIVE" ? "success" : "warning"}>{data.subscription.status.toLowerCase().replace("_", " ")}</Badge>
+                  <Badge tone={data.subscription.status === "ACTIVE" ? "success" : "warning"}>
+                    {data.subscription.status.toLowerCase().replace("_", " ")}
+                  </Badge>
                   <span>
-                    Usage resets {date(data.usage.periodEnd)} · period started {date(data.usage.periodStart)}
+                    Usage resets {date(data.usage.periodEnd)} · period started{" "}
+                    {date(data.usage.periodStart)}
                   </span>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-[34px] leading-none font-semibold tracking-[-0.03em] tabular">{data.subscription.provider === "razorpay" && data.plans.find((plan) => plan.key === data.plan.key)?.priceMonthlyInr ? price(data.plans.find((plan) => plan.key === data.plan.key)!.priceMonthlyInr!, "INR") : price(data.plan.priceMonthly, data.plan.currency)}</p>
-                <p className="mt-1 text-[12.5px] text-foreground-muted">{data.plan.priceMonthly ? "per month" : "no card needed"}</p>
+                <p className="text-[34px] leading-none font-semibold tracking-[-0.03em] tabular">
+                  {data.subscription.provider === "razorpay" &&
+                  data.plans.find((plan) => plan.key === data.plan.key)?.priceMonthlyInr
+                    ? price(
+                        data.plans.find((plan) => plan.key === data.plan.key)!.priceMonthlyInr!,
+                        "INR",
+                      )
+                    : price(data.plan.priceMonthly, data.plan.currency)}
+                </p>
+                <p className="mt-1 text-[12.5px] text-foreground-muted">
+                  {data.plan.priceMonthly ? "per month" : "no card needed"}
+                </p>
                 <PaymentStatus
                   data={data}
                   onPayAgain={() => {
@@ -358,8 +683,14 @@ export function BillingView() {
             <div className="flex items-start gap-3 rounded-xl border border-warning/40 bg-warning-soft px-4 py-3 text-[12.5px] text-warning-text">
               <Info className="mt-0.5 size-4 shrink-0" />
               <p>
-                <span className="font-semibold">Payments aren&apos;t connected.</span> Add <code className="font-mono text-[11.5px]">STRIPE_SECRET_KEY</code> for cards and/or <code className="font-mono text-[11.5px]">RAZORPAY_KEY_ID</code> + <code className="font-mono text-[11.5px]">RAZORPAY_KEY_SECRET</code> for UPI to the server&apos;s <code className="font-mono text-[11.5px]">.env</code>, then restart.{" "}
-                {data.directPlanChanges ? "Until then, plans switch without payment (development only)." : "Until then, paid plans can't be bought."}
+                <span className="font-semibold">Payments aren&apos;t connected.</span> Add{" "}
+                <code className="font-mono text-[11.5px]">STRIPE_SECRET_KEY</code> for cards and/or{" "}
+                <code className="font-mono text-[11.5px]">RAZORPAY_KEY_ID</code> +{" "}
+                <code className="font-mono text-[11.5px]">RAZORPAY_KEY_SECRET</code> for UPI to the
+                server&apos;s <code className="font-mono text-[11.5px]">.env</code>, then restart.{" "}
+                {data.directPlanChanges
+                  ? "Until then, plans switch without payment (development only)."
+                  : "Until then, paid plans can't be bought."}
               </p>
             </div>
           ) : null}
@@ -377,12 +708,17 @@ export function BillingView() {
             </Stagger>
           </section>
 
+          <CreditsSection data={data} />
+
           <section>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h2 className="flex items-center gap-2 text-[14px] font-semibold">
                 <Sparkles className="size-4 text-foreground-muted" /> Plans
               </h2>
-              <Link href="/pricing#compare" className="text-[12.5px] font-medium text-foreground-secondary hover:text-foreground">
+              <Link
+                href="/pricing#compare"
+                className="text-[12.5px] font-medium text-foreground-secondary hover:text-foreground"
+              >
                 Compare every feature →
               </Link>
             </div>
@@ -392,17 +728,39 @@ export function BillingView() {
                 const upgrade = index > currentIndex;
                 return (
                   <StaggerItem key={plan.key}>
-                    <SpotlightCard className={cn("lift relative flex h-full flex-col rounded-2xl border bg-surface p-5 shadow-xs", current ? "border-gradient border-transparent shadow-[var(--brand-glow)]" : "border-border")}>
-                      {current ? <span className="bg-brand-gradient absolute -top-2.5 left-5 rounded-full px-2 py-0.5 text-[10.5px] font-semibold text-white">Your plan</span> : null}
+                    <SpotlightCard
+                      className={cn(
+                        "lift relative flex h-full flex-col rounded-2xl border bg-surface p-5 shadow-xs",
+                        current
+                          ? "border-gradient border-transparent shadow-[var(--brand-glow)]"
+                          : "border-border",
+                      )}
+                    >
+                      {current ? (
+                        <span className="bg-brand-gradient absolute -top-2.5 left-5 rounded-full px-2 py-0.5 text-[10.5px] font-semibold text-white">
+                          Your plan
+                        </span>
+                      ) : null}
                       <div className="flex items-baseline justify-between gap-3">
                         <h3 className="text-[15px] font-semibold">{plan.name}</h3>
                         <p className="text-right text-[18px] font-semibold tabular">
                           {price(plan.priceMonthly, plan.currency)}
-                          {plan.priceMonthly ? <span className="text-[12px] font-normal text-foreground-muted"> /mo</span> : null}
-                          {plan.priceMonthlyInr && data.payments.razorpay ? <span className="block text-[11.5px] font-medium text-foreground-muted">or {price(plan.priceMonthlyInr, "INR")} via UPI</span> : null}
+                          {plan.priceMonthly ? (
+                            <span className="text-[12px] font-normal text-foreground-muted">
+                              {" "}
+                              /mo
+                            </span>
+                          ) : null}
+                          {plan.priceMonthlyInr && data.payments.razorpay ? (
+                            <span className="block text-[11.5px] font-medium text-foreground-muted">
+                              or {price(plan.priceMonthlyInr, "INR")} via UPI
+                            </span>
+                          ) : null}
                         </p>
                       </div>
-                      <p className="mt-1 text-[12.5px] leading-relaxed text-foreground-muted">{plan.description}</p>
+                      <p className="mt-1 text-[12.5px] leading-relaxed text-foreground-muted">
+                        {plan.description}
+                      </p>
                       <ul className="mt-4 grid gap-1.5 text-[12.5px] text-foreground-secondary">
                         {planHighlights(plan).map((point) => (
                           <li key={point} className="flex items-start gap-2">
@@ -416,14 +774,21 @@ export function BillingView() {
                             Current plan
                           </Button>
                         ) : !data.canManage ? (
-                          <p className="text-center text-[12px] text-foreground-muted">Only owners can change the plan.</p>
+                          <p className="text-center text-[12px] text-foreground-muted">
+                            Only owners can change the plan.
+                          </p>
                         ) : plan.priceMonthly === 0 && scheduledFree ? (
                           <Button variant="secondary" className="w-full" disabled>
                             Starts {date(data.subscription.currentPeriodEnd)}
                           </Button>
                         ) : canBuy(plan) ? (
-                          <Button variant={upgrade ? "primary" : "secondary"} className="w-full" onClick={() => choose(plan)}>
-                            {upgrade ? `Upgrade to ${plan.name}` : `Switch to ${plan.name}`} {upgrade ? <ArrowRight /> : null}
+                          <Button
+                            variant={upgrade ? "primary" : "secondary"}
+                            className="w-full"
+                            onClick={() => choose(plan)}
+                          >
+                            {upgrade ? `Upgrade to ${plan.name}` : `Switch to ${plan.name}`}{" "}
+                            {upgrade ? <ArrowRight /> : null}
                           </Button>
                         ) : (
                           <Button variant="secondary" className="w-full" disabled>
@@ -444,7 +809,16 @@ export function BillingView() {
               <h2 className="text-[14px] font-semibold">Invoices</h2>
             </header>
             {data.invoices.length === 0 ? (
-              <EmptyState compact icon={CreditCard} title="No invoices yet" description={data.paymentsConfigured ? "Invoices appear here after your first payment." : "Payments aren't set up on this server, so there's nothing to invoice."} />
+              <EmptyState
+                compact
+                icon={CreditCard}
+                title="No invoices yet"
+                description={
+                  data.paymentsConfigured
+                    ? "Invoices appear here after your first payment."
+                    : "Payments aren't set up on this server, so there's nothing to invoice."
+                }
+              />
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[560px] text-left text-[13px]">
@@ -460,21 +834,41 @@ export function BillingView() {
                   <tbody className="divide-y divide-border">
                     {data.invoices.map((invoice) => (
                       <tr key={invoice.id}>
-                        <td className="px-5 py-2.5 font-medium">{invoice.number ?? invoice.id.slice(0, 8)}</td>
-                        <td className="px-5 py-2.5 text-foreground-secondary">{date(invoice.createdAt)}</td>
-                        <td className="px-5 py-2.5 text-right tabular">{formatCurrency(invoice.amountDue / 100, invoice.currency.toUpperCase(), { decimals: 2 })}</td>
+                        <td className="px-5 py-2.5 font-medium">
+                          {invoice.number ?? invoice.id.slice(0, 8)}
+                        </td>
+                        <td className="px-5 py-2.5 text-foreground-secondary">
+                          {date(invoice.createdAt)}
+                        </td>
+                        <td className="px-5 py-2.5 text-right tabular">
+                          {formatCurrency(invoice.amountDue / 100, invoice.currency.toUpperCase(), {
+                            decimals: 2,
+                          })}
+                        </td>
                         <td className="px-5 py-2.5">
-                          <Badge tone={invoice.status === "PAID" ? "success" : "warning"}>{invoice.status.toLowerCase()}</Badge>
+                          <Badge tone={invoice.status === "PAID" ? "success" : "warning"}>
+                            {invoice.status.toLowerCase()}
+                          </Badge>
                         </td>
                         <td className="px-5 py-2.5 text-right">
                           <span className="inline-flex gap-3">
                             {invoice.hostedInvoiceUrl ? (
-                              <a href={invoice.hostedInvoiceUrl} target="_blank" rel="noreferrer" className="text-[12.5px] font-medium text-foreground-secondary hover:text-foreground">
+                              <a
+                                href={invoice.hostedInvoiceUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[12.5px] font-medium text-foreground-secondary hover:text-foreground"
+                              >
                                 View
                               </a>
                             ) : null}
                             {invoice.pdfUrl ? (
-                              <a href={invoice.pdfUrl} target="_blank" rel="noreferrer" className="text-[12.5px] font-medium text-foreground-secondary hover:text-foreground">
+                              <a
+                                href={invoice.pdfUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[12.5px] font-medium text-foreground-secondary hover:text-foreground"
+                              >
                                 PDF
                               </a>
                             ) : null}

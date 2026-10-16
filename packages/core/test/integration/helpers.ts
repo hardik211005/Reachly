@@ -24,8 +24,16 @@ export async function createUser(name = "Test User") {
 export async function createWorkspace(name = "Acme Workspace"): Promise<{ ctx: TenantContext; userId: string; organizationId: string }> {
   const user = await createUser();
   const org = await createOrganization({ userId: user.id, name });
+  // Tests start from the Free plan; real sign-ups get the free trial (see onboarding.test.ts).
+  await startOnFree(org.id);
   const ctx = createTenantContext({ organizationId: org.id, userId: user.id, role: "OWNER" });
   return { ctx, userId: user.id, organizationId: org.id };
+}
+
+/** Ends the sign-up trial so a workspace is on the Free plan, as most plan-gate tests expect. */
+export async function startOnFree(organizationId: string) {
+  const free = await prisma.plan.findUniqueOrThrow({ where: { key: "free" } });
+  await prisma.subscription.update({ where: { organizationId }, data: { planId: free.id, status: "ACTIVE", billingProvider: "none" } });
 }
 
 export async function setPlan(organizationId: string, planKey: string) {

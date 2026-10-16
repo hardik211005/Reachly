@@ -1,11 +1,13 @@
 import { createHmac } from "node:crypto";
 import { addMonths } from "date-fns";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { CREDIT_PACKS, PLAN_DEFINITIONS } from "@repo/config";
 import { resetEnvCache } from "@repo/config/env";
 import { prisma } from "@repo/db";
 import { createStripeClient } from "@repo/integrations";
 import { changePlan, getBillingOverview } from "../../src/billing/overview";
-import { ingestRazorpayWebhook, ingestStripeWebhook, verifyUpiPayment } from "../../src/billing/payments";
+import { ingestRazorpayWebhook, ingestStripeWebhook, startCreditPurchase, verifyUpiPayment } from "../../src/billing/payments";
+import { consumeUsage, getUsage, releaseUsage } from "../../src/billing/usage";
 import { hasLapsed, resolvePlan } from "../../src/billing/plans";
 import { NotFoundError, PreconditionError, UnauthorizedError, ValidationError } from "../../src/errors";
 import { createWorkspace, resetDatabase } from "./helpers";
@@ -173,10 +175,90 @@ describe("payments", () => {
     const overview = await getBillingOverview(ctx);
     expect(overview.payments).toEqual({ stripe: false, razorpay: true });
     expect(overview.directPlanChanges).toBe(false);
-    expect(overview.plans.find((plan) => plan.key === "pro")?.priceMonthlyInr).toBe(649_900);
+    expect(overview.plans.find((plan) => plan.key === "pro")?.priceMonthlyInr).toBe(PLAN_DEFINITIONS.find((plan) => plan.key === "pro")?.priceMonthlyInr);
     await expect(changePlan(ctx, "pro")).rejects.toBeInstanceOf(PreconditionError);
 
     setEnv({});
     expect((await changePlan(ctx, "pro")).plan.key).toBe("pro");
+  });
+});
+
+describe("credit top-ups", () => {
+  beforeEach(async () => {
+    await resetDatabase();
+    setEnv({ RAZORPAY_KEY_ID: KEY_ID, RAZORPAY_KEY_SECRET: KEY_SECRET, RAZORPAY_WEBHOOK_SECRET });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    setEnv({});
+    Object.assign(process.env, { APP_ENV: "test", DEMO_MODE: "true", QUEUE_DRIVER: "inline" });
+    resetEnvCache();
+  });
+
+  const pack = CREDIT_PACKS.find((item) => item.key === "leads-500")!;
+  const packOrder = (id: string, organizationId: string, amount: number = pack.priceInr): Entity => ({ id, amount, currency: "INR", receipt: `RC-${id}`, status: "paid", notes: { organizationId, packKey: pack.key } });
+
+  it("adds a paid pack exactly once and records the invoice", async () => {
+    const { ctx, organizationId } = await createWorkspace();
+    mockRazorpay({ order_c1: packOrder("order_c1", organizationId) }, { pay_c1: payment("pay_c1", "order_c1", { amount: pack.priceInr }) });
+    expect((await verifyUpiPayment(ctx, { orderId: "order_c1", paymentId: "pay_c1", signature: signCheckout("order_c1", "pay_c1") })).status).toBe("applied");
+    expect((await verifyUpiPayment(ctx, { orderId: "order_c1", paymentId: "pay_c1", signature: signCheckout("order_c1", "pay_c1") })).status).toBe("already_applied");
+
+    const balance = await prisma.creditBalance.findUniqueOrThrow({ where: { organizationId_metric: { organizationId, metric: "LEAD_CREDITS" } } });
+    expect(balance.balance).toBe(500);
+    expect(await prisma.creditPurchase.count({ where: { organizationId } })).toBe(1);
+    expect((await prisma.invoice.findFirstOrThrow({ where: { organizationId } })).amountPaid).toBe(pack.priceInr);
+    // The plan is untouched by a top-up.
+    expect((await resolvePlan(ctx)).key).toBe("free");
+  });
+
+  it("refuses an order whose price doesn't match the pack", async () => {
+    const { ctx, organizationId } = await createWorkspace();
+    mockRazorpay({ order_c2: packOrder("order_c2", organizationId, 100) }, { pay_c2: payment("pay_c2", "order_c2", { amount: 100 }) });
+    await expect(verifyUpiPayment(ctx, { orderId: "order_c2", paymentId: "pay_c2", signature: signCheckout("order_c2", "pay_c2") })).rejects.toThrow(/doesn't match the pack/);
+    expect(await prisma.creditBalance.count({ where: { organizationId } })).toBe(0);
+  });
+
+  it("uses bought credits only after the monthly allowance, and refunds them on release", async () => {
+    const { ctx, organizationId } = await createWorkspace();
+    const allowance = PLAN_DEFINITIONS.find((plan) => plan.key === "free")!.limits.usage.LEAD_CREDITS!;
+    await consumeUsage(ctx, "LEAD_CREDITS", allowance - 2, { sourceType: "test" });
+    await expect(consumeUsage(ctx, "LEAD_CREDITS", 5, { sourceType: "test" })).rejects.toThrow(/Buy a top-up/);
+
+    await prisma.creditBalance.create({ data: { organizationId, metric: "LEAD_CREDITS", balance: 10 } });
+    await consumeUsage(ctx, "LEAD_CREDITS", 5, { sourceType: "test" }); // 2 from the plan, 3 from credits
+    expect((await prisma.creditBalance.findFirstOrThrow({ where: { organizationId } })).balance).toBe(7);
+    const usage = (await getUsage(ctx)).metrics.find((metric) => metric.metric === "LEAD_CREDITS")!;
+    expect(usage).toMatchObject({ extra: 7, remaining: 7 });
+
+    await expect(consumeUsage(ctx, "LEAD_CREDITS", 8, { sourceType: "test" })).rejects.toThrow();
+    expect((await prisma.creditBalance.findFirstOrThrow({ where: { organizationId } })).balance).toBe(7);
+
+    // A failed send gives its credits back.
+    await releaseUsage(ctx, "LEAD_CREDITS", 3, "send_failed");
+    expect((await prisma.creditBalance.findFirstOrThrow({ where: { organizationId } })).balance).toBe(10);
+  });
+
+  it("adds packs without payment only on a development server", async () => {
+    setEnv({});
+    const { ctx, organizationId } = await createWorkspace();
+    expect(await startCreditPurchase(ctx, { pack: pack.key })).toMatchObject({ kind: "granted", added: 500 });
+    expect((await prisma.creditPurchase.findFirstOrThrow({ where: { organizationId } })).provider).toBe("none");
+    // Production refuses demo mode and in-process jobs at boot, so set it up like a real server.
+    Object.assign(process.env, { APP_ENV: "production", DEMO_MODE: "false", QUEUE_DRIVER: "bullmq" });
+    resetEnvCache();
+    await expect(startCreditPurchase(ctx, { pack: pack.key })).rejects.toThrow(/Payments aren't set up/);
+  });
+
+  it("ends a free trial on time and falls back to Free", async () => {
+    const { ctx, organizationId } = await createWorkspace();
+    const pro = await prisma.plan.findUniqueOrThrow({ where: { key: "pro" } });
+    await prisma.subscription.update({ where: { organizationId }, data: { planId: pro.id, status: "TRIALING", billingProvider: "trial", currentPeriodEnd: new Date(Date.now() + 86_400_000) } });
+    expect((await resolvePlan(ctx)).key).toBe("pro");
+    await prisma.subscription.update({ where: { organizationId }, data: { currentPeriodEnd: new Date(Date.now() - 1000) } });
+    const plan = await resolvePlan(ctx);
+    expect(plan.key).toBe("free");
+    expect(plan.subscription.billingProvider).toBe("none");
   });
 });

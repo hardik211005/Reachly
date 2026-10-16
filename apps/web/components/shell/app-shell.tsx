@@ -3,8 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FlaskConical, Menu, MessageSquareText, Search } from "lucide-react";
-import { Button, Kbd, Sheet, SheetContent, SheetTitle, Tooltip } from "@repo/ui";
+import { FlaskConical, Gift, Menu, MessageSquareText, Search, Zap } from "lucide-react";
+import { Button, Kbd, Sheet, SheetContent, SheetTitle, Tooltip, cn } from "@repo/ui";
 import { Logo } from "../brand/logo";
 import { ThemeToggle } from "../theme-toggle";
 import { CommandMenu } from "./command-menu";
@@ -76,6 +76,50 @@ function DemoModeBadge({ mockProviders }: { mockProviders: string[] }) {
   );
 }
 
+/** Lead credits left this month (allowance + bought top-ups): a credit bolt and the number. */
+function LeadsLeft({ left, total }: { left: number; total: number | null }) {
+  const share = total ? Math.max(0, Math.min(1, left / total)) : 1;
+  const low = left < 25 || share < 0.1;
+  const amount = left.toLocaleString("en-IN");
+  const usedNote = total
+    ? ` (${(total - left).toLocaleString("en-IN")} of ${total.toLocaleString("en-IN")} used)`
+    : "";
+  return (
+    <Tooltip
+      content={`${amount} lead credits left this month${usedNote}. Each new business found uses one. Click to buy more.`}
+    >
+      <Link
+        href="/app/billing"
+        aria-label={`${amount} lead credits left this month`}
+        className={cn(
+          "inline-flex h-8 items-center gap-1.5 rounded-full border pr-3 pl-1.5 text-[12.5px] tabular-nums transition-colors",
+          low
+            ? "border-critical/40 bg-danger-soft text-danger-text"
+            : "border-border bg-surface text-foreground-secondary hover:border-border-strong hover:bg-surface-muted/60",
+        )}
+      >
+        <span
+          className={cn(
+            "flex size-5 items-center justify-center rounded-full",
+            low ? "bg-critical/15" : "bg-warning-soft",
+          )}
+        >
+          <Zap
+            className={cn(
+              "size-3",
+              low ? "fill-critical text-critical" : "fill-warning text-warning",
+            )}
+          />
+        </span>
+        <span className={cn("font-semibold", low ? "text-danger-text" : "text-foreground")}>
+          {amount}
+        </span>
+        <span className="hidden sm:inline">lead credits</span>
+      </Link>
+    </Tooltip>
+  );
+}
+
 export function AppShell({ data, children }: { data: ShellData; children: React.ReactNode }) {
   const [commandOpen, setCommandOpen] = React.useState(false);
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
@@ -90,7 +134,13 @@ export function AppShell({ data, children }: { data: ShellData; children: React.
         <Sidebar onOpenDrawer={() => setMobileNavOpen(true)} />
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-30 flex h-[72px] items-center gap-2 border-b border-border bg-background/85 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:px-5">
-            <Button variant="ghost" size="icon-sm" className="md:hidden" aria-label="Open navigation" onClick={() => setMobileNavOpen(true)}>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="md:hidden"
+              aria-label="Open navigation"
+              onClick={() => setMobileNavOpen(true)}
+            >
               <Menu />
             </Button>
             <Link href="/app" className="md:hidden">
@@ -99,7 +149,7 @@ export function AppShell({ data, children }: { data: ShellData; children: React.
             <button
               type="button"
               onClick={openCommand}
-              className="flex h-9 w-full max-w-md items-center gap-2 rounded-lg border border-border bg-surface px-3 text-[13px] text-foreground-subtle shadow-xs transition-colors hover:border-border-strong"
+              className="flex h-9 w-full min-w-0 max-w-md items-center gap-2 rounded-lg border border-border bg-surface px-3 text-[13px] text-foreground-subtle shadow-xs transition-colors hover:border-border-strong"
             >
               <Search className="size-3.5" />
               <span className="flex-1 truncate text-left">Search or jump to…</span>
@@ -107,8 +157,30 @@ export function AppShell({ data, children }: { data: ShellData; children: React.
             </button>
             <div className="ml-auto flex items-center gap-1.5">
               {data.demoMode ? <DemoModeBadge mockProviders={data.mockProviders} /> : null}
+              {data.trial ? (
+                <Link
+                  href="/app/billing"
+                  className={cn(
+                    "hidden h-8 items-center gap-1.5 rounded-full border px-3 text-[12.5px] font-medium transition-colors lg:inline-flex",
+                    data.trial.daysLeft <= 3
+                      ? "border-warning/40 bg-warning-soft text-warning-text"
+                      : "border-border bg-surface text-foreground-secondary hover:text-foreground",
+                  )}
+                >
+                  <Gift className="size-3.5" /> {data.trial.planName} trial · {data.trial.daysLeft}{" "}
+                  day{data.trial.daysLeft === 1 ? "" : "s"} left
+                </Link>
+              ) : null}
+              {data.leadsLeft !== null ? (
+                <LeadsLeft left={data.leadsLeft} total={data.leadsTotal} />
+              ) : null}
               <Tooltip content="Ask Copilot (⌘J)">
-                <Button variant="ghost" size="icon" aria-label="Open copilot" onClick={toggleCopilot}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Open copilot"
+                  onClick={toggleCopilot}
+                >
                   <MessageSquareText />
                 </Button>
               </Tooltip>
@@ -122,7 +194,8 @@ export function AppShell({ data, children }: { data: ShellData; children: React.
       <CommandMenu open={commandOpen} onOpenChange={setCommandOpen} />
       <CopilotPanel open={copilotOpen} onOpenChange={setCopilotOpen} />
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-        <SheetContent side="left" className="w-72 p-0">
+        {/* Top padding keeps the close button clear of the workspace switcher. */}
+        <SheetContent side="left" className="w-72 p-0 pt-11">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <SidebarContent collapsed={false} onNavigate={() => setMobileNavOpen(false)} />
         </SheetContent>
@@ -130,4 +203,3 @@ export function AppShell({ data, children }: { data: ShellData; children: React.
     </ShellProvider>
   );
 }
-

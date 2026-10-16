@@ -332,18 +332,18 @@ export async function getOverview(ctx: TenantContext, input: AnalyticsFilterInpu
   const spendNow = aiSpend(aiNow) + voiceNow / 100;
   const spendPrev = aiSpend(aiPrev) + voicePrev / 100;
   const kpis: Kpi[] = [
-    { key: "leads", label: "New leads", value: current.leadsCreated, previous: previous.leadsCreated, delta: delta(current.leadsCreated, previous.leadsCreated), format: "number", upIsGood: true, hint: `${totalLeads.toLocaleString()} total in workspace` },
-    { key: "qualified", label: "Qualified leads", value: current.leadsQualified, previous: previous.leadsQualified, delta: delta(current.leadsQualified, previous.leadsQualified), format: "number", upIsGood: true },
-    { key: "outreach", label: "Outreach sent", value: current.outreachSent, previous: previous.outreachSent, delta: delta(current.outreachSent, previous.outreachSent), format: "number", upIsGood: true },
+    { key: "leads", label: "Customers found", value: current.leadsCreated, previous: previous.leadsCreated, delta: delta(current.leadsCreated, previous.leadsCreated), format: "number", upIsGood: true, hint: `${totalLeads.toLocaleString()} in your list` },
+    { key: "qualified", label: "Good fits", value: current.leadsQualified, previous: previous.leadsQualified, delta: delta(current.leadsQualified, previous.leadsQualified), format: "number", upIsGood: true },
+    { key: "outreach", label: "Messages sent", value: current.outreachSent, previous: previous.outreachSent, delta: delta(current.outreachSent, previous.outreachSent), format: "number", upIsGood: true },
     { key: "replies", label: "Replies", value: current.replies, previous: previous.replies, delta: delta(current.replies, previous.replies), format: "number", upIsGood: true, hint: replyRate === null ? undefined : `${(replyRate * 100).toFixed(1)}% reply rate` },
-    { key: "positive", label: "Positive replies", value: current.positiveReplies, previous: previous.positiveReplies, delta: delta(current.positiveReplies, previous.positiveReplies), format: "number", upIsGood: true },
+    { key: "positive", label: "Interested replies", value: current.positiveReplies, previous: previous.positiveReplies, delta: delta(current.positiveReplies, previous.positiveReplies), format: "number", upIsGood: true },
     { key: "calls", label: "Calls", value: current.callsCompleted, previous: previous.callsCompleted, delta: delta(current.callsCompleted, previous.callsCompleted), format: "number", upIsGood: true, hint: current.callsCompleted ? `${current.callsAnswered} answered` : undefined },
     { key: "meetings", label: "Meetings", value: current.meetings, previous: previous.meetings, delta: delta(current.meetings, previous.meetings), format: "number", upIsGood: true },
     { key: "quotes", label: "Quotes sent", value: current.quotesSent, previous: previous.quotesSent, delta: delta(current.quotesSent, previous.quotesSent), format: "number", upIsGood: true },
     { key: "won", label: "Deals won", value: current.dealsWon, previous: previous.dealsWon, delta: delta(current.dealsWon, previous.dealsWon), format: "number", upIsGood: true },
-    { key: "conversion", label: "Conversion rate", value: conversion ?? 0, previous: previousConversion ?? 0, delta: conversion === null || previousConversion === null ? null : conversion - previousConversion, format: "percent", upIsGood: true, hint: "Deals won ÷ leads contacted" },
-    { key: "revenue", label: "Revenue won", value: current.revenue, previous: previous.revenue, delta: delta(current.revenue, previous.revenue), format: "currency", upIsGood: true, hint: `${Math.round(pipeline.weightedValue).toLocaleString()} weighted pipeline` },
-    { key: "aiCost", label: "AI & voice cost", value: spendNow, previous: spendPrev, delta: delta(spendNow, spendPrev), format: "cost", upIsGood: false, hint: `AI ${aiSpend(aiNow).toFixed(2)} · voice ${(voiceNow / 100).toFixed(2)}` },
+    { key: "conversion", label: "Success rate", value: conversion ?? 0, previous: previousConversion ?? 0, delta: conversion === null || previousConversion === null ? null : conversion - previousConversion, format: "percent", upIsGood: true, hint: "Sales won out of businesses contacted" },
+    { key: "revenue", label: "Money earned", value: current.revenue, previous: previous.revenue, delta: delta(current.revenue, previous.revenue), format: "currency", upIsGood: true, hint: `${Math.round(pipeline.weightedValue).toLocaleString()} more likely from deals in progress` },
+    { key: "aiCost", label: "Running costs", value: spendNow, previous: spendPrev, delta: delta(spendNow, spendPrev), format: "cost", upIsGood: false, hint: `AI ${aiSpend(aiNow).toFixed(2)} · calls ${(voiceNow / 100).toFixed(2)}` },
   ];
 
   return {

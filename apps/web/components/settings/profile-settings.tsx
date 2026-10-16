@@ -4,22 +4,35 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
-import { KeyRound, Laptop, LogOut, Monitor, Moon, Palette, Smartphone, Sun, UserRound } from "lucide-react";
+import {
+  KeyRound,
+  Laptop,
+  LogOut,
+  Monitor,
+  Moon,
+  Palette,
+  Smartphone,
+  Sun,
+  UserRound,
+} from "lucide-react";
 import { motion } from "motion/react";
-import { Badge, Button, Checkbox, ErrorState, Input, Label, Skeleton, Spinner, cn, toast } from "@repo/ui";
+import {
+  Badge,
+  Button,
+  Checkbox,
+  ErrorState,
+  Input,
+  Label,
+  Skeleton,
+  Spinner,
+  cn,
+  toast,
+} from "@repo/ui";
 import { authClient } from "@/lib/auth-client";
 import { useShell } from "../shell/shell-context";
 import { DeleteAccountSection } from "./danger-zone";
+import { ProfilePicture } from "./logo-section";
 import { Row, SaveBar, Section } from "./kit";
-
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
 
 function ProfileSection() {
   const router = useRouter();
@@ -38,16 +51,35 @@ function ProfileSection() {
   });
   const dirty = name.trim() !== user.name;
   return (
-    <Section title="Profile" description="How you appear to teammates." icon={UserRound} footer={<SaveBar dirty={dirty} pending={save.isPending} onSave={() => save.mutate()} onReset={() => setName(user.name)} disabled={name.trim().length < 2} />}>
+    <Section
+      title="Profile"
+      description="How you appear to teammates."
+      icon={UserRound}
+      footer={
+        <SaveBar
+          dirty={dirty}
+          pending={save.isPending}
+          onSave={() => save.mutate()}
+          onReset={() => setName(user.name)}
+          disabled={name.trim().length < 2}
+        />
+      }
+    >
       <div className="mb-5 flex items-center gap-4">
-        <span className="bg-brand-gradient flex size-14 items-center justify-center rounded-2xl text-[18px] font-semibold text-white shadow-[var(--brand-glow)]">{initials(name || user.name)}</span>
+        <ProfilePicture />
         <div>
           <p className="text-[15px] font-semibold">{name || user.name}</p>
           <p className="text-[13px] text-foreground-muted">{user.email}</p>
         </div>
       </div>
       <Row label="Full name" htmlFor="profile-name">
-        <Input id="profile-name" value={name} maxLength={80} autoComplete="name" onChange={(event) => setName(event.target.value)} />
+        <Input
+          id="profile-name"
+          value={name}
+          maxLength={80}
+          autoComplete="name"
+          onChange={(event) => setName(event.target.value)}
+        />
       </Row>
       <Row label="Email" hint="Your sign-in address. Contact support to change it.">
         <Input value={user.email} disabled readOnly />
@@ -83,14 +115,20 @@ function PasswordSection() {
   const valid = current.length > 0 && next.length >= 8 && next === confirm;
   const change = useMutation({
     mutationFn: async () => {
-      const { error } = await authClient.changePassword({ currentPassword: current, newPassword: next, revokeOtherSessions: signOutOthers });
+      const { error } = await authClient.changePassword({
+        currentPassword: current,
+        newPassword: next,
+        revokeOtherSessions: signOutOthers,
+      });
       if (error) throw new Error(error.message ?? "Could not change your password");
     },
     onSuccess: () => {
       setCurrent("");
       setNext("");
       setConfirm("");
-      toast.success(signOutOthers ? "Password changed. Other devices were signed out." : "Password changed");
+      toast.success(
+        signOutOthers ? "Password changed. Other devices were signed out." : "Password changed",
+      );
     },
     onError: (error) => toast.error(error.message),
   });
@@ -100,7 +138,12 @@ function PasswordSection() {
       description="Use at least 8 characters. A longer passphrase is stronger than a short complex one."
       icon={KeyRound}
       footer={
-        <Button variant="primary" size="sm" disabled={!valid || change.isPending} onClick={() => change.mutate()}>
+        <Button
+          variant="primary"
+          size="sm"
+          disabled={!valid || change.isPending}
+          onClick={() => change.mutate()}
+        >
           {change.isPending ? <Spinner className="size-3.5" /> : null} Change password
         </Button>
       }
@@ -114,31 +157,63 @@ function PasswordSection() {
       >
         <div className="grid gap-1.5">
           <Label htmlFor="password-current">Current password</Label>
-          <Input id="password-current" type="password" autoComplete="current-password" value={current} onChange={(event) => setCurrent(event.target.value)} />
+          <Input
+            id="password-current"
+            type="password"
+            autoComplete="current-password"
+            value={current}
+            onChange={(event) => setCurrent(event.target.value)}
+          />
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="password-new">New password</Label>
-          <Input id="password-new" type="password" autoComplete="new-password" value={next} onChange={(event) => setNext(event.target.value)} />
+          <Input
+            id="password-new"
+            type="password"
+            autoComplete="new-password"
+            value={next}
+            onChange={(event) => setNext(event.target.value)}
+          />
           {next ? (
             <div className="flex items-center gap-2" aria-live="polite">
               <div className="grid flex-1 grid-cols-4 gap-1">
                 {[0, 1, 2, 3].map((index) => (
                   <span key={index} className="h-1 overflow-hidden rounded-full bg-surface-sunken">
-                    <motion.span className={cn("block h-full", STRENGTH[score]!.tone)} initial={false} animate={{ width: index < score ? "100%" : "0%" }} transition={{ duration: 0.25 }} />
+                    <motion.span
+                      className={cn("block h-full", STRENGTH[score]!.tone)}
+                      initial={false}
+                      animate={{ width: index < score ? "100%" : "0%" }}
+                      transition={{ duration: 0.25 }}
+                    />
                   </span>
                 ))}
               </div>
-              <span className="w-16 text-right text-[11.5px] text-foreground-muted">{STRENGTH[next.length < 8 ? 0 : score]!.label}</span>
+              <span className="w-16 text-right text-[11.5px] text-foreground-muted">
+                {STRENGTH[next.length < 8 ? 0 : score]!.label}
+              </span>
             </div>
           ) : null}
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="password-confirm">Confirm new password</Label>
-          <Input id="password-confirm" type="password" autoComplete="new-password" value={confirm} aria-invalid={mismatch} onChange={(event) => setConfirm(event.target.value)} />
-          {mismatch ? <p className="text-[12px] text-danger-text">The passwords don&apos;t match.</p> : null}
+          <Input
+            id="password-confirm"
+            type="password"
+            autoComplete="new-password"
+            value={confirm}
+            aria-invalid={mismatch}
+            onChange={(event) => setConfirm(event.target.value)}
+          />
+          {mismatch ? (
+            <p className="text-[12px] text-danger-text">The passwords don&apos;t match.</p>
+          ) : null}
         </div>
         <label className="flex items-center gap-2 text-[13px] text-foreground-secondary">
-          <Checkbox checked={signOutOthers} onCheckedChange={(value) => setSignOutOthers(value === true)} /> Sign out of other devices
+          <Checkbox
+            checked={signOutOthers}
+            onCheckedChange={(value) => setSignOutOthers(value === true)}
+          />{" "}
+          Sign out of other devices
         </label>
         <button type="submit" hidden />
       </form>
@@ -157,9 +232,30 @@ interface SessionRow {
 
 function describeAgent(agent: string | null | undefined) {
   if (!agent) return { device: "Unknown device", mobile: false };
-  const browser = /Edg\//.test(agent) ? "Edge" : /Chrome\//.test(agent) ? "Chrome" : /Firefox\//.test(agent) ? "Firefox" : /Safari\//.test(agent) ? "Safari" : "Browser";
-  const os = /Windows/.test(agent) ? "Windows" : /Android/.test(agent) ? "Android" : /iPhone|iPad/.test(agent) ? "iOS" : /Mac OS X/.test(agent) ? "macOS" : /Linux/.test(agent) ? "Linux" : "";
-  return { device: os ? `${browser} on ${os}` : browser, mobile: /Mobile|Android|iPhone/.test(agent) };
+  const browser = /Edg\//.test(agent)
+    ? "Edge"
+    : /Chrome\//.test(agent)
+      ? "Chrome"
+      : /Firefox\//.test(agent)
+        ? "Firefox"
+        : /Safari\//.test(agent)
+          ? "Safari"
+          : "Browser";
+  const os = /Windows/.test(agent)
+    ? "Windows"
+    : /Android/.test(agent)
+      ? "Android"
+      : /iPhone|iPad/.test(agent)
+        ? "iOS"
+        : /Mac OS X/.test(agent)
+          ? "macOS"
+          : /Linux/.test(agent)
+            ? "Linux"
+            : "";
+  return {
+    device: os ? `${browser} on ${os}` : browser,
+    mobile: /Mobile|Android|iPhone/.test(agent),
+  };
 }
 
 function SessionsSection() {
@@ -175,7 +271,10 @@ function SessionsSection() {
   });
   const revoke = useMutation({
     mutationFn: async (token: string | "others") => {
-      const { error } = token === "others" ? await authClient.revokeOtherSessions() : await authClient.revokeSession({ token });
+      const { error } =
+        token === "others"
+          ? await authClient.revokeOtherSessions()
+          : await authClient.revokeSession({ token });
       if (error) throw new Error(error.message ?? "Could not sign that session out");
     },
     onSuccess: () => {
@@ -185,7 +284,13 @@ function SessionsSection() {
     onError: (error) => toast.error(error.message),
   });
   const currentToken = current.data?.session.token;
-  const rows = [...(sessions.data ?? [])].sort((a, b) => (a.token === currentToken ? -1 : b.token === currentToken ? 1 : new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
+  const rows = [...(sessions.data ?? [])].sort((a, b) =>
+    a.token === currentToken
+      ? -1
+      : b.token === currentToken
+        ? 1
+        : new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+  );
   return (
     <Section
       title="Where you're signed in"
@@ -193,7 +298,12 @@ function SessionsSection() {
       icon={Laptop}
       footer={
         rows.length > 1 ? (
-          <Button variant="secondary" size="sm" disabled={revoke.isPending} onClick={() => revoke.mutate("others")}>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={revoke.isPending}
+            onClick={() => revoke.mutate("others")}
+          >
             <LogOut /> Sign out everywhere else
           </Button>
         ) : null
@@ -210,17 +320,32 @@ function SessionsSection() {
             const isCurrent = session.token === currentToken;
             return (
               <li key={session.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                <span className="flex size-9 items-center justify-center rounded-lg bg-surface-muted">{mobile ? <Smartphone className="size-4 text-foreground-muted" /> : <Laptop className="size-4 text-foreground-muted" />}</span>
+                <span className="flex size-9 items-center justify-center rounded-lg bg-surface-muted">
+                  {mobile ? (
+                    <Smartphone className="size-4 text-foreground-muted" />
+                  ) : (
+                    <Laptop className="size-4 text-foreground-muted" />
+                  )}
+                </span>
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-2 text-[13px] font-medium">
                     {device} {isCurrent ? <Badge tone="success">This device</Badge> : null}
                   </p>
                   <p className="text-[12px] text-foreground-muted">
-                    {session.ipAddress ? `${session.ipAddress} · ` : ""}Last active {new Date(session.updatedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                    {session.ipAddress ? `${session.ipAddress} · ` : ""}Last active{" "}
+                    {new Date(session.updatedAt).toLocaleString(undefined, {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}
                   </p>
                 </div>
                 {isCurrent ? null : (
-                  <Button variant="ghost" size="sm" disabled={revoke.isPending} onClick={() => revoke.mutate(session.token)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={revoke.isPending}
+                    onClick={() => revoke.mutate(session.token)}
+                  >
                     Sign out
                   </Button>
                 )}
@@ -242,7 +367,11 @@ const subscribe = () => () => {};
 
 function AppearanceSection() {
   const { theme, setTheme } = useTheme();
-  const mounted = React.useSyncExternalStore(subscribe, () => true, () => false);
+  const mounted = React.useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
   const current = mounted ? (theme ?? "system") : null;
   return (
     <Section title="Appearance" description="Saved in this browser." icon={Palette}>
@@ -250,9 +379,27 @@ function AppearanceSection() {
         {THEMES.map((option) => {
           const active = current === option.value;
           return (
-            <button key={option.value} type="button" role="radio" aria-checked={active} onClick={() => setTheme(option.value)} className={cn("relative flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-[13px] font-medium transition-colors", active ? "border-transparent" : "border-border hover:bg-surface-muted/60")}>
-              {active ? <motion.span layoutId="profile-theme" className="border-gradient absolute inset-0 rounded-xl bg-accent-soft/30" transition={{ type: "spring", stiffness: 500, damping: 36 }} /> : null}
-              <option.icon className={cn("relative size-5", active ? "text-brand-1" : "text-foreground-muted")} />
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => setTheme(option.value)}
+              className={cn(
+                "relative flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-[13px] font-medium transition-colors",
+                active ? "border-transparent" : "border-border hover:bg-surface-muted/60",
+              )}
+            >
+              {active ? (
+                <motion.span
+                  layoutId="profile-theme"
+                  className="border-gradient absolute inset-0 rounded-xl bg-accent-soft/30"
+                  transition={{ type: "spring", stiffness: 500, damping: 36 }}
+                />
+              ) : null}
+              <option.icon
+                className={cn("relative size-5", active ? "text-brand-1" : "text-foreground-muted")}
+              />
               <span className="relative">{option.label}</span>
             </button>
           );

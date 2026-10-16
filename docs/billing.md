@@ -9,7 +9,30 @@ Plans, limits and usage live in `packages/config/src/plans.ts` and `packages/cor
 
 With neither configured, owners can switch plans directly in development (clearly labelled "no payment collected"). In production that path is refused.
 
-Prices: `priceMonthly` + `currency` (USD) for Stripe and `priceMonthlyInr` (paise) for UPI, per plan in `plans.ts`. Change them there. The public pricing page adds the rupee price when Razorpay keys are present when the site is built.
+Prices: `priceMonthly` + `currency` (USD) for Stripe and `priceMonthlyInr` (paise) for UPI, per plan in `plans.ts`. Change them there. The public pricing page adds the rupee price when Razorpay keys are present when the site is built. Plan rows are copied into the `plans` table by `syncPlans` (run by the seed), so re-run it after changing prices or limits.
+
+Starting prices: Free · Pro ₹999 / $12 a month · Scale ₹2,999 / $36 a month.
+
+## Free trial
+
+`TRIAL` in `plans.ts` (default: Pro for 14 days). A new workspace starts on that plan with `status = TRIALING` and `billingProvider = "trial"`. No card is asked for. The billing page and the top bar show the days left. When `currentPeriodEnd` passes, `resolvePlan` moves the workspace to Free with no grace period; data is kept. Paying for any plan ends the trial. Set `days: 0` to turn trials off.
+
+## Credit top-ups
+
+`CREDIT_PACKS` in `plans.ts` (default: 500 extra leads for ₹499, 2,000 AI credits for ₹299). Owners buy them on the billing page through Razorpay (one-time order with `notes {organizationId, packKey}`), verified like a plan payment: signature, amount equal to the pack price, captured once per payment id.
+
+- Bought credits go into a wallet (`credit_balances`) that never expires.
+- `consumeUsage` uses the monthly allowance first, then the wallet, atomically. `releaseUsage` refunds the wallet when the allowance was already used up.
+- Each purchase is recorded in `credit_purchases` and, when paid, as an invoice and payment.
+- With no Razorpay keys, packs are added without payment in development only ("No payment collected"). In production that path is refused.
+
+## Going live (collecting real money)
+
+1. Create a Razorpay account and finish KYC (PAN, bank account, business details). Switch the dashboard to Live mode and create API keys.
+2. Set `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` in the server environment.
+3. Add a webhook at `<APP_URL>/api/webhooks/razorpay` for `payment.captured` and `payment.failed`. Put its secret in `RAZORPAY_WEBHOOK_SECRET`.
+4. Optional, for international cards: `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` (webhook at `<APP_URL>/api/webhooks/stripe`).
+5. Run with `APP_ENV=production` and a public HTTPS `APP_URL`. Restart, then rebuild so the pricing page shows rupee prices.
 
 ## Stripe (cards)
 
@@ -76,5 +99,6 @@ Plan resolution prefers the price being paid over metadata. Portal plan switches
   - month extension;
   - signed Razorpay and Stripe webhooks with replay protection;
   - lapse to Free;
-  - the production guard on direct plan changes.
+  - the production guard on direct plan changes;
+  - credit packs applied once, price mismatches refused, wallet use and refunds, and the trial lapsing to Free.
 - Tests never call Stripe or Razorpay. Keys are blanked in the test setup and Razorpay's HTTP API is stubbed.

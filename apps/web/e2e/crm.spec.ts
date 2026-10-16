@@ -30,8 +30,8 @@ test.describe("CRM & quotes", () => {
     const company = await createCompany(request, baseURL, "QUALIFIED");
     try {
       await page.goto("/app/crm");
-      await expect(page.getByRole("heading", { name: "CRM", exact: true })).toBeVisible();
-      await expect(page.getByText("Open pipeline")).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Deals & quotes", exact: true })).toBeVisible();
+      await expect(page.getByText("Deals in progress")).toBeVisible();
       const card = page.locator('li[aria-roledescription="Draggable deal"]', { hasText: company.name });
       await expect(card).toBeVisible();
       if (shots) await page.screenshot({ path: "e2e/screenshots/crm-pipeline.png" });

@@ -22,7 +22,7 @@ export function Highlighted({ title, highlight, animate = false }: { title: stri
 export function SectionHeading({ eyebrow, title, highlight, description, center = true, className }: { eyebrow: string; title: string; highlight?: string; description?: React.ReactNode; center?: boolean; className?: string }) {
   return (
     <Reveal className={cn("max-w-2xl", center && "mx-auto text-center", className)}>
-      <p className="text-xs font-semibold tracking-[0.14em] text-brand-1 uppercase">{eyebrow}</p>
+      <p className="text-xs font-semibold tracking-[0.14em] text-foreground-muted uppercase">{eyebrow}</p>
       <h2 className="mt-3 text-[32px] leading-[1.1] font-semibold tracking-[-0.03em] text-balance sm:text-[40px]">
         <Highlighted title={title} highlight={highlight} />
       </h2>

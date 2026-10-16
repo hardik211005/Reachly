@@ -46,9 +46,15 @@ This document covers the public site, the in-app settings, integrations, billing
 | API keys | Create keys with scopes and expiry (shown once), revoke, quick-start example | Admins, on plans with API access |
 | Audit log | Every recorded change (settings, billing, team, integrations, scoring, exports, deletions) with who did it, filters by area and actor, and the details of each entry | Admins (`audit:read`) |
 
-### Brand logo
+### Profile photo
 
-- **Upload**: General → Brand logo (drag and drop or click). PNG, JPG or WebP up to 1 MB (`packages/core/src/organizations/logo.ts`).
+- **Upload**: Settings → Your profile → the pencil on your picture (upload a new one or remove it). Same rules as the workspace picture below: PNG, JPG or WebP up to 1 MB, type detected from the bytes, no SVG (`packages/core/src/users/avatar.ts`).
+- Stored in `user_avatars` (one row per person); `users.image` points at it, so the sidebar menu and anywhere else showing the person's picture picks it up. Deleted with the account.
+- **Serving**: `GET /api/public/avatars/:userId?v=<hash>`, with the same caching and headers as logos. `POST`/`DELETE /api/v1/me/avatar` changes your own photo only.
+
+### Workspace picture (brand logo)
+
+- **Upload**: General → the pencil on the workspace picture in the Workspace card. PNG, JPG or WebP up to 1 MB (`packages/core/src/organizations/logo.ts`).
   - The type is detected from the file's bytes, not its name. SVG is refused because it can carry scripts.
   - Stored in `organization_logos` (one row per workspace) with a SHA-256 hash.
 - **Where it shows**: the sidebar workspace switcher, the quote page and quote PDFs (PNG/JPG are embedded; WebP shows on the page only).
@@ -112,20 +118,26 @@ Owners pay by card (Stripe) or UPI (Razorpay) from a payment-method dialog; see 
 
 Code: `packages/core/src/organizations/lifecycle.ts`.
 
-## Platform admin
+## Admin portal
 
-`/admin` is a view across **every** workspace on the deployment, for whoever runs it. It is not part of any workspace.
+`/admin` is a separate portal across **every** workspace on the deployment, for whoever runs it. It is not part of any workspace and is not linked from the business app: it has its own sign-in at `/admin/login`, its own header (Overview, Server health, sign out) and its own pages.
 
-- **Access**: only signed-in users whose email is listed in `PLATFORM_ADMIN_EMAILS` (comma-separated). When `AUTH_REQUIRE_EMAIL_VERIFICATION=true`, the address must also be verified. Everyone else gets a 404, and the page is disallowed in robots.txt. Listed admins also get a **Platform admin** link in the sidebar and command menu.
+- **Access**: only signed-in users whose email is listed in `PLATFORM_ADMIN_EMAILS` (comma-separated). When `AUTH_REQUIRE_EMAIL_VERIFICATION=true`, the address must also be verified. Signed-out visitors are sent to `/admin/login`; signed-in business accounts get a 404 on every admin page, and `/admin/login` tells them the account has no admin access. The admin APIs (`/api/admin/*`, `/api/v1/system/health`) refuse anyone else with 403. Pages are disallowed in robots.txt.
 - **Shows**: users, with new sign-ups this week and month; workspaces, with active and deleted counts; paying workspaces, with monthly revenue per currency (Stripe at the plan price, UPI at the INR price); stored leads and 7-day activity; and plan distribution.
+- **Overview tab** (`packages/core/src/platform/monitor.ts`):
+  - **Growth**: sign-ups and searches per day, and leads found per day, for the last 30 days (UTC days).
+  - **Live activity**: the latest sign-ups, businesses finishing registration (with their first search and automations), searches with how many leads they found, failed searches, campaign launches, won deals and deleted workspaces. Each links to the workspace.
+  - **Problems in the last 24 hours**: failed lead searches, messages, workflow runs and webhook deliveries.
+  - **Services**: which platform-level providers are really connected (AI, lead data, email, WhatsApp, calling, payments, n8n). Shows only whether each is set, never a key.
+- **Workspace detail** (`/admin/workspaces/<id>`): owner and team, plan and billing, business profile, leads (qualified and chains), searches, campaigns, messages, calls, deals won, active automations, recent searches with results, recent audit entries, chain setting and learned-model status.
 - **Workspaces table**: owner, plan and billing state, members, leads, last activity, created, onboarding/deleted badges, and **Restore** for workspaces deleted within the last 30 days.
 - **Users table**: workspaces and roles, verification, last seen, joined.
 
-Code: `packages/core/src/platform/admin.ts`, `apps/web/app/admin`.
+Code: `packages/core/src/platform/admin.ts`, `apps/web/app/admin` (`(portal)` holds the guarded pages, `login` the sign-in).
 
-## System health
+## Server health
 
-`/app/system` is for admins (`system:read`) and refreshes every 30 seconds (`packages/core/src/system/health.ts`).
+`/admin/system`, inside the admin portal, refreshes every 30 seconds. Businesses never see server internals; the old `/app/system` address forwards there (`packages/core/src/system/health.ts`).
 
 - **Checks**:
   - database latency;
@@ -156,5 +168,5 @@ Code: `packages/core/src/platform/admin.ts`, `apps/web/app/admin`.
 | `POST /api/v1/billing/portal`, `POST/DELETE /api/v1/billing/cancel` | Stripe customer portal, schedule or undo a move to Free |
 | `POST /api/v1/workspace/logo`, `DELETE /api/v1/workspace/logo` | Upload (multipart field `file`) or remove the brand logo |
 | `POST /api/webhooks/stripe`, `POST /api/webhooks/razorpay` | Signed payment webhooks |
-| `GET /api/v1/system/health` | System health |
+| `GET /api/v1/system/health` | Server health (admin portal only) |
 | `POST /api/public/contact` | Public contact form |

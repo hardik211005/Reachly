@@ -13,6 +13,7 @@
     "dev": "turbo run dev --filter=@repo/web --filter=@repo/worker",
     "dev:web": "turbo run dev --filter=@repo/web",
     "dev:worker": "turbo run dev --filter=@repo/worker",
+    "fast": "npm run fast -w @repo/web",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",

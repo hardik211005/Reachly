@@ -16,5 +16,4 @@ export * from "./components/data-table";
 export * from "./components/display";
 export * from "./components/filters";
 export * from "./components/toaster";
-export * from "./charts/charts";
 export * from "./motion";

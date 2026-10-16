@@ -11,6 +11,7 @@ import "./workflows";
 import "./crm";
 import "./analytics";
 import "./onboarding";
+import "./grow";
 
 export { processJob, registeredJobNames, hasProcessor, registerProcessor, NonRetryableJobError } from "./registry";
 export { recordDeadLetter, recentDeadLetters } from "./dead-letter";

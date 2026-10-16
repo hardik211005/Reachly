@@ -27,7 +27,7 @@ export function PageHeader({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           {eyebrow ? <div className="mb-1 text-xs font-medium tracking-wide text-foreground-muted uppercase">{eyebrow}</div> : null}
-          <h1 className="truncate text-[26px] leading-tight font-semibold tracking-[-0.03em] text-foreground">{typeof title === "string" ? <span className="text-gradient animate-gradient-pan">{title}</span> : title}</h1>
+          <h1 className="truncate text-[28px] leading-tight font-extrabold tracking-[-0.04em] text-foreground">{typeof title === "string" ? <span className="text-gradient animate-gradient-pan">{title}</span> : title}</h1>
           {description ? <p className="mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-foreground-secondary">{description}</p> : null}
         </div>
         {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}

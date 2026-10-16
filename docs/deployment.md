@@ -79,11 +79,11 @@ Without Redis you *can* run a single web instance with `QUEUE_DRIVER=inline`, bu
 | Endpoint | Auth | Use |
 |---|---|---|
 | `GET /api/health` | none | Liveness/readiness. `200 {"status":"ok"}` when the database answers, `503` otherwise. Reveals nothing else. |
-| `GET /api/v1/system/health` | admin session or API key | Detailed view behind the **System health** page: database, Redis, queues (waiting/failed counts), worker heartbeats, dead letters, provider modes. |
+| `GET /api/v1/system/health` | platform admin session | Detailed view behind the admin portal’s **Server health** page: database, Redis, queues (waiting/failed counts), worker heartbeats, dead letters, provider modes. |
 
 - **Logs** are structured JSON (pino) on stdout from both processes; ship them with your platform's log driver. Set `LOG_LEVEL=info` in production. Every API response carries an `x-request-id`, which also appears in the logs and the audit log.
-- **Worker liveness.** Workers write a heartbeat to Redis. The System health page flags a missing heartbeat, so alert on it, or on the failed-jobs count.
-- **Dead letters.** Jobs that exhaust their retries are kept in the `reachai:dead-letter` Redis list (latest 1,000) and shown on System health.
+- **Worker liveness.** Workers write a heartbeat to Redis. The admin portal’s Server health page flags a missing heartbeat, so alert on it, or on the failed-jobs count.
+- **Dead letters.** Jobs that exhaust their retries are kept in the `reachai:dead-letter` Redis list (latest 1,000) and shown on the admin portal’s Server health page.
 
 ## Backups and recovery
 

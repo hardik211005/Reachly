@@ -30,7 +30,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
       <div className="w-full max-w-md animate-rise rounded-2xl border border-border bg-surface/90 p-8 text-center shadow-lg backdrop-blur">
         {invitation.state === "valid" ? (
           <>
-            <p className="text-xs font-semibold tracking-[0.14em] text-brand-1 uppercase">You&apos;re invited</p>
+            <p className="text-xs font-semibold tracking-[0.14em] text-foreground-muted uppercase">You&apos;re invited</p>
             <h1 className="mt-3 text-[24px] leading-tight font-semibold tracking-[-0.02em]">
               Join <span className="text-gradient">{invitation.workspace}</span>
             </h1>

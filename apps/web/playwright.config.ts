@@ -5,7 +5,10 @@ import { defineConfig, devices } from "@playwright/test";
  * Locally they use the installed Chrome (no browser download); CI installs Chromium.
  */
 // The dev server compiles each route on its first request (up to ~20s on a cold cache).
-const devServer = !process.env.E2E_BASE_URL;
+// CI tests a production build instead: the dev compiler plus two browsers runs a small CI
+// machine out of memory, and a built app is what actually ships.
+const ci = Boolean(process.env.CI);
+const devServer = !process.env.E2E_BASE_URL && !ci;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -47,10 +50,11 @@ export default defineConfig({
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : {
-        command: "npx next dev --port 3100",
+        command: ci ? "npx next build && npx next start --port 3100" : "npx next dev --port 3100",
         url: "http://localhost:3100/login",
         reuseExistingServer: true,
-        timeout: 180_000,
+        // A production build takes a few minutes on CI before the server starts.
+        timeout: ci ? 600_000 : 180_000,
         env: {
           NEXT_DIST_DIR: ".next-e2e",
           APP_URL: "http://localhost:3100",

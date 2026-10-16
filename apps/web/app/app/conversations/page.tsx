@@ -5,14 +5,16 @@ import { Skeleton } from "@repo/ui";
 import { InboxView } from "@/components/inbox/inbox-view";
 import { requireWorkspace } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Inbox" };
+export const metadata: Metadata = { title: "Replies" };
 
 export default async function ConversationsPage() {
   const { ctx } = await requireWorkspace();
   const summary = await inboxSummary(ctx);
   return (
     <Suspense fallback={<Skeleton className="m-6 h-[70vh]" />}>
-      <InboxView counts={{ needsResponse: summary.needsResponse, pendingApproval: summary.pendingApproval }} />
+      <InboxView
+        counts={{ needsResponse: summary.needsResponse, pendingApproval: summary.pendingApproval }}
+      />
     </Suspense>
   );
 }

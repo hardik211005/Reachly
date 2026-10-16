@@ -26,7 +26,7 @@ test.describe("campaigns & outreach", () => {
     const name = `E2E cafés ${Date.now().toString(36)}`;
 
     await page.goto("/app/campaigns");
-    await expect(page.getByRole("heading", { name: "Campaigns" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Send offers" })).toBeVisible();
     if (shots) await page.screenshot({ path: "e2e/screenshots/campaigns.png", fullPage: true });
 
     await page.getByRole("link", { name: /New campaign|Create your first campaign/ }).first().click();
@@ -100,7 +100,7 @@ test.describe("campaigns & outreach", () => {
 
   test("inbox shows classified replies and suggested responses", async ({ page }) => {
     await page.goto("/app/conversations?status=all");
-    await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Replies" })).toBeVisible();
     const first = page.locator("section button[aria-current], section button").filter({ hasText: /You: |\w/ }).first();
     await expect(first).toBeVisible();
     // Open the most recent conversation with a reply.

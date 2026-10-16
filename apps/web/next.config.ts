@@ -25,6 +25,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
+  // The shared packages are barrels (one index re-exporting everything): rewrite their imports to
+  // the modules actually used, so e.g. a marketing page with a Button does not ship the chart library.
+  experimental: { optimizePackageImports: ["@repo/ui", "@repo/config"] },
   transpilePackages: ["@repo/ui", "@repo/core", "@repo/config", "@repo/db", "@repo/ai", "@repo/integrations", "@repo/queue"],
   serverExternalPackages: ["pino", "bullmq", "ioredis", "pg", "@prisma/adapter-pg", "nodemailer", "pdf-lib", "@pdf-lib/fontkit", "stripe"],
   // Quote PDFs embed these fonts; standalone builds must ship them.

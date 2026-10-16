@@ -10,7 +10,8 @@
     ".": "./src/index.ts",
     "./lib/utils": "./src/lib/utils.ts",
     "./styles.css": "./src/styles/globals.css",
-    "./components/*": "./src/components/*.tsx"
+    "./components/*": "./src/components/*.tsx",
+    "./charts": "./src/charts/charts.tsx"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

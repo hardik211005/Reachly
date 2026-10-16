@@ -20,6 +20,10 @@ import { Prisma, type PrismaClient } from "./generated/prisma/client";
  */
 export const TENANT_MODELS: ReadonlySet<Prisma.ModelName> = new Set<Prisma.ModelName>([
   "Membership",
+  "PublicPage",
+  "Review",
+  "CreditBalance",
+  "CreditPurchase",
   "Invitation",
   "OrganizationLogo",
   "ApiKey",

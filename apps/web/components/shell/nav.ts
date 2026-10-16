@@ -1,6 +1,6 @@
-import type { LucideIcon } from "lucide-react";
+import type { ComponentType } from "react";
+import { WhatsAppGlyph } from "../brand/brand-icon";
 import {
-  Activity,
   BarChart3,
   CreditCard,
   Home,
@@ -9,11 +9,10 @@ import {
   Lightbulb,
   Mail,
   Megaphone,
-  MessageCircle,
   Phone,
   Plug,
   Settings,
-  ShieldHalf,
+  Sprout,
   Telescope,
   Users,
   Workflow,
@@ -22,7 +21,8 @@ import {
 export interface NavItem {
   label: string;
   href: string;
-  icon: LucideIcon;
+  /** A lucide icon, or a brand mark (e.g. WhatsApp) that takes the same className. */
+  icon: ComponentType<{ className?: string }>;
   /** Keyboard shortcut after pressing "g". */
   shortcut?: string;
   /** Minimum role permission to show the item. */
@@ -34,56 +34,67 @@ export interface NavItem {
 export interface NavGroup {
   label: string | null;
   items: NavItem[];
+  /** Folded away by default (remembered per browser); opens when one of its pages is active. */
+  collapsible?: boolean;
 }
 
-/** Grouped by the job: find buyers, reach them, close and automate, then learn what worked. */
+/**
+ * Grouped by what an owner is trying to do, in plain words: get customers, talk to them, win and
+ * keep them, see results. Specialist screens live under "More tools" so the everyday menu stays short.
+ */
 export const NAV_GROUPS: NavGroup[] = [
   {
     label: null,
-    items: [{ label: "Home", href: "/app", icon: Home, shortcut: "o" }],
+    items: [{ label: "Today", href: "/app", icon: Home, shortcut: "o" }],
   },
   {
-    label: "Find",
+    label: "Get customers",
     items: [
-      { label: "Find leads", href: "/app/discover", icon: Telescope, shortcut: "d" },
-      { label: "Leads", href: "/app/leads", icon: Users, shortcut: "l" },
+      { label: "Find customers", href: "/app/discover", icon: Telescope, shortcut: "d" },
+      { label: "Customer list", href: "/app/leads", icon: Users, shortcut: "l" },
     ],
   },
   {
-    label: "Reach out",
+    label: "Talk to them",
     items: [
-      { label: "Campaigns", href: "/app/campaigns", icon: Megaphone, shortcut: "c" },
-      { label: "Inbox", href: "/app/conversations", icon: Inbox, shortcut: "i" },
+      { label: "Replies", href: "/app/conversations", icon: Inbox, shortcut: "i" },
+      { label: "Send offers", href: "/app/campaigns", icon: Megaphone, shortcut: "c" },
+    ],
+  },
+  {
+    label: "Win & keep them",
+    items: [
+      { label: "Deals & quotes", href: "/app/crm", icon: KanbanSquare, shortcut: "p" },
+      { label: "Auto follow-ups", href: "/app/workflows", icon: Workflow, shortcut: "w" },
+      { label: "Your page & reviews", href: "/app/grow", icon: Sprout, shortcut: "r" },
+    ],
+  },
+  {
+    label: "See results",
+    items: [{ label: "Reports", href: "/app/analytics", icon: BarChart3, shortcut: "a" }],
+  },
+  {
+    label: "More tools",
+    collapsible: true,
+    items: [
       { label: "Calls", href: "/app/calls", icon: Phone },
       { label: "Email", href: "/app/email", icon: Mail },
-      { label: "WhatsApp", href: "/app/whatsapp", icon: MessageCircle },
-    ],
-  },
-  {
-    label: "Close & automate",
-    items: [
-      { label: "CRM & quotes", href: "/app/crm", icon: KanbanSquare, shortcut: "p" },
-      { label: "Workflows", href: "/app/workflows", icon: Workflow, shortcut: "w" },
-    ],
-  },
-  {
-    label: "Insights",
-    items: [
-      { label: "Analytics", href: "/app/analytics", icon: BarChart3, shortcut: "a" },
-      { label: "Insights", href: "/app/ai-insights", icon: Lightbulb },
+      { label: "WhatsApp", href: "/app/whatsapp", icon: WhatsAppGlyph },
+      { label: "AI tips", href: "/app/ai-insights", icon: Lightbulb },
     ],
   },
 ];
 
 export const NAV_FOOTER: NavItem[] = [
-  { label: "Integrations", href: "/app/integrations", icon: Plug },
+  { label: "Connect apps", href: "/app/integrations", icon: Plug },
   { label: "Billing", href: "/app/billing", icon: CreditCard },
   { label: "Settings", href: "/app/settings", icon: Settings, shortcut: "s" },
-  { label: "System health", href: "/app/system", icon: Activity, adminOnly: true },
-  { label: "Platform admin", href: "/admin", icon: ShieldHalf, platformOnly: true },
 ];
 
-export const ALL_NAV_ITEMS: NavItem[] = [...NAV_GROUPS.flatMap((group) => group.items), ...NAV_FOOTER];
+export const ALL_NAV_ITEMS: NavItem[] = [
+  ...NAV_GROUPS.flatMap((group) => group.items),
+  ...NAV_FOOTER,
+];
 
 export function isActive(pathname: string, href: string): boolean {
   if (href === "/app") return pathname === "/app";

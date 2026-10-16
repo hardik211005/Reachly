@@ -7,18 +7,22 @@ import { countPendingApprovals } from "@repo/core/outreach/approvals";
 import { Button, PageHeader } from "@repo/ui";
 import { CampaignsList, type CampaignListItem } from "@/components/campaigns/campaigns-list";
 import { PageContainer } from "@/components/page";
+import { PageGuide } from "@/components/page-guide";
 import { requireWorkspace } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Campaigns" };
+export const metadata: Metadata = { title: "Send offers" };
 
 export default async function CampaignsPage() {
   const { ctx } = await requireWorkspace();
-  const [pendingApproval, campaigns] = await Promise.all([countPendingApprovals(ctx), listCampaignsWithStats(ctx)]);
+  const [pendingApproval, campaigns] = await Promise.all([
+    countPendingApprovals(ctx),
+    listCampaignsWithStats(ctx),
+  ]);
   return (
     <PageContainer wide>
       <PageHeader
-        title="Campaigns"
-        description="Multi-step outreach sequences across email, WhatsApp and calls. Every number here comes from recorded events."
+        title="Send offers"
+        description="Send a personal message to many businesses at once by email or WhatsApp, with polite follow-ups. Nothing goes out until you approve it."
         actions={
           can(ctx, "campaigns:write") ? (
             <Button asChild variant="primary" size="sm">
@@ -30,7 +34,30 @@ export default async function CampaignsPage() {
         }
         className="mb-5"
       />
-      <CampaignsList pendingApproval={pendingApproval} initial={JSON.parse(JSON.stringify(campaigns)) as CampaignListItem[]} />
+      <div className="mb-5">
+        <PageGuide
+          id="send-offers"
+          title="How sending offers works"
+          steps={[
+            {
+              title: "Choose who gets it",
+              body: "Pick businesses from your customer list — for example, cafés near you with a good score.",
+            },
+            {
+              title: "We write each message",
+              body: "A personal email or WhatsApp for every business. You read and approve it before anything is sent.",
+            },
+            {
+              title: "Follow-ups stop on reply",
+              body: "Polite reminders go out if there's no answer. When someone replies, it appears in Replies.",
+            },
+          ]}
+        />
+      </div>
+      <CampaignsList
+        pendingApproval={pendingApproval}
+        initial={JSON.parse(JSON.stringify(campaigns)) as CampaignListItem[]}
+      />
     </PageContainer>
   );
 }

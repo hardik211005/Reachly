@@ -1,12 +1,11 @@
 import {
   DEFAULT_PLAN_KEY,
   PLAN_DEFINITIONS,
-  planFeaturesSchema,
-  planLimitsSchema,
   type PlanFeatureKey,
   type PlanFeatures,
   type PlanLimits,
 } from "@repo/config";
+import { planFeaturesSchema, planLimitsSchema } from "@repo/config/plans-schema";
 import { addMonths } from "date-fns";
 import { prisma, type Plan, type PrismaClient, type Subscription } from "@repo/db";
 import type { TenantContext } from "../context";
@@ -24,7 +23,9 @@ export interface ResolvedPlan {
 /** Writes the plan definitions from @repo/config into the Plan table (idempotent). */
 export async function syncPlans(client: PrismaClient = prisma): Promise<void> {
   for (const definition of PLAN_DEFINITIONS) {
-    const stripePriceId = definition.stripePriceEnv ? process.env[definition.stripePriceEnv] || null : null;
+    const stripePriceId = definition.stripePriceEnv
+      ? process.env[definition.stripePriceEnv] || null
+      : null;
     await client.plan.upsert({
       where: { key: definition.key },
       create: {
@@ -69,7 +70,10 @@ export async function getDefaultPlan(client: PrismaClient = prisma): Promise<Pla
 }
 
 export async function listPlans(): Promise<Array<Plan & { parsed: ReturnType<typeof parsePlan> }>> {
-  const plans = await prisma.plan.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } });
+  const plans = await prisma.plan.findMany({
+    where: { isActive: true },
+    orderBy: { sortOrder: "asc" },
+  });
   return plans.map((plan) => ({ ...plan, parsed: parsePlan(plan) }));
 }
 
@@ -80,9 +84,18 @@ const LAPSE_GRACE_MS = 3 * 24 * 60 * 60 * 1000;
  * A prepaid (UPI) month that has run out, or a card subscription set to cancel whose period
  * is over but whose cancellation webhook never arrived.
  */
-export function hasLapsed(subscription: Pick<Subscription, "billingProvider" | "currentPeriodEnd" | "cancelAtPeriodEnd">, now: Date = new Date()): boolean {
+export function hasLapsed(
+  subscription: Pick<Subscription, "billingProvider" | "currentPeriodEnd" | "cancelAtPeriodEnd">,
+  now: Date = new Date(),
+): boolean {
+  // A free trial ends exactly when it says — no grace period.
+  if (subscription.billingProvider === "trial")
+    return subscription.currentPeriodEnd.getTime() <= now.getTime();
   if (subscription.currentPeriodEnd.getTime() + LAPSE_GRACE_MS > now.getTime()) return false;
-  return subscription.billingProvider === "razorpay" || (subscription.billingProvider === "stripe" && subscription.cancelAtPeriodEnd);
+  return (
+    subscription.billingProvider === "razorpay" ||
+    (subscription.billingProvider === "stripe" && subscription.cancelAtPeriodEnd)
+  );
 }
 
 export async function resolvePlan(ctx: TenantContext): Promise<ResolvedPlan> {
@@ -93,7 +106,15 @@ export async function resolvePlan(ctx: TenantContext): Promise<ResolvedPlan> {
     const now = new Date();
     subscription = await ctx.db.subscription.update({
       where: { id: subscription.id },
-      data: { planId: free.id, status: "ACTIVE", billingProvider: "none", providerSubscriptionId: null, cancelAtPeriodEnd: false, currentPeriodStart: now, currentPeriodEnd: addMonths(now, 1) },
+      data: {
+        planId: free.id,
+        status: "ACTIVE",
+        billingProvider: "none",
+        providerSubscriptionId: null,
+        cancelAtPeriodEnd: false,
+        currentPeriodStart: now,
+        currentPeriodEnd: addMonths(now, 1),
+      },
       include: { plan: true },
     });
   }
@@ -108,7 +129,10 @@ export async function hasFeature(ctx: TenantContext, feature: PlanFeatureKey): P
   return Array.isArray(value) ? value.length > 0 : Boolean(value);
 }
 
-export async function assertFeature(ctx: TenantContext, feature: PlanFeatureKey): Promise<ResolvedPlan> {
+export async function assertFeature(
+  ctx: TenantContext,
+  feature: PlanFeatureKey,
+): Promise<ResolvedPlan> {
   const plan = await resolvePlan(ctx);
   const value = plan.features[feature];
   const enabled = Array.isArray(value) ? value.length > 0 : Boolean(value);
@@ -119,16 +143,24 @@ export async function assertFeature(ctx: TenantContext, feature: PlanFeatureKey)
 type ResourceKey = "activeCampaigns" | "members" | "workflows" | "savedSearches";
 
 /** Enforces concurrent resource caps (active campaigns, seats, workflows…). */
-export async function assertResourceLimit(ctx: TenantContext, resource: ResourceKey, currentCount: number, adding = 1) {
+export async function assertResourceLimit(
+  ctx: TenantContext,
+  resource: ResourceKey,
+  currentCount: number,
+  adding = 1,
+) {
   const plan = await resolvePlan(ctx);
   const limit = plan.limits.resources[resource];
   if (limit !== null && currentCount + adding > limit) {
-    throw new LimitExceededError(`Your ${plan.name} plan allows ${limit} ${resourceLabel(resource)}.`, {
-      metric: resource,
-      limit,
-      used: currentCount,
-      requested: adding,
-    });
+    throw new LimitExceededError(
+      `Your ${plan.name} plan allows ${limit} ${resourceLabel(resource)}.`,
+      {
+        metric: resource,
+        limit,
+        used: currentCount,
+        requested: adding,
+      },
+    );
   }
 }
 
@@ -143,4 +175,19 @@ function resourceLabel(resource: ResourceKey): string {
     case "savedSearches":
       return "saved searches";
   }
+}
+
+/** The free trial still running on a subscription, or null. Days left rounds up (ends today = 1). */
+export function trialStatus(
+  subscription: Pick<Subscription, "billingProvider" | "currentPeriodEnd">,
+  now: Date = new Date(),
+): { endsAt: Date; daysLeft: number } | null {
+  if (subscription.billingProvider !== "trial") return null;
+  return {
+    endsAt: subscription.currentPeriodEnd,
+    daysLeft: Math.max(
+      0,
+      Math.ceil((subscription.currentPeriodEnd.getTime() - now.getTime()) / 86_400_000),
+    ),
+  };
 }

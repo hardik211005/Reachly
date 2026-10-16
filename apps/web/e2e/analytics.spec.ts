@@ -5,7 +5,7 @@ const shots = process.env.E2E_SCREENSHOTS === "1";
 test.describe("Analytics & AI insights", () => {
   test("analytics: metrics with their counts, URL filters and CSV export", async ({ page }) => {
     await page.goto("/app/analytics?days=90");
-    await expect(page.getByRole("heading", { name: "Analytics", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Reports", exact: true })).toBeVisible();
     await expect(page.getByText("Reply rate", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Conversion funnel")).toBeVisible();
     // Rates show the counts behind them.

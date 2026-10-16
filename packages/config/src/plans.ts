@@ -1,5 +1,7 @@
-import { z } from "zod";
-import { AUTOMATION_MODES, CHANNELS, USAGE_METRICS, type UsageMetric } from "./domain";
+import type { PlanDefinition } from "./plans-schema";
+import type { UsageMetric } from "./domain";
+
+export type { PlanDefinition, PlanFeatureKey, PlanFeatures, PlanLimits } from "./plans-schema";
 
 /**
  * Plan configuration.
@@ -9,63 +11,41 @@ import { AUTOMATION_MODES, CHANNELS, USAGE_METRICS, type UsageMetric } from "./d
  * plan's limits without touching application code. `null` means "unlimited".
  */
 
-export const planFeaturesSchema = z.object({
-  automationModes: z.array(z.enum(AUTOMATION_MODES)),
-  channels: z.array(z.enum(CHANNELS)),
-  aiQualification: z.boolean(),
-  aiInsights: z.boolean(),
-  copilot: z.boolean(),
-  advancedAnalytics: z.boolean(),
-  workflows: z.boolean(),
-  n8n: z.boolean(),
-  crm: z.boolean(),
-  quotes: z.boolean(),
-  voiceAgent: z.boolean(),
-  apiAccess: z.boolean(),
-  outboundWebhooks: z.boolean(),
-  priorityProcessing: z.boolean(),
-  csvImport: z.boolean(),
-});
-export type PlanFeatures = z.infer<typeof planFeaturesSchema>;
-export type PlanFeatureKey = keyof PlanFeatures;
-
-const usageLimitsShape = Object.fromEntries(
-  USAGE_METRICS.map((metric) => [metric, z.number().int().nonnegative().nullable()]),
-) as Record<UsageMetric, z.ZodNullable<z.ZodNumber>>;
-
-export const planLimitsSchema = z.object({
-  /** Monthly metered allowances, reset at the start of each billing period. */
-  usage: z.object(usageLimitsShape),
-  /** Concurrent resource caps. */
-  resources: z.object({
-    activeCampaigns: z.number().int().nonnegative().nullable(),
-    members: z.number().int().positive().nullable(),
-    workflows: z.number().int().nonnegative().nullable(),
-    discoveryResultsPerSearch: z.number().int().positive(),
-    savedSearches: z.number().int().nonnegative().nullable(),
-  }),
-});
-export type PlanLimits = z.infer<typeof planLimitsSchema>;
-
-export const planDefinitionSchema = z.object({
-  key: z.string().regex(/^[a-z0-9_-]+$/),
-  name: z.string(),
-  description: z.string(),
-  /** Monthly price in the smallest currency unit (cents/paise). */
-  priceMonthly: z.number().int().nonnegative(),
-  currency: z.string().length(3),
-  highlighted: z.boolean().default(false),
-  sortOrder: z.number().int(),
-  limits: planLimitsSchema,
-  features: planFeaturesSchema,
-  /** Env var holding the Stripe price id for this plan, if it is purchasable. */
-  stripePriceEnv: z.string().optional(),
-  /** Monthly price in paise for UPI payments (Razorpay charges in INR). Unset = not sold over UPI. */
-  priceMonthlyInr: z.number().int().positive().optional(),
-});
-export type PlanDefinition = z.infer<typeof planDefinitionSchema>;
-
 export const DEFAULT_PLAN_KEY = "free";
+
+/** New businesses try this plan free for this many days (no card), then drop to Free unless they pay. 0 = no trial. */
+export const TRIAL = { planKey: "pro", days: 14 } as const;
+
+/**
+ * Credit top-ups, bought on top of the plan's monthly allowance. They never expire and are used
+ * only once the monthly allowance runs out. Prices are in paise (INR), charged through Razorpay.
+ */
+export const CREDIT_PACKS = [
+  {
+    key: "leads-500",
+    metric: "LEAD_CREDITS",
+    amount: 500,
+    name: "500 extra leads",
+    description: "Find and add 500 more businesses.",
+    priceInr: 49900,
+  },
+  {
+    key: "ai-2000",
+    metric: "AI_CREDITS",
+    amount: 2000,
+    name: "2,000 AI credits",
+    description: "More AI-written messages, scoring and replies.",
+    priceInr: 29900,
+  },
+] as const satisfies ReadonlyArray<{
+  key: string;
+  metric: UsageMetric;
+  amount: number;
+  name: string;
+  description: string;
+  priceInr: number;
+}>;
+export type CreditPack = (typeof CREDIT_PACKS)[number];
 
 export const PLAN_DEFINITIONS: PlanDefinition[] = [
   {
@@ -115,9 +95,9 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
     key: "pro",
     name: "Pro",
     description: "AI qualification, email + WhatsApp sequences, workflows and the full CRM.",
-    priceMonthly: 7900,
+    priceMonthly: 1200,
     currency: "USD",
-    priceMonthlyInr: 649900,
+    priceMonthlyInr: 99900,
     highlighted: true,
     sortOrder: 1,
     stripePriceEnv: "STRIPE_PRICE_PRO_MONTHLY",
@@ -160,9 +140,9 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
     key: "scale",
     name: "Scale",
     description: "Voice agents, advanced workflows, API access and team collaboration at volume.",
-    priceMonthly: 29900,
+    priceMonthly: 3600,
     currency: "USD",
-    priceMonthlyInr: 2499900,
+    priceMonthlyInr: 299900,
     highlighted: false,
     sortOrder: 2,
     stripePriceEnv: "STRIPE_PRICE_SCALE_MONTHLY",

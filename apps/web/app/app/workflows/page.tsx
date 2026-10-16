@@ -4,14 +4,21 @@ import { PageContainer } from "@/components/page";
 import { WorkflowsView } from "@/components/workflows/workflows-view";
 import { requireWorkspace } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Workflows" };
+export const metadata: Metadata = { title: "Auto follow-ups" };
 
 export default async function WorkflowsPage() {
   const { ctx } = await requireWorkspace();
   const plan = await resolvePlan(ctx);
   return (
     <PageContainer wide>
-      <WorkflowsView plan={{ workflows: plan.features.workflows, outboundWebhooks: plan.features.outboundWebhooks, limit: plan.limits.resources.workflows, name: plan.name }} />
+      <WorkflowsView
+        plan={{
+          workflows: plan.features.workflows,
+          outboundWebhooks: plan.features.outboundWebhooks,
+          limit: plan.limits.resources.workflows,
+          name: plan.name,
+        }}
+      />
     </PageContainer>
   );
 }

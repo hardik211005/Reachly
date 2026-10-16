@@ -6,16 +6,12 @@ import { CHANNEL_LABELS, type Channel } from "@repo/config";
 import type { OverviewData } from "@repo/core/analytics/overview";
 import {
   AIInsightCard,
-  BarChart,
   Button,
-  ChartCard,
   EmptyState,
-  FunnelChart,
   MetricCard,
   Reveal,
   Stagger,
   StaggerItem,
-  SERIES_COLORS,
   StatusBadge,
   Table,
   TableBody,
@@ -23,11 +19,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  TimeSeriesChart,
   formatNumber,
   formatPercent,
 } from "@repo/ui";
+import { BarChart, ChartCard, FunnelChart, SERIES_COLORS, TimeSeriesChart } from "@repo/ui/charts";
 import { formatDay, formatKpi } from "./format";
+import { BentoTile } from "./overview-hero";
 
 export interface InsightSummary {
   id: string;
@@ -47,12 +44,31 @@ const CAMPAIGN_TONES: Record<string, "success" | "warning" | "neutral" | "muted"
   ARCHIVED: "muted",
 };
 
-export function OverviewView({ data, currency, insights }: { data: OverviewData; currency: string; insights: InsightSummary[] }) {
+const TODAY_KPIS = [
+  "leads",
+  "qualified",
+  "replies",
+  "positive",
+  "meetings",
+  "won",
+  "revenue",
+  "conversion",
+];
+
+export function OverviewView({
+  data,
+  currency,
+  insights,
+}: {
+  data: OverviewData;
+  currency: string;
+  insights: InsightSummary[];
+}) {
   const series = data.series.map((point) => ({ ...point }));
   const activitySeries = [
-    { key: "outreach", label: "Outreach sent", slot: 0 },
+    { key: "outreach", label: "Messages sent", slot: 0 },
     { key: "replies", label: "Replies", slot: 1 },
-    { key: "positive", label: "Positive replies", slot: 2 },
+    { key: "positive", label: "Interested replies", slot: 2 },
   ];
   const channelRows = data.channels.map((channel) => ({
     channel: CHANNEL_LABELS[channel.channel as Channel] ?? channel.channel,
@@ -60,72 +76,95 @@ export function OverviewView({ data, currency, insights }: { data: OverviewData;
     replies: channel.replies,
   }));
 
+  // The eight numbers an owner checks daily; the rest (messages sent, calls, quotes, costs) live in Reports.
+  const kpis = TODAY_KPIS.map((key) => data.kpis.find((kpi) => kpi.key === key)).filter(
+    (kpi) => kpi !== undefined,
+  );
+
   if (!data.hasData) {
     return (
-      <div className="rounded-lg border border-dashed border-border-strong bg-surface">
+      <BentoTile className="col-span-2 border-dashed md:col-span-6 xl:col-span-12">
         <EmptyState
           icon={Telescope}
           title="No activity yet"
-          description="Every number on this page comes from real events in your workspace. Discover your first leads to get started."
+          description="Your results will show up here once you start. Begin by finding customers near you — it takes about a minute."
           action={
             <>
               <Button asChild variant="primary">
                 <Link href="/app/discover">
-                  <Telescope /> Find leads
+                  <Telescope /> Find customers
                 </Link>
               </Button>
               <Button asChild>
                 <Link href="/app/campaigns/new">
-                  <Megaphone /> Create campaign
+                  <Megaphone /> Send an offer
                 </Link>
               </Button>
             </>
           }
         />
-      </div>
+      </BentoTile>
     );
   }
 
   return (
-    <div className="grid gap-4">
-      <section aria-label="Key metrics">
-        <Stagger step={0.04} delay={0.1} className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6 *:min-w-0">
-          {data.kpis.map((kpi) => (
-            <StaggerItem key={kpi.key}>
-              <MetricCard
-                label={kpi.label}
-                value={formatKpi(kpi.value, kpi.format, currency)}
-                numeric={{ value: kpi.value, format: (value) => formatKpi(value, kpi.format, currency) }}
-                delta={{
-                  value: kpi.delta,
-                  upIsGood: kpi.upIsGood,
-                  label: `vs previous ${data.range.days} days (${formatKpi(kpi.previous, kpi.format, currency)})`,
-                }}
-                hint={kpi.hint}
-                className="h-full"
-              />
-            </StaggerItem>
-          ))}
-        </Stagger>
-      </section>
+    <>
+      {kpis.map((kpi, index) => (
+        <Reveal
+          key={kpi.key}
+          delay={index * 0.04}
+          className="col-span-1 min-w-0 md:col-span-3 xl:col-span-3"
+        >
+          <MetricCard
+            label={kpi.label}
+            value={formatKpi(kpi.value, kpi.format, currency)}
+            numeric={{
+              value: kpi.value,
+              format: (value) => formatKpi(value, kpi.format, currency),
+            }}
+            delta={{
+              value: kpi.delta,
+              upIsGood: kpi.upIsGood,
+              label: `vs previous ${data.range.days} days (${formatKpi(kpi.previous, kpi.format, currency)})`,
+            }}
+            hint={kpi.hint}
+            className="h-full rounded-xl"
+          />
+        </Reveal>
+      ))}
 
-      <Reveal className="grid gap-4 lg:grid-cols-3">
+      <Reveal className="col-span-2 min-w-0 md:col-span-6 xl:col-span-8">
         <ChartCard
-          className="lg:col-span-2"
-          title="Outreach activity"
+          className="h-full rounded-xl"
+          title="Messages & replies"
           description={`Daily, last ${data.range.days} days`}
-          legend={activitySeries.map((item) => ({ label: item.label, color: SERIES_COLORS[item.slot] ?? SERIES_COLORS[0] }))}
+          legend={activitySeries.map((item) => ({
+            label: item.label,
+            color: SERIES_COLORS[item.slot] ?? SERIES_COLORS[0],
+          }))}
           table={{
             columns: ["Date", "Leads", "Outreach", "Replies", "Positive"],
-            rows: series.map((point) => [formatDay(point.date), point.leads, point.outreach, point.replies, point.positive]),
+            rows: series.map((point) => [
+              formatDay(point.date),
+              point.leads,
+              point.outreach,
+              point.replies,
+              point.positive,
+            ]),
           }}
         >
           <TimeSeriesChart data={series} xKey="date" series={activitySeries} xFormat={formatDay} />
         </ChartCard>
+      </Reveal>
+      <Reveal className="col-span-2 min-w-0 md:col-span-6 xl:col-span-4">
         <ChartCard
-          title="Conversion funnel"
+          className="h-full rounded-xl"
+          title="From found to won"
           description="Leads reaching each stage in the period"
-          table={{ columns: ["Stage", "Leads"], rows: data.funnel.map((stage) => [stage.label, stage.value]) }}
+          table={{
+            columns: ["Stage", "Leads"],
+            rows: data.funnel.map((stage) => [stage.label, stage.value]),
+          }}
           height={260}
         >
           <div className="flex h-full flex-col justify-center">
@@ -134,16 +173,29 @@ export function OverviewView({ data, currency, insights }: { data: OverviewData;
         </ChartCard>
       </Reveal>
 
-      <Reveal className="grid gap-4 lg:grid-cols-3">
+      <Reveal className="col-span-2 min-w-0 md:col-span-3 xl:col-span-4">
         <ChartCard
-          title="Lead acquisition"
-          description="New leads per day"
-          table={{ columns: ["Date", "New leads"], rows: series.map((point) => [formatDay(point.date), point.leads]) }}
+          className="h-full rounded-xl"
+          title="Customers found"
+          description="Customers found per day"
+          table={{
+            columns: ["Date", "Customers found"],
+            rows: series.map((point) => [formatDay(point.date), point.leads]),
+          }}
         >
-          <TimeSeriesChart data={series} xKey="date" variant="area" series={[{ key: "leads", label: "New leads", slot: 0 }]} xFormat={formatDay} />
+          <TimeSeriesChart
+            data={series}
+            xKey="date"
+            variant="area"
+            series={[{ key: "leads", label: "Customers found", slot: 0 }]}
+            xFormat={formatDay}
+          />
         </ChartCard>
+      </Reveal>
+      <Reveal className="col-span-2 min-w-0 md:col-span-3 xl:col-span-4">
         <ChartCard
-          title="Channel performance"
+          className="h-full rounded-xl"
+          title="Which channel works best"
           description="Sent vs. replies by channel"
           legend={[
             { label: "Sent", color: SERIES_COLORS[0] },
@@ -159,7 +211,11 @@ export function OverviewView({ data, currency, insights }: { data: OverviewData;
               formatPercent(channel.positiveRate),
             ]),
           }}
-          empty={channelRows.length === 0 ? <p className="text-[13px] text-foreground-muted">No outreach in this period</p> : undefined}
+          empty={
+            channelRows.length === 0 ? (
+              <p className="text-[13px] text-foreground-muted">No outreach in this period</p>
+            ) : undefined
+          }
         >
           <BarChart
             data={channelRows}
@@ -170,22 +226,38 @@ export function OverviewView({ data, currency, insights }: { data: OverviewData;
             ]}
           />
         </ChartCard>
+      </Reveal>
+      <Reveal className="col-span-2 min-w-0 md:col-span-6 xl:col-span-4">
         <ChartCard
-          title="Lead quality"
+          className="h-full rounded-xl"
+          title="How good your list is"
           description="Current leads by score band"
-          table={{ columns: ["Score", "Leads"], rows: data.scoreDistribution.map((bucket) => [bucket.bucket, bucket.count]) }}
-          empty={data.scoreDistribution.every((bucket) => bucket.count === 0) ? <p className="text-[13px] text-foreground-muted">No scored leads yet</p> : undefined}
+          table={{
+            columns: ["Score", "Leads"],
+            rows: data.scoreDistribution.map((bucket) => [bucket.bucket, bucket.count]),
+          }}
+          empty={
+            data.scoreDistribution.every((bucket) => bucket.count === 0) ? (
+              <p className="text-[13px] text-foreground-muted">No scored leads yet</p>
+            ) : undefined
+          }
         >
-          <BarChart data={data.scoreDistribution} categoryKey="bucket" series={[{ key: "count", label: "Leads", slot: 0 }]} />
+          <BarChart
+            data={data.scoreDistribution}
+            categoryKey="bucket"
+            series={[{ key: "count", label: "Leads", slot: 0 }]}
+          />
         </ChartCard>
       </Reveal>
 
-      <Reveal className="grid items-start gap-4 lg:grid-cols-3">
-        <section className="rounded-lg border border-border bg-surface shadow-xs lg:col-span-2">
+      <Reveal className="col-span-2 min-w-0 md:col-span-6 xl:col-span-8">
+        <BentoTile className="h-full">
           <header className="flex items-center justify-between px-4 pt-3.5 pb-2">
             <div>
-              <h3 className="text-[13px] font-semibold">Campaign performance</h3>
-              <p className="mt-0.5 text-xs text-foreground-muted">Activity attributed to each campaign in the period</p>
+              <h3 className="text-[13px] font-semibold">How each offer is doing</h3>
+              <p className="mt-0.5 text-xs text-foreground-muted">
+                Activity attributed to each campaign in the period
+              </p>
             </div>
             <Button asChild variant="ghost" size="sm">
               <Link href="/app/campaigns">
@@ -194,7 +266,16 @@ export function OverviewView({ data, currency, insights }: { data: OverviewData;
             </Button>
           </header>
           {data.campaigns.length === 0 ? (
-            <EmptyState compact icon={Megaphone} title="No campaigns yet" action={<Button asChild size="sm"><Link href="/app/campaigns/new">Create campaign</Link></Button>} />
+            <EmptyState
+              compact
+              icon={Megaphone}
+              title="No offers sent yet"
+              action={
+                <Button asChild size="sm">
+                  <Link href="/app/campaigns/new">Send an offer</Link>
+                </Button>
+              }
+            />
           ) : (
             <Table>
               <TableHeader>
@@ -212,15 +293,22 @@ export function OverviewView({ data, currency, insights }: { data: OverviewData;
                 {data.campaigns.map((campaign) => (
                   <TableRow key={campaign.campaignId}>
                     <TableCell>
-                      <Link href={`/app/campaigns/${campaign.campaignId}`} className="flex items-center gap-2 font-medium hover:underline">
+                      <Link
+                        href={`/app/campaigns/${campaign.campaignId}`}
+                        className="flex items-center gap-2 font-medium hover:underline"
+                      >
                         {campaign.name}
-                        <StatusBadge tone={CAMPAIGN_TONES[campaign.status] ?? "neutral"}>{campaign.status.toLowerCase()}</StatusBadge>
+                        <StatusBadge tone={CAMPAIGN_TONES[campaign.status] ?? "neutral"}>
+                          {campaign.status.toLowerCase()}
+                        </StatusBadge>
                       </Link>
                     </TableCell>
                     <TableCell className="text-right">{formatNumber(campaign.leads)}</TableCell>
                     <TableCell className="text-right">{formatNumber(campaign.sent)}</TableCell>
                     <TableCell className="text-right">{formatNumber(campaign.replies)}</TableCell>
-                    <TableCell className="text-right">{formatPercent(campaign.replyRate)}</TableCell>
+                    <TableCell className="text-right">
+                      {formatPercent(campaign.replyRate)}
+                    </TableCell>
                     <TableCell className="text-right">{formatNumber(campaign.meetings)}</TableCell>
                     <TableCell className="text-right">{formatNumber(campaign.won)}</TableCell>
                   </TableRow>
@@ -228,10 +316,14 @@ export function OverviewView({ data, currency, insights }: { data: OverviewData;
               </TableBody>
             </Table>
           )}
-        </section>
-        <section className="flex flex-col gap-3">
+        </BentoTile>
+      </Reveal>
+      <Reveal className="col-span-2 min-w-0 md:col-span-6 xl:col-span-4">
+        <BentoTile className="flex h-full flex-col gap-3 p-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-[13px] font-semibold">AI insights</h3>
+            <h3 className="flex items-center gap-1.5 text-[13px] font-semibold">
+              <Sparkles className="size-3.5 text-brand-2" /> AI insights
+            </h3>
             <Button asChild variant="ghost" size="xs">
               <Link href="/app/ai-insights">
                 View all <ArrowRight />
@@ -255,7 +347,13 @@ export function OverviewView({ data, currency, insights }: { data: OverviewData;
                     className="border-gradient border-transparent lift"
                     title={insight.title}
                     body={insight.body}
-                    sentiment={insight.sentiment === "POSITIVE" ? "positive" : insight.sentiment === "NEGATIVE" ? "negative" : "neutral"}
+                    sentiment={
+                      insight.sentiment === "POSITIVE"
+                        ? "positive"
+                        : insight.sentiment === "NEGATIVE"
+                          ? "negative"
+                          : "neutral"
+                    }
                     comparison={insight.comparisonLabel ?? undefined}
                     confidence={insight.confidence}
                   />
@@ -263,13 +361,13 @@ export function OverviewView({ data, currency, insights }: { data: OverviewData;
               ))}
             </Stagger>
           )}
-          <Button asChild variant="secondary" size="sm" className="w-full">
+          <Button asChild variant="secondary" size="sm" className="mt-auto w-full">
             <Link href="/app/analytics">
               <BarChart3 /> Open analytics
             </Link>
           </Button>
-        </section>
+        </BentoTile>
       </Reveal>
-    </div>
+    </>
   );
 }

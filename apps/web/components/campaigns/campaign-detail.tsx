@@ -20,11 +20,15 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
-import { AUTOMATION_MODE_LABELS, CHANNEL_LABELS, type AutomationMode, type Channel } from "@repo/config";
+import {
+  AUTOMATION_MODE_LABELS,
+  CHANNEL_LABELS,
+  type AutomationMode,
+  type Channel,
+} from "@repo/config";
 import {
   Button,
   Callout,
-  ChartCard,
   CompanyMark,
   DropdownMenu,
   DropdownMenuContent,
@@ -32,7 +36,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   EmptyState,
-  FunnelChart,
   MetricCard,
   ScoreIndicator,
   SegmentedControl,
@@ -42,19 +45,27 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  TimeSeriesChart,
   Tooltip,
   cn,
   formatNumber,
   toast,
   type StatusTone,
 } from "@repo/ui";
+import { ChartCard, FunnelChart, TimeSeriesChart } from "@repo/ui/charts";
 import { api, apiWithMeta, errorMessage } from "@/lib/api-client";
 import { formatDay } from "../dashboard/format";
 import { useCanWrite } from "../shell/shell-context";
 import { RelativeTime } from "../time";
 import { ReviewQueue } from "../outreach/review-queue";
-import { AutomationModeBadge, CampaignStatusBadge, ChannelIcon, ChannelList, TemplateText, pct, type ProviderState } from "../outreach/shared";
+import {
+  AutomationModeBadge,
+  CampaignStatusBadge,
+  ChannelIcon,
+  ChannelList,
+  TemplateText,
+  pct,
+  type ProviderState,
+} from "../outreach/shared";
 import { LaunchDialog } from "./launch-dialog";
 
 // ----------------------------------------------------------------------------- Types
@@ -105,7 +116,12 @@ interface CampaignStats {
   meetings: number;
   won: number;
   revenue: number;
-  rates: { delivery: number | null; open: number | null; reply: number | null; positive: number | null };
+  rates: {
+    delivery: number | null;
+    open: number | null;
+    reply: number | null;
+    positive: number | null;
+  };
   series: Array<{ day: string; sent: number; replies: number }>;
   channels: Array<{ channel: string; sent: number; replies: number }>;
   steps: Record<string, { sent: number; pending: number; scheduled: number; failed: number }>;
@@ -120,7 +136,17 @@ interface CampaignLeadRow {
   stoppedReason: string | null;
   addedAt: string;
   nextStep: { order: number; name: string; channel: Channel } | null;
-  lead: { id: string; name: string; category: string | null; city: string | null; locality: string | null; score: number | null; status: string; email: string | null; phone: string | null };
+  lead: {
+    id: string;
+    name: string;
+    category: string | null;
+    city: string | null;
+    locality: string | null;
+    score: number | null;
+    status: string;
+    email: string | null;
+    phone: string | null;
+  };
 }
 
 const MEMBER_STATUS: Record<string, { label: string; tone: StatusTone }> = {
@@ -142,7 +168,9 @@ function StepProgress({ campaign, stats }: { campaign: CampaignDetailData; stats
     <section className="rounded-lg border border-border bg-surface shadow-xs">
       <header className="px-4 pt-3.5 pb-2">
         <h3 className="text-[13px] font-semibold">Sequence progress</h3>
-        <p className="mt-0.5 text-xs text-foreground-muted">Messages per step, out of {formatNumber(stats.audience)} leads</p>
+        <p className="mt-0.5 text-xs text-foreground-muted">
+          Messages per step, out of {formatNumber(stats.audience)} leads
+        </p>
       </header>
       <ol className="grid gap-3 px-4 pb-4">
         {campaign.steps.map((step, index) => {
@@ -157,17 +185,36 @@ function StepProgress({ campaign, stats }: { campaign: CampaignDetailData; stats
             <li key={step.id} className="grid gap-1.5">
               <div className="flex items-center justify-between gap-2 text-xs">
                 <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
-                  <span className="flex size-4 items-center justify-center rounded-full border border-border text-[9px] tabular">{index + 1}</span>
-                  <ChannelIcon channel={step.channel} className="size-3 text-foreground-muted" /> {step.name}
+                  <span className="flex size-4 items-center justify-center rounded-full border border-border text-[9px] tabular">
+                    {index + 1}
+                  </span>
+                  <ChannelIcon channel={step.channel} className="size-3 text-foreground-muted" />{" "}
+                  {step.name}
                 </span>
                 <span className="text-foreground-muted tabular">
-                  {formatNumber(row.sent)} sent{row.pending ? ` · ${formatNumber(row.pending)} to review` : ""}
+                  {formatNumber(row.sent)} sent
+                  {row.pending ? ` · ${formatNumber(row.pending)} to review` : ""}
                   {row.failed ? ` · ${formatNumber(row.failed)} failed` : ""}
                 </span>
               </div>
-              <div className="flex h-2 overflow-hidden rounded-full bg-surface-sunken" role="img" aria-label={segments.map((segment) => `${segment.label}: ${segment.value}`).join(", ")}>
+              <div
+                className="flex h-2 overflow-hidden rounded-full bg-surface-sunken"
+                role="img"
+                aria-label={segments
+                  .map((segment) => `${segment.label}: ${segment.value}`)
+                  .join(", ")}
+              >
                 {segments.map((segment) =>
-                  segment.value ? <span key={segment.label} style={{ width: `${(segment.value / max) * 100}%`, background: segment.color }} className="h-full" /> : null,
+                  segment.value ? (
+                    <span
+                      key={segment.label}
+                      style={{
+                        width: `${(segment.value / max) * 100}%`,
+                        background: segment.color,
+                      }}
+                      className="h-full"
+                    />
+                  ) : null,
                 )}
               </div>
             </li>
@@ -197,14 +244,22 @@ function AudienceBreakdown({ stats }: { stats: CampaignStats }) {
   return (
     <section className="rounded-lg border border-border bg-surface p-4 shadow-xs">
       <h3 className="text-[13px] font-semibold">Where leads are</h3>
-      <p className="mt-0.5 text-xs text-foreground-muted">Current state of every lead in this campaign</p>
+      <p className="mt-0.5 text-xs text-foreground-muted">
+        Current state of every lead in this campaign
+      </p>
       {entries.length ? (
         <ul className="mt-3 grid gap-2">
           {entries.map((entry) => (
-            <li key={entry.status} className="grid grid-cols-[120px_minmax(0,1fr)_40px] items-center gap-3 text-xs">
+            <li
+              key={entry.status}
+              className="grid grid-cols-[120px_minmax(0,1fr)_40px] items-center gap-3 text-xs"
+            >
               <StatusBadge tone={entry.tone}>{entry.label}</StatusBadge>
               <div className="h-1.5 overflow-hidden rounded-full bg-surface-sunken">
-                <div className="h-full rounded-full bg-foreground/70" style={{ width: `${(entry.count / Math.max(1, stats.audience)) * 100}%` }} />
+                <div
+                  className="h-full rounded-full bg-foreground/70"
+                  style={{ width: `${(entry.count / Math.max(1, stats.audience)) * 100}%` }}
+                />
               </div>
               <span className="text-right font-medium tabular">{formatNumber(entry.count)}</span>
             </li>
@@ -217,7 +272,13 @@ function AudienceBreakdown({ stats }: { stats: CampaignStats }) {
   );
 }
 
-function OverviewTab({ campaign, stats }: { campaign: CampaignDetailData; stats: CampaignStats | undefined }) {
+function OverviewTab({
+  campaign,
+  stats,
+}: {
+  campaign: CampaignDetailData;
+  stats: CampaignStats | undefined;
+}) {
   if (!stats) {
     return (
       <div className="grid gap-4">
@@ -241,12 +302,36 @@ function OverviewTab({ campaign, stats }: { campaign: CampaignDetailData; stats:
   return (
     <div className="grid gap-4">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <MetricCard label="Leads" value={formatNumber(stats.audience)} hint={`${formatNumber(stats.byStatus.IN_SEQUENCE ?? 0)} in sequence`} />
-        <MetricCard label="Sent" value={formatNumber(stats.sent)} hint={stats.failed ? `${formatNumber(stats.failed)} failed` : "No failures"} />
-        <MetricCard label="Delivered" value={pct(stats.rates.delivery)} hint={`${formatNumber(stats.delivered)} messages`} />
-        <MetricCard label="Opened / read" value={pct(stats.rates.open)} hint={`${formatNumber(stats.leads.opened)} of ${formatNumber(stats.leads.contacted)} leads`} />
-        <MetricCard label="Reply rate" value={pct(stats.rates.reply)} hint={`${formatNumber(stats.leads.replied)} leads · ${formatNumber(stats.leads.positive)} positive`} />
-        <MetricCard label="Opt-outs" value={formatNumber(stats.optOuts)} hint="Suppressed automatically" />
+        <MetricCard
+          label="Leads"
+          value={formatNumber(stats.audience)}
+          hint={`${formatNumber(stats.byStatus.IN_SEQUENCE ?? 0)} in sequence`}
+        />
+        <MetricCard
+          label="Sent"
+          value={formatNumber(stats.sent)}
+          hint={stats.failed ? `${formatNumber(stats.failed)} failed` : "No failures"}
+        />
+        <MetricCard
+          label="Delivered"
+          value={pct(stats.rates.delivery)}
+          hint={`${formatNumber(stats.delivered)} messages`}
+        />
+        <MetricCard
+          label="Opened / read"
+          value={pct(stats.rates.open)}
+          hint={`${formatNumber(stats.leads.opened)} of ${formatNumber(stats.leads.contacted)} leads`}
+        />
+        <MetricCard
+          label="Reply rate"
+          value={pct(stats.rates.reply)}
+          hint={`${formatNumber(stats.leads.replied)} leads · ${formatNumber(stats.leads.positive)} positive`}
+        />
+        <MetricCard
+          label="Opt-outs"
+          value={formatNumber(stats.optOuts)}
+          hint="Suppressed automatically"
+        />
       </div>
       <div className="grid gap-4 *:min-w-0 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <ChartCard
@@ -256,8 +341,19 @@ function OverviewTab({ campaign, stats }: { campaign: CampaignDetailData; stats:
             { label: "Sent", color: "var(--series-1)" },
             { label: "Replies", color: "var(--series-3)" },
           ]}
-          table={{ columns: ["Day", "Sent", "Replies"], rows: stats.series.map((row) => [formatDay(row.day), row.sent, row.replies]) }}
-          empty={stats.sent ? undefined : <EmptyState compact title="No sends yet" description="Activity appears here once the first messages go out." />}
+          table={{
+            columns: ["Day", "Sent", "Replies"],
+            rows: stats.series.map((row) => [formatDay(row.day), row.sent, row.replies]),
+          }}
+          empty={
+            stats.sent ? undefined : (
+              <EmptyState
+                compact
+                title="No sends yet"
+                description="Activity appears here once the first messages go out."
+              />
+            )
+          }
         >
           <TimeSeriesChart
             data={stats.series}
@@ -269,7 +365,15 @@ function OverviewTab({ campaign, stats }: { campaign: CampaignDetailData; stats:
             ]}
           />
         </ChartCard>
-        <ChartCard title="Funnel" description="From audience to meetings" table={{ columns: ["Stage", "Count"], rows: funnel.map((stage) => [stage.label, stage.value]) }} height={200}>
+        <ChartCard
+          title="Funnel"
+          description="From audience to meetings"
+          table={{
+            columns: ["Stage", "Count"],
+            rows: funnel.map((stage) => [stage.label, stage.value]),
+          }}
+          height={200}
+        >
           <div className="pt-2">
             <FunnelChart stages={funnel} />
           </div>
@@ -292,11 +396,15 @@ function AudienceTab({ campaign }: { campaign: CampaignDetailData }) {
   const [page, setPage] = React.useState(1);
   const query = useQuery({
     queryKey: ["campaign-leads", campaign.id, status, page],
-    queryFn: () => apiWithMeta<CampaignLeadRow[], { total: number; pageSize: number }>(`/api/v1/campaigns/${campaign.id}/leads?page=${page}&pageSize=25${status === "all" ? "" : `&status=${status}`}`),
+    queryFn: () =>
+      apiWithMeta<CampaignLeadRow[], { total: number; pageSize: number }>(
+        `/api/v1/campaigns/${campaign.id}/leads?page=${page}&pageSize=25${status === "all" ? "" : `&status=${status}`}`,
+      ),
     placeholderData: (previous) => previous,
   });
   const remove = useMutation({
-    mutationFn: (leadId: string) => api(`/api/v1/campaigns/${campaign.id}/leads?leadId=${leadId}`, { method: "DELETE" }),
+    mutationFn: (leadId: string) =>
+      api(`/api/v1/campaigns/${campaign.id}/leads?leadId=${leadId}`, { method: "DELETE" }),
     onSuccess: () => {
       toast.success("Removed from campaign — pending messages canceled");
       void queryClient.invalidateQueries({ queryKey: ["campaign-leads", campaign.id] });
@@ -356,15 +464,25 @@ function AudienceTab({ campaign }: { campaign: CampaignDetailData }) {
                   </tr>
                 ))
               : rows.map((row) => {
-                  const meta = MEMBER_STATUS[row.status] ?? { label: row.status, tone: "neutral" as const };
+                  const meta = MEMBER_STATUS[row.status] ?? {
+                    label: row.status,
+                    tone: "neutral" as const,
+                  };
                   return (
                     <tr key={row.id} className="hover:bg-surface-muted/40">
                       <td className="px-4 py-2.5">
-                        <Link href={`/app/leads/${row.lead.id}`} className="flex items-center gap-2.5">
+                        <Link
+                          href={`/app/leads/${row.lead.id}`}
+                          className="flex items-center gap-2.5"
+                        >
                           <CompanyMark name={row.lead.name} className="size-7 text-[10px]" />
                           <span className="min-w-0">
-                            <span className="block truncate font-medium hover:underline">{row.lead.name}</span>
-                            <span className="block truncate text-xs text-foreground-muted">{[row.lead.locality, row.lead.city].filter(Boolean).join(", ")}</span>
+                            <span className="block truncate font-medium hover:underline">
+                              {row.lead.name}
+                            </span>
+                            <span className="block truncate text-xs text-foreground-muted">
+                              {[row.lead.locality, row.lead.city].filter(Boolean).join(", ")}
+                            </span>
                           </span>
                           <ScoreIndicator score={row.lead.score} size="sm" className="ml-auto" />
                         </Link>
@@ -381,9 +499,14 @@ function AudienceTab({ campaign }: { campaign: CampaignDetailData }) {
                         )}
                       </td>
                       <td className="hidden px-3 py-2.5 text-xs text-foreground-secondary md:table-cell">
-                        {row.nextStep && ["PENDING", "IN_SEQUENCE", "AWAITING_APPROVAL"].includes(row.status) ? (
+                        {row.nextStep &&
+                        ["PENDING", "IN_SEQUENCE", "AWAITING_APPROVAL"].includes(row.status) ? (
                           <span className="inline-flex items-center gap-1.5">
-                            <ChannelIcon channel={row.nextStep.channel} className="size-3 text-foreground-muted" /> {row.nextStep.name}
+                            <ChannelIcon
+                              channel={row.nextStep.channel}
+                              className="size-3 text-foreground-muted"
+                            />{" "}
+                            {row.nextStep.name}
                             {row.nextActionAt ? (
                               <span className="text-foreground-muted">
                                 · <RelativeTime value={row.nextActionAt} />
@@ -394,17 +517,27 @@ function AudienceTab({ campaign }: { campaign: CampaignDetailData }) {
                           <span className="text-foreground-subtle">—</span>
                         )}
                       </td>
-                      <td className="hidden px-3 py-2.5 text-xs text-foreground-muted lg:table-cell">{row.lastStepAt ? <RelativeTime value={row.lastStepAt} /> : "—"}</td>
+                      <td className="hidden px-3 py-2.5 text-xs text-foreground-muted lg:table-cell">
+                        {row.lastStepAt ? <RelativeTime value={row.lastStepAt} /> : "—"}
+                      </td>
                       <td className="px-3 py-2.5 text-right">
-                        {canWrite && ["PENDING", "IN_SEQUENCE", "AWAITING_APPROVAL"].includes(row.status) ? (
+                        {canWrite &&
+                        ["PENDING", "IN_SEQUENCE", "AWAITING_APPROVAL"].includes(row.status) ? (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button size="icon-xs" variant="ghost" aria-label={`Actions for ${row.lead.name}`}>
+                              <Button
+                                size="icon-xs"
+                                variant="ghost"
+                                aria-label={`Actions for ${row.lead.name}`}
+                              >
                                 <MoreHorizontal />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem destructive onSelect={() => remove.mutate(row.lead.id)}>
+                              <DropdownMenuItem
+                                destructive
+                                onSelect={() => remove.mutate(row.lead.id)}
+                              >
                                 <CircleStop /> Remove from campaign
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -416,17 +549,29 @@ function AudienceTab({ campaign }: { campaign: CampaignDetailData }) {
                 })}
           </tbody>
         </table>
-        {!query.isPending && rows.length === 0 ? <EmptyState compact icon={Users} title="No leads in this view" /> : null}
+        {!query.isPending && rows.length === 0 ? (
+          <EmptyState compact icon={Users} title="No leads in this view" />
+        ) : null}
         {pages > 1 ? (
           <div className="flex items-center justify-between border-t border-border px-4 py-2 text-xs text-foreground-muted">
             <span>
               {formatNumber(total)} leads · page {page} of {pages}
             </span>
             <div className="flex gap-1">
-              <Button size="xs" variant="secondary" disabled={page === 1} onClick={() => setPage(page - 1)}>
+              <Button
+                size="xs"
+                variant="secondary"
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+              >
                 Previous
               </Button>
-              <Button size="xs" variant="secondary" disabled={page >= pages} onClick={() => setPage(page + 1)}>
+              <Button
+                size="xs"
+                variant="secondary"
+                disabled={page >= pages}
+                onClick={() => setPage(page + 1)}
+              >
                 Next
               </Button>
             </div>
@@ -439,7 +584,13 @@ function AudienceTab({ campaign }: { campaign: CampaignDetailData }) {
 
 // ----------------------------------------------------------------------------- Sequence & settings
 
-function SequenceTab({ campaign, stats }: { campaign: CampaignDetailData; stats: CampaignStats | undefined }) {
+function SequenceTab({
+  campaign,
+  stats,
+}: {
+  campaign: CampaignDetailData;
+  stats: CampaignStats | undefined;
+}) {
   return (
     <div className="grid gap-4 *:min-w-0 xl:grid-cols-[minmax(0,1fr)_320px]">
       <ol className="grid gap-0">
@@ -447,8 +598,16 @@ function SequenceTab({ campaign, stats }: { campaign: CampaignDetailData; stats:
           const row = stats?.steps[step.id];
           return (
             <li key={step.id} className="relative pl-10">
-              <span aria-hidden className={cn("absolute top-0 left-[15px] w-px bg-border", index === campaign.steps.length - 1 ? "h-4" : "h-full")} />
-              <span className="absolute top-3 left-0 flex size-[31px] items-center justify-center rounded-full border border-border bg-background text-xs font-semibold tabular">{index + 1}</span>
+              <span
+                aria-hidden
+                className={cn(
+                  "absolute top-0 left-[15px] w-px bg-border",
+                  index === campaign.steps.length - 1 ? "h-4" : "h-full",
+                )}
+              />
+              <span className="absolute top-3 left-0 flex size-[31px] items-center justify-center rounded-full border border-border bg-background text-xs font-semibold tabular">
+                {index + 1}
+              </span>
               {index > 0 ? (
                 <p className="pt-1 pb-2 text-xs text-foreground-muted">
                   Wait {step.delayDays} day{step.delayDays === 1 ? "" : "s"}
@@ -461,20 +620,29 @@ function SequenceTab({ campaign, stats }: { campaign: CampaignDetailData; stats:
                 <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2.5">
                   <ChannelIcon channel={step.channel} className="text-foreground-muted" />
                   <span className="text-[13px] font-semibold">{step.name}</span>
-                  <span className="text-xs text-foreground-muted">{CHANNEL_LABELS[step.channel]}</span>
+                  <span className="text-xs text-foreground-muted">
+                    {CHANNEL_LABELS[step.channel]}
+                  </span>
                   {step.useAI && (step.channel === "EMAIL" || step.channel === "WHATSAPP") ? (
                     <span className="inline-flex items-center gap-1 text-xs text-accent">
                       <Sparkles className="size-3" /> AI personalised
                     </span>
                   ) : null}
-                  {row ? <span className="ml-auto text-xs text-foreground-muted tabular">{formatNumber(row.sent)} sent</span> : null}
+                  {row ? (
+                    <span className="ml-auto text-xs text-foreground-muted tabular">
+                      {formatNumber(row.sent)} sent
+                    </span>
+                  ) : null}
                 </div>
                 <div className="grid gap-2 px-4 py-3">
                   {step.subject ? <p className="text-[13px] font-medium">{step.subject}</p> : null}
                   <TemplateText text={step.body} />
                   {step.channel === "WHATSAPP" ? (
                     <p className="text-xs text-foreground-muted">
-                      Template: {step.whatsappTemplate ? `${step.whatsappTemplate.name} (${step.whatsappTemplate.status.toLowerCase()})` : "none — sends only inside a 24-hour reply window"}
+                      Template:{" "}
+                      {step.whatsappTemplate
+                        ? `${step.whatsappTemplate.name} (${step.whatsappTemplate.status.toLowerCase()})`
+                        : "none — sends only inside a 24-hour reply window"}
                     </p>
                   ) : null}
                 </div>
@@ -493,7 +661,9 @@ function SequenceTab({ campaign, stats }: { campaign: CampaignDetailData; stats:
             </div>
             <div>
               <dt className="text-xs text-foreground-muted">Offer</dt>
-              <dd className="text-foreground-secondary">{campaign.offerSummary ?? "From business profile"}</dd>
+              <dd className="text-foreground-secondary">
+                {campaign.offerSummary ?? "From business profile"}
+              </dd>
             </div>
             {campaign.pitchAngle ? (
               <div>
@@ -509,8 +679,12 @@ function SequenceTab({ campaign, stats }: { campaign: CampaignDetailData; stats:
               <dt className="text-xs text-foreground-muted">Daily limits</dt>
               <dd className="flex flex-wrap gap-x-3 gap-y-1">
                 {campaign.channels.map((channel) => (
-                  <span key={channel} className="inline-flex items-center gap-1 text-foreground-secondary">
-                    <ChannelIcon channel={channel} className="size-3" /> {campaign.dailyLimits[channel] ?? "—"}/day
+                  <span
+                    key={channel}
+                    className="inline-flex items-center gap-1 text-foreground-secondary"
+                  >
+                    <ChannelIcon channel={channel} className="size-3" />{" "}
+                    {campaign.dailyLimits[channel] ?? "—"}/day
                   </span>
                 ))}
               </dd>
@@ -528,7 +702,13 @@ function SequenceTab({ campaign, stats }: { campaign: CampaignDetailData; stats:
 
 // ----------------------------------------------------------------------------- Page
 
-export function CampaignDetail({ initial, providers }: { initial: CampaignDetailData; providers: { EMAIL: ProviderState; WHATSAPP: ProviderState } }) {
+export function CampaignDetail({
+  initial,
+  providers,
+}: {
+  initial: CampaignDetailData;
+  providers: { EMAIL: ProviderState; WHATSAPP: ProviderState };
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
@@ -545,17 +725,30 @@ export function CampaignDetail({ initial, providers }: { initial: CampaignDetail
     refetchInterval: campaign.status === "ACTIVE" ? 10_000 : false,
   });
   const [tab, setTab] = React.useState("overview");
-  const [launchOpen, setLaunchOpen] = React.useState(() => searchParams.get("launch") === "1" && initial.status === "DRAFT");
+  const [launchOpen, setLaunchOpen] = React.useState(
+    () => searchParams.get("launch") === "1" && initial.status === "DRAFT",
+  );
 
   const action = useMutation({
-    mutationFn: (name: "pause" | "resume" | "complete" | "archive" | "duplicate") => api<{ id?: string; status?: string }>(`/api/v1/campaigns/${campaign.id}/${name}`, { method: "POST" }),
+    mutationFn: (name: "pause" | "resume" | "complete" | "archive" | "duplicate") =>
+      api<{ id?: string; status?: string }>(`/api/v1/campaigns/${campaign.id}/${name}`, {
+        method: "POST",
+      }),
     onSuccess: (result, name) => {
       if (name === "duplicate" && result.id) {
         toast.success("Campaign duplicated as a draft");
         router.push(`/app/campaigns/${result.id}`);
         return;
       }
-      toast.success({ pause: "Campaign paused — nothing more will be sent", resume: "Campaign resumed", complete: "Campaign completed", archive: "Campaign archived", duplicate: "" }[name]);
+      toast.success(
+        {
+          pause: "Campaign paused — nothing more will be sent",
+          resume: "Campaign resumed",
+          complete: "Campaign completed",
+          archive: "Campaign archived",
+          duplicate: "",
+        }[name],
+      );
       void queryClient.invalidateQueries({ queryKey: ["campaign", campaign.id] });
       void queryClient.invalidateQueries({ queryKey: ["campaign-stats", campaign.id] });
       void queryClient.invalidateQueries({ queryKey: ["campaigns"] });
@@ -569,13 +762,18 @@ export function CampaignDetail({ initial, providers }: { initial: CampaignDetail
   });
 
   const pending = stats.data?.pendingApproval ?? 0;
-  const simulated = campaign.channels.filter((channel) => (channel === "EMAIL" || channel === "WHATSAPP") && providers[channel].simulated);
+  const simulated = campaign.channels.filter(
+    (channel) => (channel === "EMAIL" || channel === "WHATSAPP") && providers[channel].simulated,
+  );
   const place = (campaign.target.locations ?? []).map((location) => location.label).join(", ");
 
   return (
     <div className="grid gap-5">
       <div>
-        <Link href="/app/campaigns" className="mb-3 inline-flex items-center gap-1 text-xs text-foreground-muted hover:text-foreground">
+        <Link
+          href="/app/campaigns"
+          className="mb-3 inline-flex items-center gap-1 text-xs text-foreground-muted hover:text-foreground"
+        >
           <ArrowLeft className="size-3" /> Campaigns
         </Link>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -610,12 +808,21 @@ export function CampaignDetail({ initial, providers }: { initial: CampaignDetail
                 </Button>
               ) : null}
               {campaign.status === "ACTIVE" ? (
-                <Button size="sm" onClick={() => action.mutate("pause")} disabled={action.isPending}>
+                <Button
+                  size="sm"
+                  onClick={() => action.mutate("pause")}
+                  disabled={action.isPending}
+                >
                   <Pause /> Pause
                 </Button>
               ) : null}
               {campaign.status === "PAUSED" ? (
-                <Button variant="primary" size="sm" onClick={() => action.mutate("resume")} disabled={action.isPending}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => action.mutate("resume")}
+                  disabled={action.isPending}
+                >
                   <Play /> Resume
                 </Button>
               ) : null}
@@ -630,7 +837,13 @@ export function CampaignDetail({ initial, providers }: { initial: CampaignDetail
                     <Copy /> Duplicate
                   </DropdownMenuItem>
                   {["ACTIVE", "PAUSED"].includes(campaign.status) ? (
-                    <DropdownMenuItem onSelect={() => window.confirm("Complete this campaign? Remaining steps and queued messages are canceled.") && action.mutate("complete")}>
+                    <DropdownMenuItem
+                      onSelect={() =>
+                        window.confirm(
+                          "Complete this campaign? Remaining steps and queued messages are canceled.",
+                        ) && action.mutate("complete")
+                      }
+                    >
                       <CheckCheck /> Mark completed
                     </DropdownMenuItem>
                   ) : null}
@@ -642,7 +855,13 @@ export function CampaignDetail({ initial, providers }: { initial: CampaignDetail
                   {campaign.status !== "ACTIVE" ? (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem destructive onSelect={() => window.confirm("Delete this campaign? Its history stays in analytics.") && remove.mutate()}>
+                      <DropdownMenuItem
+                        destructive
+                        onSelect={() =>
+                          window.confirm("Delete this campaign? Its history stays in analytics.") &&
+                          remove.mutate()
+                        }
+                      >
                         <Trash2 /> Delete
                       </DropdownMenuItem>
                     </>
@@ -667,17 +886,21 @@ export function CampaignDetail({ initial, providers }: { initial: CampaignDetail
             ) : null
           }
         >
-          This campaign is a draft. You’ll see the volume, reachability and cost estimate before confirming — nothing is sent until then.
+          This campaign is a draft. You’ll see the volume, reachability and cost estimate before
+          confirming — nothing is sent until then.
         </Callout>
       ) : null}
       {campaign.status === "PAUSED" ? (
         <Callout tone="warning" icon={Pause}>
-          Paused — no messages are sent and no steps advance. Approved messages wait and go out when you resume.
+          Paused — no messages are sent and no steps advance. Approved messages wait and go out when
+          you resume.
         </Callout>
       ) : null}
       {simulated.length && campaign.status !== "DRAFT" ? (
         <Callout tone="warning" icon={FlaskConical}>
-          {simulated.map((channel) => CHANNEL_LABELS[channel]).join(" and ")} {simulated.length === 1 ? "runs" : "run"} through demo providers: messages aren’t delivered, and opens and replies are simulated so you can see the full flow.
+          {simulated.map((channel) => CHANNEL_LABELS[channel]).join(" and ")}{" "}
+          {simulated.length === 1 ? "runs" : "run"} through demo providers: messages aren’t
+          delivered, and opens and replies are simulated so you can see the full flow.
         </Callout>
       ) : null}
       {pending > 0 && tab !== "review" ? (
@@ -691,7 +914,9 @@ export function CampaignDetail({ initial, providers }: { initial: CampaignDetail
             </Button>
           }
         >
-          {campaign.automationMode === "MANUAL" ? "Manual mode: every message is a draft until you send it." : "Nothing goes out until you approve it."}
+          {campaign.automationMode === "MANUAL"
+            ? "Manual mode: every message is a draft until you send it."
+            : "Nothing goes out until you approve it."}
         </Callout>
       ) : null}
 
@@ -700,10 +925,17 @@ export function CampaignDetail({ initial, providers }: { initial: CampaignDetail
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="review">
             Review
-            {pending ? <span className="rounded-full bg-warning-soft px-1.5 text-[10px] font-semibold text-warning-text tabular">{pending}</span> : null}
+            {pending ? (
+              <span className="rounded-full bg-warning-soft px-1.5 text-[10px] font-semibold text-warning-text tabular">
+                {pending}
+              </span>
+            ) : null}
           </TabsTrigger>
           <TabsTrigger value="audience">
-            Audience <span className="text-foreground-subtle tabular">{stats.data ? formatNumber(stats.data.audience) : ""}</span>
+            Audience{" "}
+            <span className="text-foreground-subtle tabular">
+              {stats.data ? formatNumber(stats.data.audience) : ""}
+            </span>
           </TabsTrigger>
           <TabsTrigger value="sequence">Sequence</TabsTrigger>
         </TabsList>
@@ -721,7 +953,12 @@ export function CampaignDetail({ initial, providers }: { initial: CampaignDetail
         </TabsContent>
       </Tabs>
 
-      <LaunchDialog campaignId={campaign.id} campaignName={campaign.name} open={launchOpen} onOpenChange={setLaunchOpen} />
+      <LaunchDialog
+        campaignId={campaign.id}
+        campaignName={campaign.name}
+        open={launchOpen}
+        onOpenChange={setLaunchOpen}
+      />
     </div>
   );
 }

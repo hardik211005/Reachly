@@ -1,16 +1,26 @@
-import { addMonths } from "date-fns";
+import { addDays, addMonths } from "date-fns";
+import { TRIAL } from "@repo/config";
 import { prisma, type PrismaClient } from "@repo/db";
 import type { TenantContext } from "../context";
 import { audit } from "../audit";
 import { NotFoundError } from "../errors";
 import { getDefaultPlan } from "./plans";
 
-/** Every organisation has exactly one subscription row; new workspaces start on the default plan. */
+/**
+ * Every organisation has exactly one subscription row. New workspaces get the free trial of the
+ * paid plan (TRIAL in @repo/config) — no card — and drop to the default plan when it ends.
+ */
 export async function ensureSubscription(organizationId: string, client: PrismaClient = prisma) {
   const existing = await client.subscription.findUnique({ where: { organizationId } });
   if (existing) return existing;
-  const plan = await getDefaultPlan(client);
   const now = new Date();
+  const trialPlan = TRIAL.days > 0 ? await client.plan.findUnique({ where: { key: TRIAL.planKey } }) : null;
+  if (trialPlan) {
+    return client.subscription.create({
+      data: { organizationId, planId: trialPlan.id, status: "TRIALING", billingProvider: "trial", currentPeriodStart: now, currentPeriodEnd: addDays(now, TRIAL.days) },
+    });
+  }
+  const plan = await getDefaultPlan(client);
   return client.subscription.create({
     data: {
       organizationId,
